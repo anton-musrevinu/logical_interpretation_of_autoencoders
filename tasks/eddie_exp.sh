@@ -20,7 +20,6 @@ module load anaconda
 # Run the program
 conda config --add envs_dirs ./miniconda3/envs/
 source activate mlp
-
-echo pwd
+echo ${PWD}
 
 python experiment.py
