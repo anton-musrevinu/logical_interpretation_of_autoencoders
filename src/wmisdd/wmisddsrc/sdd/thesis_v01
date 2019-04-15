@@ -1,0 +1,320 @@
+%++++++++++++++++++++++++++++++++++++++++
+\documentclass[bsc,frontabs,twoside,singlespacing,parskip,deptreport]{infthesis}
+\usepackage{tabularx} % extra features for tabular environment
+\usepackage{amsmath}  % improve math presentation
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{graphicx} % takes care of graphic including machinery
+%\usepackage[margin=1in,letterpaper]{geometry} % decreases margins
+\usepackage{cite} % takes care of citations
+\usepackage{subcaption}
+\usepackage{fancyhdr}
+\usepackage{float}
+\setlength{\headheight}{15.2pt}
+\pagestyle{fancy}
+\lhead{ \fancyplain{}{Anton Fuxjaeger} }
+\rhead{ \fancyplain{}{Temporary Thesis, v1.0} }
+\usepackage[final]{hyperref} % adds hyper links inside the generated pdf file
+\hypersetup{
+	colorlinks=true,       % false: boxed links; true: colored links
+	linkcolor=blue,        % color of internal links
+	citecolor=blue,        % color of links to bibliography
+	filecolor=magenta,     % color of file links
+	urlcolor=blue         
+}
+
+
+\theoremstyle{plain}
+\newtheorem{defCounter}{Definition} % reset theorem numbering for each chapter
+\newtheorem{thmCounter}{Theorem} % reset theorem numbering for each chapter
+\newtheorem{exCounter}{Example} % reset theorem numbering for each chapter
+
+\theoremstyle{definition}
+\newtheorem{defn}[defCounter]{Definition} % definition numbers are dependent on theorem numbers
+\newtheorem{exmp}[exCounter]{Example} % same for example numbers
+\theoremstyle{plain}
+\newtheorem{thrm}[thmCounter]{Theorem} % same for example numbers
+
+%++++++++++++++++++++++++++++++++++++++++
+
+
+
+%\setcounter{secnumdepth}{0}
+
+\begin{document}
+
+\title{Working Title of Antons Amazing Thesis}
+\author{Anton R. Fuxjaeger}
+\course{Artificial Intelligence and Mathematics}
+\date{\today}
+\project{4th Year Project Report}
+\abstract{
+This is an example of {\tt infthesis} style.
+The file {\tt skeleton.tex} generates this document and can be 
+used to get a ``skeleton'' for your thesis.
+The abstract should summarise your report and fit in the space on the 
+first page.
+%
+You may, of course, use any other software to write your report,
+as long as you follow the same style. That means: producing a title
+page as given here, and including a table of contents and bibliography.
+}
+\maketitle
+
+\section*{Acknowledgements}
+Acknowledgements go here. 
+
+\tableofcontents
+\pagebreak
+
+\chapter{Introduction}
+//to be written
+\chapter{Background}
+\section{Notational Preliminaries}
+Throughout this paper upper case letters (eg. $X$) will refer to Boolean random variables, while lower case letters (eg. $x$) will represent their instantiation. Furthermore, bold letters will indicate sets of random variables, such that $\mathbf{X}$ is a set of variables and $\mathbf{x}$ is a set of instantiations. \\
+A boolean function $\mathit{f(\mathbf{Z})}$ is a function, taking a set of variables $\mathbf{Z}$ and maps each instantiation $\mathbf{z}$ to a value in $\{0,1\}$.\\
+\paragraph{Appreviations}:
+RV - Random Variable\\
+WMC - Weighted Model Counting
+//to be continued
+
+
+
+%----------------------------------------------------------------------------------------------------------------------------------------------
+%------------------------------------------------------ Probabilistic Inference in graphical Models -------------------------------------------
+%----------------------------------------------------------------------------------------------------------------------------------------------
+\section{Graphical Models} 
+\subsection{Bayesian Networks}
+A Bayesian or belief Network $\mathcal{N}$ over variables \textbf{X}, is a probabilistic graphical model that represents a set of Random Variables (RV) \textbf{X} and there conditional dependencies by means of a directed acyclic Graph $G$ in addition to a conditional probability function for each variable $X \in \mathbf{X}$. Each node $n\in N$ of the Graph $G = (N,E)$ represents a random variable, while each (directed) edge $(n_1, n_2) = e \in E, s.t. n_1,n_2\in N$ represents a conditional dependency from $n_1$ to $n_2$. In other words, a directed edge from variable $n_1$ to $n_2$, indicated that the RV corresponding to $n_2$ is conditionally dependent on $n_1$. Furthermore each variable $X \in \mathbf{X}$ has a conditional probability function $\theta_{X|X\mathbf{U}}$ defined in terms of its parent nodes $X\mathbf{U}$ in the graph. When dealing with Boolean RV, this functions are usually defined in terms of tables, where the number of entries is $2^{\#parentVariables + 1}$, called conditional probability tables. In such a case, the function $\theta_{X|X\mathbf{U}}$ is described as a piecewise constant functions, assigning network parameter values $\theta_{x|\mathbf{u}}$ to each row of the table. An example of such a network is given by Figure~\ref{fig:bn}. Here $\mathbf{X} = \{S,R,W\}$, where S,R,W are boolean RV that represent events sprinkler being switched on, its raining outside, and the grass in the garden being wet respectively.\\
+The probability of an instantiation \textbf{x} in a Bayesian Network, it then simply the product of all network parameters $\theta_{x|\mathbf{u}}$, where $x\mathbf{u}$ is consistent with \textbf{x}.
+\begin{thrm}{Probability in Bayesian Networks}
+$$ Pr(\mathbf{x}) = \prod_{x\mathbf{u} \sim \mathbf{x}} \theta_{x|\mathbf{u}} $$ where $\sim$ is used to denote that instantiation $x\mathbf{u}$ and $\mathbf{x}$ agree on values of their common variables.
+\end{thrm}
+\begin{figure}[ht]
+        \centering \includegraphics[width=0.8\columnwidth,clip]{images/beyesian_network_tmp.jpg}
+        \caption{
+                \label{fig:bn}
+                Simple Bayesian Network
+        }
+\end{figure}
+\subsection{The Network Polynomial}
+The concept of the networks polynomial is, in short a representation of the probability distribution of a given Bayesian Network in the form of a unique polynomial. It has been proven~\cite{darwiche2003differential} that the polynomial evaluated for any evidence (instantiation of variables) is equivalent to the Probability of this evidence. This in combination with partial derivatives allowed us to express a large number of probabilistic queries in the the from of the network polynomial. However, this multivariate polynomial where each variable has degree one, has an exponential number of terms , one term for each instantiation of the network variables. Thus a way of representing it as an arithmetic circuit, that facilitates its evaluation and differentiation, is is very desirable.
+Formally the Network Polynomial is defined as follows for Bayesian Network \textit{N}:\\
+\textit{Evidence indicators}: For each network variable $X$, we have a set of evidence indicators $\lambda_x$ .\\
+\textit{Network parameters}: For each network family $X\textbf{U}$, we have a set of parameters $\theta_{x|\mathbf{u}}$.\\
+
+\begin{defn}
+~\cite{darwiche2003differential} Let $\mathcal{N}$ be a Bayesian network over variables \textbf{X}, and let \textbf{U} denote the parents of variable X in the network. The polynomial of network $\mathcal{N}$ is defined
+as follows:$$f = \displaystyle\sum_{\mathbf{x}} \prod_{x\mathbf{u} \sim \mathbf{x}} \lambda_x \theta_{x|\mathbf{u}}$$
+\end{defn}
+The outer sum in the above definition ranges over all instantiations x of the network variables. For each instantiation $\mathbf{x}$, the inner product ranges over all instantiations of families $x\mathbf{u}$ that are compatible with x.
+The polynomial \textit{f} of Bayesian network \textit{N} represents the probability distribution \textbf{Pr} of \textit{N} in the following sense; For any piece of evidence \textbf{e}, which is an instantiation of some variables \textbf{E} in the network, we can evaluate the polynomial \textit{f} so it returns the probability of \textbf{e}, \textit{Pr(\textbf{e})} - ~\cite{darwiche2003differential}. \\
+Coming back to our example in Figure-\ref{fig:bn}, the corresponding Network polynomial f would be given by:
+\begin{align*}
+f = & \lambda_s \lambda_r \lambda_w \theta_s \theta_r \theta_{w|sr}
+	+ \lambda_s \lambda_r \lambda_{\bar{w}} \theta_s \theta_r \theta_{\bar{w}|sr}\\
+	&+ \lambda_s \lambda_{\bar{r}} \lambda_{w} \theta_s \theta_{\bar{r}} \theta_{w|s\bar{r}}
+	+ \lambda_s \lambda_{\bar{r}} \lambda_{\bar{w}} \theta_s \theta_{\bar{r}} \theta_{\bar{w}|s\bar{r}}\\
+	&+ \lambda_{\bar{s}} \lambda_{r} \lambda_{w} \theta_{\bar{s}} \theta_{r} \theta_{w|\bar{s}r}
+	+ \lambda_{\bar{s}} \lambda_{r} \lambda_{\bar{w}} \theta_{\bar{s}} \theta_{r} \theta_{\bar{w}|\bar{s}r}\\
+	&+ \lambda_{\bar{s}} \lambda_{\bar{r}} \lambda_{w} \theta_{\bar{s}} \theta_{\bar{r}} \theta_{w|\bar{s}\bar{r}}
+	+ \lambda_{\bar{s}} \lambda_{\bar{r}} \lambda_{\bar{w}} \theta_{\bar{s}} \theta_{\bar{r}} \theta_{\bar{w}|\bar{s}\bar{r}}\\
+ = & \lambda_s \lambda_r \lambda_w 0.4 * 0.3 *0.99
+	+ \lambda_s \lambda_r \lambda_{\bar{w}} 0.4 * 0.3 0.01\\
+	&+ \lambda_s \lambda_{\bar{r}} \lambda_{w} 0.4 * 0.7 * 0.8
+	+ \lambda_s \lambda_{\bar{r}} \lambda_{\bar{w}} 0.4 * 0.7 * 0.2\\
+	&+ \lambda_{\bar{s}} \lambda_{r} \lambda_{w} 0.6 * 0.3 * 0.9
+	+ \lambda_{\bar{s}} \lambda_{r} \lambda_{\bar{w}} 0.6 * 0.3 * 0.1\\
+	&+ \lambda_{\bar{s}} \lambda_{\bar{r}} \lambda_{w} 0.6 *  0.7 * 0
+	+ \lambda_{\bar{s}} \lambda_{\bar{r}} \lambda_{\bar{w}} 0.6 * 0.7 * 1
+\end{align*}
+
+\begin{defn}
+~\cite{darwiche2003differential} The \textit{value} of network polynomial $f$ at evidence \textbf{e}, denoted by $f(\mathbf{e})$, is the result of replacing each evidence indicator $\lambda_x$ in $f$ with 1 if x is consistent with \textbf{e}, and with 0 otherwise.
+\end{defn}
+
+\begin{thrm}
+\label{thm:NetPolProb}
+~\cite{darwiche2003differential} Let $\mathcal{N}$ be a Bayesian network representing probability distribution Pr and having network polynomial f. For any evidence (instantiation of variables) \textbf{e}, we have f(\textbf{e}) = Pr(\textbf{e}).
+\end{thrm}
+
+As this results shows that evaluating the network polynomial $f$ for evidence \textbf{e} for a given network $\mathcal{N}$ is the the probability of that evidence, made it possible for the research community to think and deal with Bayesian networks purely in the form a multivariate polynomial where each variable is of degree one. This is addition to the WMI formulation for Inference (see chapter ....) lead to the idea of representing this polynomial as a circuit or tree structure.
+\subsection{Markov Random Fields}
+\section{Inference in Graphical Models}
+\subsection{Probabilistic Inference}
+Inference in a Bayesian network $\mathcal{N}$ is the task of computing the probability of a given event occurring based on the underlying probability distribution of the Network $\mathcal{N}$. Considering, for example, the Bayesian Network in Figure~\ref{fig:bn}, we might be interested in the probability of the grass outside being wet, formally written as $Pr_{\mathcal{N}}(W = w)$. Another more interesting query would be the probability of Rain, given that the grass is wet, written as a conditional Probability $Pr_{\mathcal{N}}(R = r|W = w)$. Because of the expressive power of Bayesian Networks, solving such queries efficiently has become an important field in Computer Science and Probabilistic Reasoning (TODO: EXAMPELS ????.) However desirable such a computation may be, computing such probabilities is still very difficult or NP-Hard, see (TODO: Section COMPEXITY ANALYSIS). Considering for example the brute force approach, where we would create a single table representing all models ( a model being a complete instantiation of the variables) of the network with the corresponding probabilities or Network Parameters. This approach is usually infeasible in practice as the size of the table grows exponentially in the number of variables of the network. In order to address this problem a number of algorithms have been proposed, that improve the computation time considerably, but are still all exponential in the worst case analysis (TODO: check that). The most notable of such algorithms include elimination, conditioning and tree-custering. All of theses algorithms can compute the Probability $Pr(\mathbf{e})$ in $O(\mathit{n} * exp(\mathit{w}))$ time and space, where $n = |N|$ is the number of nodes of Network $\mathcal{N}$ and $w$ is the bounded treewidth~\cite{bodlaender1993pathwidth} (TODO, EXPLAIN TREEWIDTH).\\
+The inference algorithm I investigated, and will talk about in the following sections is based on the Weighted Model Counting formulation, which in turn is based on the concept of the Network polynomial~\cite{darwiche2003differential}.In short the idea is to separate a given Believe Network $\mathcal{N}$ with variables $X = N$ into a logic Knowledge base $\Delta$ representing the structure, and a weight function $w(x): \mathbf{x} -> [0,1]$ mapping each variable instantiation to a Probability. The formulation then reproduces the evaluation of the network polynomial for some evidence \textbf{e}.
+
+\subsection{Logical Inference}
+
+\subsection{Weighted Model Counting}
+In this section I will talk about the Weighted Model Counting(WMC) formulation, its relation to the network Polynomial and how a given Bayesian Network can be reduced to WMC.\\
+\paragraph{Weighed Model Counting Formulation}
+First introduced by ~\cite{chavira2008probabilistic} Weighed Model Counting is a strict generalization of Model Counting ~\cite{biere2009handbook}. Model Counting in itself however is a counting extension of the Boolean Satisfiability Problem(SAT). When we are interested in finding a model that satisfies a given propositional formula $\Delta$ in SAT, then Model Counting is the problem of finding the number of models that satisfy $\Delta$ also called \#SAT.  In WMC, each model of $\Delta$ has an associated weight, and we are interested in computing the sum of the weights that correspond to models that satisfy $\Delta$.
+
+In order to create an instance of the WMC problem, a propositional Knowledge base $\Delta$ over literals $\mathcal{L}$ is needed as well a weight function $w: \mathcal{L} \rightarrow \mathbb{R}^{\geq 0}$ mapping literal of $\Delta$, to a weight. We can then use the literals of a given model $m$ to define the weight of that model as well as the Weighted Model Count as follows:\\
+\begin{defn}
+\label{def:WMC}
+Given a propositional Knowledge base $\Delta$ over literals $\mathcal{L}$, and weight function $w: \mathcal{L} \rightarrow \mathbb{R}^{\geq 0}$ mapping literal instantiations of $\Delta$, to a non-negative weight, we can define the weight of model as: 
+$$weight(m,w) = \prod_{l\in m} w(l)$$
+Further we define the weighted model count (WMC) as:
+$$WMC(\Delta,w) = \sum_{m \models \Delta} weight(m,w)$$
+\end{defn}
+\paragraph{Probabilistic Inference in Bayesian Networks by Weighted Model Counting}
+The following results will demonstrate that we can use WMC to calculate probabilities of a given Bayesian Network.
+
+\begin{thrm}
+\cite{chavira2008probabilistic} For a given Bayesian Network $\mathcal{N}$ over variable $\mathbf{X}$, we can construct a Propositional Knowledge base $\Delta$ and weight function $\mathit{w}$ such that $$Pr_{\mathcal{N}}(q|\mathbf{e}) = \frac{WMC(\Delta \wedge q \wedge \mathbf{e},w)}{WMC(\Delta \wedge \mathbf{e},w)}$$ for some evidence $\mathbf{e}$ and query $q$, with $\mathbf{e}, q \in \mathbf{x}$ (or $\mathbf{e}, q \subset \Delta$).
+\end{thrm}
+\begin{proof}
+First we compiling the Structure, that is the variable dependencies of $\mathcal{N}$ as a Propositional Knowledge base. Then we define literals $L\in \mathcal{L}$ for every network parameter $\theta_{x|\mathbf{u}}$ such that $L = x \wedge \bigwedge_{u' \in \mathbf{u}} u'$. Finally we define the weight function as $w(L) = \theta_{x|\mathbf{u}}$. Now computing the weighted model count $WMC(\Delta,w)$ of $\Delta$ and $w$ is in one-to-one correspondence with computing the Network polynomial $f_{\mathcal{N}}$ of the Network $\mathcal{N}$, and furthermore $$Pr_{\mathcal{N}}(q|\mathbf{e}) = \frac{Pr_{\mathcal{N}}(q \wedge \mathbf{e})}{Pr_{\mathcal{N}}(\mathbf{e})} = \frac{f_{\mathcal{N}}(q,\mathbf{e})}{f_{\mathcal{N}}(\mathbf{e})} = \frac{WMC(\Delta \wedge q \wedge \mathbf{e},w)}{WMC(\Delta \wedge \mathbf{e},w)}$$
+\end{proof}
+
+The reduction used to compile a given Bayesian Network $\mathcal{N}$ into a Propositional Knowledge Base $\Delta$ is explained in more detail by ~\cite{chavira2008probabilistic}, but is relatively straight forward in general.
+
+\begin{exmp} Coming back to our example Network in Figure~\ref{fig:bn}, with variable $\mathbf{X} = {S,R,W}$ we have Propositional Knowledge Base (in CNF): $$\Delta = (S \rightarrow W) \wedge (R \rightarrow W) = (\neg S \vee W) \wedge (\neg R \vee W)$$
+While the weight function would be defined as:
+\[ weight(L) =
+  \begin{cases}
+    \theta_s\quad = 0.4       		& \quad \text{if } L == s\\
+    \theta_{\bar{s}} \quad = 0.6 	& \quad \text{if } L == \bar{s}\\
+    \theta_r   \quad = 0.3    		& \quad \text{if } L == r\\
+    \theta_{\bar{r}}\quad = 0.7  	& \quad \text{if } L == \bar{r}\\
+    \theta_{w|sr}  \quad = 0.99		& \quad \text{if } L == w  \wedge s \wedge r\\
+    \theta_{w|s\bar{r}}\quad = 0.8 & \quad \text{if } L == w \wedge s \wedge \bar{r}\\
+    \theta_{w|\bar{s}r} \quad = 0.9 		& \quad \text{if } L == w  \wedge \bar{s} \wedge r\\
+    \theta_{w|\bar{s}\bar{r}}\quad = 0 & \quad \text{if } L == w \wedge \bar{s} \wedge \bar{r}\\
+    \theta_{\bar{w}|sr}  \quad = 0.99		& \quad \text{if } L == \bar{w}  \wedge s \wedge r\\
+    \theta_{\bar{w}|s\bar{r}}\quad = 0.2 & \quad \text{if } L == \bar{w} \wedge s \wedge \bar{r}\\
+    \theta_{\bar{w}|\bar{s}r} \quad = 0.1 		& \quad \text{if } L == \bar{w}  \wedge \bar{s} \wedge r\\
+    \theta_{\bar{w}|\bar{s}\bar{r}} \quad = 1 & \quad \text{if } L == \bar{w} \wedge \bar{s} \wedge \bar{r}\\
+    1 & \quad \text{otherwise}\\
+    
+  \end{cases}
+\]
+
+Then $$Pr_{\mathcal{N}}(R = r|W = w) = \frac{WMC(\Delta \wedge r \wedge w,weight)}{WMC(\Delta \wedge w,weight)} = \frac{\sum_{m \models \Delta \wedge r \wedge w} weight(m,w)}{\sum_{m \models \Delta \wedge w} weight(m,w)} = weight$$
+\end{exmp}
+
+\subsection{Weighted Model Integration}
+
+\section{Tractable Circuit Representations}
+The graphical models I will touch upon, represent probability distributions in a compact form, as normalized product of factors. The Partition function used to evaluate the probability of a specific outcome $x$ is deified by Definition~\ref{def:pf}
+\begin{defn}
+\label{def:pf}
+$$P(X= x) = \frac{1}{Z} * \prod_{k} \phi_k (x_{k}),$$ where $x \in \chi$ is a $d$-dimensional vector, each \textit{potential} $\phi_k$ is a function of a subset $x_{\{k\}}$ of the variables (its scope), and $Z = \sum_{x \in \chi} \prod_k \phi_k (x_{\{k\}} )$ is the \textit{partition function}. ~\cite{darwiche2003differential}
+\end{defn}
+
+\subsection{Sum-Product Networks}
+Sum-Product Networks(SPN) were introduced by ~\cite{poon2011sum} as a new deep architecture for probabilistic modeling. Building on the idea of the network polynomial as introduced my ~\cite{darwiche2003differential}, SPN's are directed acyclic graphs of sums and products that efficiently compute partition functions and marginals of high-dimensional distributions. Generally speaking, the SPN represents a graphical representation of the partition function $Z$. Another more intuitive approach is to view SPN's as forming a feature hierarchy, with the sum nodes representing distributions over them. In comparison to other models SPN's prove to be exponentially more compact than hierarchical mixture as well as junction tree models. Furthermore SPN's are far more general in their design, such that they allow discrete variables as well as continuous ( straightforward as long as computing the max and argmax of p(x) is easy) ones. ~\cite{darwiche2003differential} showed in their paper, that computing the probability linear in its size. It is argued ~\cite{darwiche2003differential} that SPN's are theoretically more well-formed, at least on order of magnitude faster in both learning and inference, and much more effectively in learning in comparison to other models. Figure ~\ref{fig:ac} shows an example of an Arithmetic Circuit.
+
+\begin{figure}[H]
+        \centering \includegraphics[width=0.4\columnwidth,clip]{images/arithmetic_circit.png}
+        \caption{
+                \label{fig:ac}
+                Tractable arithmetic circuit representation of the Markov network in figure~\ref{fig:mn} ~\cite{bekker2015tractable}
+        }
+\end{figure}
+
+\subsection{Sentential Decision Diagram}
+Sentential Decision Diagrams (SDD), first introduced by ~\cite{darwiche2011sdd} are graphical representations of propositional knowledge bases. SDD's are shown to be strict subset of deterministic, decomposable negation normal form (d-DNNF), a poplar representation for probabilistic reasoning applications ~\cite{chavira2008probabilistic}, due to their desirable properties. Decomposability and determinism ensure tractable probabilistic (and logical) inference, as they enable MAP queries in Markov networks. SDD'a however satisfy two even stronger properties found in Ordinary Binary Decision Diagrams (OBDD), namely structured decomposability and strong determinism. Thus, they are strict supersets of OBDDs as well, inheriting their key properties; canonicity and a polynomial time support for Boolean combination. Finally SDD's also come with an upper bound on their size in therms of tree-width.
+
+\paragraph{Structured decomposability, Strong determinism and vtrees:}
+Consider the boolean function $f(\mathbf{Z})$ such that $\mathbf{Z} = \mathbf{X} \sqcup \mathbf{Y}, \mathbf{X} \cap \mathbf{Y} = \emptyset$.
+Now if $p_i and s_i$ are further boolean functions and $f = (p_1(\mathbf{X}) \land s_1(\mathbf{Y})) \lor ... \lor (p_n(\mathbf{X}) \land s_n(\mathbf{Y}))$, then $\{(p_1,s_1),...,(p_n,s_n)\}$ is called an $(\mathbf{X},\mathbf{Y})$-decomposition of $\mathit{f}$ since it allows us to express $f$ purely in terms of functions on $\mathbf{X}$ and $\mathbf{Y}$ ~\cite{pipatsrisawat2010lower}. Formally; a conjunction is decomposable if each pair of its conjuncts share no variables. Now if further $p_i \land p_j = false, for i \neq j$ the decomposition is considered to be strongly deterministic. In such a case the structures pair $(p_i, s_i)$ is called an element of the decomposition and $p_i$,$s_i$ the elements prime and sub respectively~\cite{darwiche2011sdd}. But the decomposition used by SDDs has structural properties as well, that build on the notion of the vtree~\cite{pipatsrisawat2010lower}.
+\begin{defn}
+A vtree for a set of variables $\mathbf{Z}$ is a full, rooted binary tree whose leaves are in one-to-one correspondence with the variables in $\mathbf{Z}$.
+\end{defn}
+\begin{figure}[ht]
+        \centering \includegraphics[width=0.3\columnwidth,clip]{images/vtree.png}
+        \caption{
+                \label{fig:vtree}
+                Vtree for the Markov network in figure~\ref{fig:mn} ~\cite{bekker2015tractable}
+        }
+\end{figure}
+Figure~\ref{fig:vtree} represents a possible vtree for the networks depicted in Figure~\ref{fig:mn}. While we are going to use $v$ for a vtree node, $v^l$ and $v^r$ are used to represent the left and right child respectively of the a node $v$. Furthermore, each vtree induced a total variable order that is obtained by a left-right traversal of the tree.
+
+\paragraph{The syntax and semantics of SDDs:}
+Here we will used $\langle . \rangle$ to specify a mapping from an SDD to a boolean function.
+\begin{defn}
+$\alpha$ \textit{is an SDD that resprects vtree v iff:}\\
+\begin{equation}
+\begin{split}
+- & \alpha = \bot \text{ or } \alpha = \top \\
+ & \text{Semantics:} \langle \bot \rangle = false \text{and} \langle \top \rangle = true \\
+ - & \alpha = X \text{ or } \alpha = \neg X \text{ and } v \text{ is a leaf with variable } X \\
+ & Semantics: \langle X \rangle = X and \langle \neg X \rangle = \neg X \\
+ - & \alpha = \{ (p_1,s_1),...,(p_n,s_n)\}, v \text{ is internal,}\\
+ & p_1,...,p_n \text{ are SDDs that respect subtrees of } v^l, \\
+ & s_1,...,s_n \text{ are SDDs that resprect subtrees of } v^r, \text{and} \\
+ & \langle p_1 \rangle,...,\langle p_n \rangle \text{ is a partition} \\
+ & \text{Semantics: } \langle \alpha \rangle = \bigvee_{i=1}^{n} \langle p_i \rangle \wedge \langle s_i \rangle
+\end{split}
+\end{equation}
+The size of SDD $\alpha$, denoted $| \alpha | $, is obtained by summing the sizes of all its decompositions.
+\end{defn}
+Constant and literal SDD nodes are called \textit{terminal nodes} and \textit{decomposition/decision node} otherwise. Graphically we represent a decision node by a circle with a number indication the vtree node it respects, and elements of the decision node by boxes. Figure~\ref{fig:function} depicts an SDD and the vtree it respects for the specified boolean function. Figure~\ref{fig:sdd} on the other hand gives an graphical representation of the SDD for the Markov network in figure~\ref{fig:mn}.
+
+\begin{figure}[ht]
+\begin{subfigure}{.5\textwidth}
+        \centering 
+        \includegraphics[width=0.5\columnwidth,clip]{images/vtree_function.png}
+        \caption{Vtree}
+        \label{fig:vtree_function}
+\end{subfigure}
+\begin{subfigure}{.5\textwidth}
+        \centering 
+        \includegraphics[width=0.7\columnwidth,clip]{images/sdd_function.png}
+        \caption{SDD}
+        \label{fig:sdd_function}
+\end{subfigure}
+\caption{Function: $f = (A \land b) \lor (B \land C) \lor (C \land D)$~\cite{darwiche2011sdd}}
+\label{fig:function}
+\end{figure}
+
+\begin{figure}[ht]
+        \centering \includegraphics[width=0.3\columnwidth,clip]{images/sdd.png}
+        \caption{
+                \label{fig:sdd}
+                Tractable SDD representation of the Markov network in figure~\ref{fig:mn} ~\cite{bekker2015tractable}
+        }
+\end{figure}
+\paragraph{Canonicity:}
+//to be written
+
+\paragraph{polytime Apply operation:}
+//to be written
+
+
+
+
+\subsection{Probabilistic Sentential Decision Diagrams}
+\section{Logical Background and Complexity Analysis}
+\subsection{SAT and NP completeness}
+\subsection{sharpSAT}
+\subsection{SMT and LRA}
+\subsection{sharoSMT?}
+\chapter{SDDs in Hybrid Domains}
+\section{Theoretical Basis}
+\section{Python Implementation}
+\chapter{The sharpsmt python package}
+\section{The Manager}
+\section{SDD querying and the different algorithms}
+\chapter{Experimental evaluation}
+\section{Generated Data}
+\section{Real-World Data Set}
+\chapter{Discussion and Future Work}
+\chapter{Conclusion}
+
+%++++++++++++++++++++++++++++++++++++++++
+% References section will be created automatically 
+% with inclusion of "thebibliography" environment
+% as it shown below. See text starting with line
+% \begin{thebibliography}{99}
+% Note: with this approach it is YOUR responsibility to put them in order
+% of appearance.
+
+\bibliographystyle{apalike}
+\bibliography{mybibfile}
+
+\end{document}
