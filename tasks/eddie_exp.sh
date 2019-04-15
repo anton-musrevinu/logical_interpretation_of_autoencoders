@@ -24,4 +24,6 @@ conda config --add envs_dirs ./miniconda3/envs/
 source activate mlp
 echo ${PWD}
 
+cd ./msc/tasks/
+
 python experiment.py
