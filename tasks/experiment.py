@@ -8,13 +8,13 @@ def learn_encoder(testing = False):
 	if testing:
 		os.system('python {} --phase train --experiment_name {} --dataset {} --num_batches 50 --num_epochs 2 --batch_size 50 --feature_layer_size 28'.format(LOWLEVEL_CMD, experiment_name,dataset))
 	else:
-		os.system('~/miniconda3/envs/mlp/bin/python3.7 {} --phase train --experiment_name {} --gpu_ids 0,1 --feature_layer_size 1 --categorical_dim 10 --num_epochs 200'.format(LOWLEVEL_CMD, experiment_name))
+		os.system('python {} --phase train --experiment_name {} --gpu_ids 0,1 --feature_layer_size 1 --categorical_dim 10 --num_epochs 200'.format(LOWLEVEL_CMD, experiment_name))
 
 def encode_data(testing = False):
 	if testing:
 		os.system('python {} --phase encode --experiment_name {} --limit_conversion 1000'.format(LOWLEVEL_CMD, experiment_name))
 	else:
-		os.system('~/miniconda3/envs/mlp/bin/python3.7 {} --phase encode --experiment_name {}'.format(LOWLEVEL_CMD, experiment_name))
+		os.system('python {} --phase encode --experiment_name {}'.format(LOWLEVEL_CMD, experiment_name))
 
 def learn_vtree(train_data_file,vtree_file):
 	# training_data = 
@@ -100,4 +100,4 @@ if __name__ == '__main__':
 	if not os.path.exists(psdd_out_dir):
 		os.mkdir(psdd_out_dir)
 
-	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir, num_components = 1)
+	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir, num_components = 10)

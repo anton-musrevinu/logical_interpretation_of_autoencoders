@@ -2,7 +2,7 @@
 # Grid Engine options (lines prefixed with #$)
 
 $ -N psdd_search_fl16_c4_small              
-$ -cwd                  
+$ -cwd ./msc/tasks          
 $ -l h_rt=7200:00:00 
 $ -l h_vmem=32G
 #  These options are:
@@ -20,5 +20,5 @@ module load anaconda
 # Run the program
 conda config --add envs_dirs ./miniconda3/envs/
 source activate mlp
-cd ./mlpractical_private/tasks/
-./job_task_2.sh
+
+python experiment.py
