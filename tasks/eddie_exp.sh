@@ -2,7 +2,7 @@
 # Grid Engine options (lines prefixed with #$)
 
 #$ -N psdd_search_fl16_c4_small              
-#$ -cwd ./msc/tasks          
+#$ -cwd        
 #$ -l h_rt=7200:00:00 
 #$ -l h_vmem=32G
 
