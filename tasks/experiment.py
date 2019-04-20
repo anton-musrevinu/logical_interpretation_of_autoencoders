@@ -67,7 +67,7 @@ if __name__ == '__main__':
 	os.system('pwd')
 	small_data_set = True
 
-	experiment_name = 'ex_1_fl16_c2'
+	experiment_name = 'ex_1_fl64_c4_hard_training'
 	dataset = 'mnist'
 
 	# learn_encoder(testing = testing)
