@@ -12,7 +12,7 @@ def learn_encoder(testing = False):
 
 def encode_data(testing = False):
 	if testing:
-		os.system('python {} --phase encode --experiment_name {} --limit_conversion 150'.format(LOWLEVEL_CMD, experiment_name))
+		os.system('python {} --phase encode --experiment_name {} --limit_conversion 1000'.format(LOWLEVEL_CMD, experiment_name))
 	else:
 		os.system('python {} --phase encode --experiment_name {}'.format(LOWLEVEL_CMD, experiment_name))
 
