@@ -12,7 +12,7 @@ def learn_encoder(testing = False):
 
 def encode_data(testing = False):
 	if testing:
-		os.system('python {} --phase encode --experiment_name {} --limit_conversion 1000'.format(LOWLEVEL_CMD, experiment_name))
+		os.system('python {} --phase encode --experiment_name {} --limit_conversion 150'.format(LOWLEVEL_CMD, experiment_name))
 	else:
 		os.system('python {} --phase encode --experiment_name {}'.format(LOWLEVEL_CMD, experiment_name))
 
@@ -49,9 +49,16 @@ def compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
 
-def learn_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir, num_components = 10):
+def learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir, num_components = 10):
 	cmd = 'java -jar {} learnEnsemblePsdd softEM -d {} -b {} -t {} -v {} -m l-1 -p {} -o {} -c {}'.format(\
 		LEARNPSDD_CMD, train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file,psdd_out_dir,num_components)
+
+	print('excuting: {}'.format(cmd))
+	os.system(cmd)
+
+def learn_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir):
+	cmd = 'java -jar {} learnPsdd search -d {} -b {} -t {} -v {} -m l-1 -p {} -o {}'.format(\
+		LEARNPSDD_CMD, train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file,psdd_out_dir)
 
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
@@ -100,4 +107,8 @@ if __name__ == '__main__':
 	if not os.path.exists(psdd_out_dir):
 		os.mkdir(psdd_out_dir)
 
-	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir, num_components = 10)
+	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir)
+
+
+
+
