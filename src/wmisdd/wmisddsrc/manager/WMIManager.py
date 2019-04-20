@@ -24,7 +24,7 @@ import numpy as np
 
 class WMIManager(object):
 
-	DEF_TIMEOUT_SDDCOMPILE = 2 * 60 * 60
+	DEF_TIMEOUT_SDDCOMPILE = 5 * 60 * 60
 	DEF_TIMEOUT_ME = 2 * 60 * 60
 	DEF_TIMOOUT_INT = 3 * 60 * 60
 
