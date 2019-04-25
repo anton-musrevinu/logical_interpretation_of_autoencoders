@@ -139,10 +139,10 @@ def parse_sdd(BIN_DIR, cnfFile,sddFile, vtreeFile,timeout, logger, precomputed_v
 	vtreeFlag = '-v' if precomputed_vtree else '-W'
 	vtreeSearchFlag = '0' if precomputed_vtree else '5'
 	if 'Linux' in platform.system():
-		command = "{}/sdd-linux -c {} {} {} -R {} -r {}".format(BIN_DIR,cnfFile,\
+		command = "{}/sdd-linux -c {} {} {} -R {} -r {} -m".format(BIN_DIR,cnfFile,\
 			vtreeFlag, vtreeFile, sddFile, vtreeSearchFlag)
 	else:
-		command = "{}/sdd-darwin -c {} {} {} -R {} -r {}".format(BIN_DIR, cnfFile,\
+		command = "{}/sdd-darwin -c {} {} {} -R {} -r {} -m".format(BIN_DIR, cnfFile,\
 			vtreeFlag, treeFile, sddFile,vtreeSearchFlag)
 	#logging.debug('\t' + command)
 

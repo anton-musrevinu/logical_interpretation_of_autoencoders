@@ -71,7 +71,7 @@ if __name__ == '__main__':
 	dataset = 'mnist'
 
 	# learn_encoder(testing = testing)
-	encode_data(testing = small_data_set)
+#	encode_data(testing = small_data_set)
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
@@ -97,17 +97,17 @@ if __name__ == '__main__':
 			total_num_variables = len(line.split(','))
 			break
 
-	if not os.path.exists(symbolic_dir):
-		os.mkdir(symbolic_dir)
+#	if not os.path.exists(symbolic_dir):
+#		os.mkdir(symbolic_dir)
 
-	learn_vtree(train_data_file, vtree_file)
+#	learn_vtree(train_data_file, vtree_file)
 	compile_constraints_to_sdd(opt_file, sdd_file, vtree_file, total_num_variables,symbolic_dir)
-	compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file, sdd_file, psdd_file)
+	# compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file, sdd_file, psdd_file)
 
-	if not os.path.exists(psdd_out_dir):
-		os.mkdir(psdd_out_dir)
+	# if not os.path.exists(psdd_out_dir):
+	# 	os.mkdir(psdd_out_dir)
 
-	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir)
+	# learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir)
 
 
 
