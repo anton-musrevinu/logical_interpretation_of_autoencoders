@@ -34,7 +34,7 @@ class QueryManager:
 
 		return time.time() - testTime
 
-	def convert_to_sdd(self, hkbAsZ3, sdd_file = None, vtree_file = None, printModels = False, total_num_vars = None,precomputed_vtree = False, cnf_dir = None):
+	def convert_to_sdd(self, hkbAsZ3, sdd_file = None, vtree_file = None, printModels = False, total_num_vars = None, precomputed_vtree = False, cnf_dir = None):
 		# print(hkbAsZ3)
 		start_time = time.time()
 		wmiManager = WMIManager(self._propName, self._tmpDir, self._logger)
@@ -42,7 +42,7 @@ class QueryManager:
 		wmiManager.rewrite_atoms()
 		wmiManager.find_conditions()
 
-		wmiManager.create_sdd(sdd_file = sdd_file ,vtree_file = vtree_file, total_num_vars = total_num_vars,precomputed_vtree = precomputed_vtree, cnf_dir = cnf_dir)
+		wmiManager.create_sdd(sdd_file = sdd_file ,vtree_file = vtree_file, total_num_vars = total_num_vars, precomputed_vtree = precomputed_vtree, cnf_dir = cnf_dir)
 		total_time = time.time() - start_time
 		if printModels:
 			wmiManager.query_sdd()

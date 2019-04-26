@@ -3,6 +3,7 @@ import os
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 LEARNPSDD_CMD = '../src/Scala-LearnPsdd/target/scala-2.11/psdd.jar'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
+SDD_CMD_DIR = '../src/wmisdd/bin/'
 
 def learn_encoder(testing = False):
 	if testing:
@@ -25,7 +26,10 @@ def learn_vtree(train_data_file,vtree_file):
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
 
-def compile_constraints_to_sdd(opt_file, sdd_file, vtree_file, total_num_variables, symbolic_dir,testing = False):
+	cmd_convert_to_pdf = 'dot -Tpdf {}.dot -o {}.pdf'.format(vtree_file,vtree_file)
+	os.system(cmd_convert_to_pdf)
+
+def compile_constraints_to_sdd(opt_file, sdd_file, vtree_file, total_num_variables, symbolic_dir,testing = False, precomputed_vtree = True):
 	with open(opt_file, 'r') as f:
 		for line in f:
 			if 'feature_layer_size' in line:
@@ -35,19 +39,28 @@ def compile_constraints_to_sdd(opt_file, sdd_file, vtree_file, total_num_variabl
 
 	print('feature_layer_size: {}, categorical_dim: {}, total_num_variables: {}'.format(feature_layer_size, categorical_dim, total_num_variables))
 
-	cmd = 'python {} --mode onehot --onehot_numvars {} --onehot_fl_size {} --onehot_fl_categorical_dim {} --onehot_out_sdd {} --onehot_out_vtree {} --cnf_dir {} --precomputed_vtree True'.format(\
-				WMISDD_CMD, total_num_variables, feature_layer_size, categorical_dim, sdd_file, vtree_file, symbolic_dir)
+	cmd = 'python {} --mode onehot --onehot_numvars {} --onehot_fl_size {} --onehot_fl_categorical_dim {} --onehot_out_sdd {} --onehot_out_vtree {} --cnf_dir {} --precomputed_vtree {}'.format(\
+				WMISDD_CMD, total_num_variables, feature_layer_size, categorical_dim, sdd_file, vtree_file, symbolic_dir, precomputed_vtree)
 	if testing:
 		cmd = 'python {} --mode onehot --onehot_numvars {} --onehot_fl_size {} --onehot_fl_categorical_dim {} --onehot_out_sdd {} --onehot_out_vtree {} --cnf_dir {} --precomputed_vtree False'.format(\
 				WMISDD_CMD, 3*2 + 10, 3, 2, sdd_file, vtree_file, symbolic_dir)
 	os.system(cmd)
 
+	if precomputed_vtree == False:
+		cmd_convert_to_pdf = 'dot -Tpdf {}.dot -o {}.pdf'.format(vtree_file, vtree_file)
+		os.system(cmd_convert_to_pdf)
+	cmd_convert_to_pdf = 'dot -Tpdf {}.dot -o {}.pdf'.format(sdd_file, sdd_file)
+	os.system(cmd_convert_to_pdf)
+
 def compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file, sdd_file, psdd_file):
+	java_library_path = os.path.abspath(SDD_CMD_DIR)
+	print('java_library_path: {}'.format(java_library_path)) # -Djava.library.path {} 
 	cmd = 'java -jar {} sdd2psdd -d {} -b {} -t {} -v {} -s {} -m l-1 -o {}'.format(
 		LEARNPSDD_CMD,train_data_file, valid_data_file, test_data_file, vtree_file, sdd_file, psdd_file)
 
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
+
 
 def learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir, num_components = 10):
 	cmd = 'java -jar {} learnEnsemblePsdd softEM -d {} -b {} -t {} -v {} -m l-1 -p {} -o {} -c {}'.format(\
@@ -77,9 +90,12 @@ if __name__ == '__main__':
 	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
 	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff')
 	opt_file = os.path.join(experiment_dir, 'opt.txt')
-	vtree_file = os.path.join(symbolic_dir, '{}_new.vtree'.format(experiment_name))
-	sdd_file = os.path.join(symbolic_dir, '{}_constrains.sdd'.format(experiment_name))
-	psdd_file = os.path.join(symbolic_dir, '{}_constrains.psdd'.format(experiment_name))
+	vtree_file_learned = os.path.join(symbolic_dir, '{}_learned.vtree'.format('model'))#experiment_name))
+	vtree_file_compiled = os.path.join(symbolic_dir, '{}_compiled.vtree'.format('model'))#experiment_name))
+	sdd_file_lvt = os.path.join(symbolic_dir, 'constrains_lvt.sdd')#.format('model'))#experiment_name))
+	sdd_file_cvt = os.path.join(symbolic_dir, 'constrains_cvt.sdd')#.format('model'))#experiment_name))
+	psdd_file_cvt = os.path.join(symbolic_dir, 'constrains_cvt.psdd')#.format('model'))#experiment_name))
+	psdd_file_lvt = os.path.join(symbolic_dir, 'constrains_lvt.psdd')#.format('model'))#experiment_name))
 	psdd_out_dir = os.path.join(experiment_dir, 'psdd_model/')
 
 
@@ -100,14 +116,19 @@ if __name__ == '__main__':
 	# if not os.path.exists(symbolic_dir):
 	# 	os.mkdir(symbolic_dir)
 
-	learn_vtree(train_data_file, vtree_file)
-	# compile_constraints_to_sdd(opt_file, sdd_file, vtree_file, total_num_variables,symbolic_dir)
-	# compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file, sdd_file, psdd_file)
+	#Make vtree (from data or constraints) make sdd from contraints
+	# learn_vtree(train_data_file, vtree_file_learned)
 
-	# if not os.path.exists(psdd_out_dir):
-	# 	os.mkdir(psdd_out_dir)
+	# compile_constraints_to_sdd(opt_file, sdd_file_cvt, vtree_file_compiled, total_num_variables, symbolic_dir, precomputed_vtree = False)
+	# compile_constraints_to_sdd(opt_file, sdd_file_lvt, vtree_file_learned, total_num_variables, symbolic_dir, precomputed_vtree = True)
+	
 
-	# learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir)
+	compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, sdd_file_cvt, psdd_file_cvt)
+	# compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_learned, sdd_file_lvt, psdd_file_lvt)
+	if not os.path.exists(psdd_out_dir):
+		os.mkdir(psdd_out_dir)
+
+	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir)
 
 
 

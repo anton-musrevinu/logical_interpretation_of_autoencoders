@@ -137,13 +137,15 @@ def save_to_demacs(file, cnfFormula, numOfPredicates):
 
 def parse_sdd(BIN_DIR, cnfFile,sddFile, vtreeFile,timeout, logger, precomputed_vtree = False):
 	vtreeFlag = '-v' if precomputed_vtree else '-W'
-	vtreeSearchFlag = '0' if precomputed_vtree else '5'
+	vtreeSearchFlag = '-r 0' if precomputed_vtree else ''
+	vtreeDotFile = vtreeFile + '.dot'
+	sddDotFiel = sddFile + '.dot'
 	if 'Linux' in platform.system():
-		command = "{}/sdd-linux -c {} {} {} -R {} -r {} -m".format(BIN_DIR,cnfFile,\
-			vtreeFlag, vtreeFile, sddFile, vtreeSearchFlag)
+		command = "{}/sdd-linux -c {} {} {} -R {} {} -m -V {} -S {}".format(BIN_DIR,cnfFile,\
+			vtreeFlag, vtreeFile, sddFile, vtreeSearchFlag, vtreeDotFile, sddDotFiel)
 	else:
-		command = "{}/sdd-darwin -c {} {} {} -R {} -r {} -m".format(BIN_DIR, cnfFile,\
-			vtreeFlag, treeFile, sddFile,vtreeSearchFlag)
+		command = "{}/sdd-darwin -c {} {} {} -R {} {} -m -V {} -S {}".format(BIN_DIR, cnfFile,\
+			vtreeFlag, vtreeFile, sddFile,vtreeSearchFlag, vtreeDotFile, sddDotFiel)
 	#logging.debug('\t' + command)
 
 	start_time = time.time()
