@@ -965,7 +965,9 @@ object Main {
               case "miBlossom" => VtreeLearner.learnBlossomBottomUp(train, config.out, config.entropyOrder)
             }
             vtreeNode match{
-              case vtree: VtreeInternal => vtree.save(new File(config.out + ".vtree"))
+              case vtree: VtreeInternal => 
+                vtree.save(new File(config.out + ".vtree"))
+                vtree.saveAsDot(new File(config.out + ".vtree.dot"))
               case _ => println("There were no variables, so no vtree could be learned")
             }
         }
