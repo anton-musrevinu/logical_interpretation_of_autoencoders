@@ -77,7 +77,7 @@ if __name__ == '__main__':
 	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
 	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff')
 	opt_file = os.path.join(experiment_dir, 'opt.txt')
-	vtree_file = os.path.join(symbolic_dir, '{}.vtree'.format(experiment_name))
+	vtree_file = os.path.join(symbolic_dir, '{}_new.vtree'.format(experiment_name))
 	sdd_file = os.path.join(symbolic_dir, '{}_constrains.sdd'.format(experiment_name))
 	psdd_file = os.path.join(symbolic_dir, '{}_constrains.psdd'.format(experiment_name))
 	psdd_out_dir = os.path.join(experiment_dir, 'psdd_model/')
