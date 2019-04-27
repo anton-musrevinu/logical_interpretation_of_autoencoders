@@ -123,12 +123,12 @@ if __name__ == '__main__':
 	# compile_constraints_to_sdd(opt_file, sdd_file_lvt, vtree_file_learned, total_num_variables, symbolic_dir, precomputed_vtree = True)
 	
 
-	compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, sdd_file_cvt, psdd_file_cvt)
+	# compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, sdd_file_cvt, psdd_file_cvt)
 	# compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_learned, sdd_file_lvt, psdd_file_lvt)
 	if not os.path.exists(psdd_out_dir):
 		os.mkdir(psdd_out_dir)
 
-	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir)
+	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, psdd_file_cvt, psdd_out_dir)
 
 
 
