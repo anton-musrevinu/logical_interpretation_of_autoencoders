@@ -86,7 +86,7 @@ def learn_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_
 
 if __name__ == '__main__':
 	os.system('pwd')
-	small_data_set = True
+	small_data_set = False
 
 	experiment_name = 'ex_1_fl32_c4_hard_training'
 	dataset = 'mnist'
