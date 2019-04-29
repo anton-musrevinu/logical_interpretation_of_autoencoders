@@ -105,7 +105,7 @@ if __name__ == '__main__':
 	psdd_file_cvt = os.path.join(symbolic_dir, 'constrains_cvt.psdd')#.format('model'))#experiment_name))
 	psdd_file_lvt = os.path.join(symbolic_dir, 'constrains_lvt.psdd')#.format('model'))#experiment_name))
 	psdd_out_dir = os.path.join(experiment_dir, 'psdd_model/')
-	psdd_ens_out_dir = os.path.join(experiment_dir, 'ensembly_psdd_model')
+	psdd_ens_out_dir = os.path.join(experiment_dir, 'ensembly_psdd_model/')
 
 
 	for root, dir_names, file_names in os.walk(encoded_data_dir):
