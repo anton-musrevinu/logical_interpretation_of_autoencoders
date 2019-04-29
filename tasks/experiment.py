@@ -71,7 +71,7 @@ def learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_fil
 	os.system(cmd)
 
 def learn_ensembly_psdd_2_from_data(dataDir, vtree_file, psdd_out_dir, num_components = 10):
-	cmd = 'java -jar {} softEM {} {} {} {}'.format(\
+	cmd = 'java -jar {} SoftEM {} {} {} {}'.format(\
 		LEARNPSDD2_CMD, dataDir, vtree_file, psdd_out_dir, num_components)
 
 	print('excuting: {}'.format(cmd))
