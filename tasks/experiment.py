@@ -78,13 +78,13 @@ def learn_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_
 
 if __name__ == '__main__':
 	os.system('pwd')
-	small_data_set = False
+	small_data_set = True
 
 	experiment_name = 'ex_1_fl32_c4_hard_training'
 	dataset = 'mnist'
 
 	# learn_encoder(testing = testing)
-	# encode_data(testing = small_data_set)
+	encode_data(testing = small_data_set)
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 	# 	os.mkdir(symbolic_dir)
 
 	#Make vtree (from data or constraints) make sdd from contraints
-	# learn_vtree(train_data_file, vtree_file_learned)
+	learn_vtree(train_data_file, vtree_file_learned)
 
 	# compile_constraints_to_sdd(opt_file, sdd_file_cvt, vtree_file_compiled, total_num_variables, symbolic_dir, precomputed_vtree = False)
 	# compile_constraints_to_sdd(opt_file, sdd_file_lvt, vtree_file_learned, total_num_variables, symbolic_dir, precomputed_vtree = True)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
 	if not os.path.exists(psdd_ens_out_dir):
 		os.mkdir(psdd_ens_out_dir)
-	learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file_compiled, psdd_file_cvt, psdd_ens_out_dir, num_components = 10)
+	learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file_learned, psdd_file_cvt, psdd_ens_out_dir, num_components = 10)
 
 
 

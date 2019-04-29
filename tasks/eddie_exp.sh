@@ -20,7 +20,7 @@
 module load anaconda
  
 # Run the program
-conda config --add envs_dirs ./miniconda3/envs/
+conda config --add envs_dirs ./scratch/miniconda3/envs/
 source activate mlp
 echo ${PWD}
 

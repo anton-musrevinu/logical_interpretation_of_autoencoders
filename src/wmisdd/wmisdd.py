@@ -36,6 +36,7 @@ args = get_args()
 
 arg_mode_wmi = 'WMI'
 arg_mode_onehot = 'onehot'
+arg_mode_WME = 'WME'
 arg_logger_file = 'file'
 arg_logger_console = 'console'
 arg_logger_both = 'both'
@@ -102,7 +103,9 @@ if args.mode == arg_mode_onehot:
 	queryManager = QueryManager(query_name, tmpdir, args.interror, logger)
 	queryManager.convert_to_sdd(onehot_kb, args.onehot_out_sdd, args.onehot_out_vtree,\
 								 printModels = False, total_num_vars = args.onehot_numvars, precomputed_vtree = args.precomputed_vtree, cnf_dir = args.cnf_dir)
-
+if args.mode == arg_mode_WME:
+	queryManager = QueryManager(query_name, tmpdir, args.interror, logger)
+	queryManager.do_enumeration(args.wme_in_vtree, args.wme_in_sdd, args.onehot_numvars)
 
 if not args.keeptmpdir:
 	shutil.rmtree(tmpdir)

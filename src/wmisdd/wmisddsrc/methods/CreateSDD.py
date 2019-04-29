@@ -135,7 +135,7 @@ def save_to_demacs(file, cnfFormula, numOfPredicates):
 		f.write('0\n')
 	f.close()
 
-def parse_sdd(BIN_DIR, cnfFile,sddFile, vtreeFile,timeout, logger, precomputed_vtree = False):
+def parse_sdd(BIN_DIR, cnfFile,sddFile, vtreeFile, timeout, logger, precomputed_vtree = False):
 	vtreeFlag = '-v' if precomputed_vtree else '-W'
 	vtreeSearchFlag = '-r 0' if precomputed_vtree else ''
 	vtreeDotFile = vtreeFile + '.dot'

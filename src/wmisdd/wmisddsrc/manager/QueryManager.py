@@ -49,6 +49,14 @@ class QueryManager:
 			for model in wmiManager.get_models():
 				print('\t' + str(model[:total_num_vars]))
 
+	def do_enumeration(self,vtree_file, sdd_file, total_num_vars):
+		wmiManager = WMIManager(self._propName, self._tmpDir, self._logger)
+		wmiManager.read_from_file(vtree_file, sdd_file)
+		wmiManager.query_sdd(setModelCount = True)
+		print('model count: {}'.format(wmiManager.get_model_count()))
+		for model in wmiManager.get_models():
+			print('\t' + str(model[:total_num_vars]))
+
 	def do_wmi_base(self, hkbAsZ3, wfAsZ3, integrationMethod = DEF_COMUTE_LATTE, keepFiles = False):
 
 		start_time = time.time()

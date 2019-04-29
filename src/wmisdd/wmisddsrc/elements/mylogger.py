@@ -54,6 +54,9 @@ class Mylogger(object):
 	def resetProgress(self):
 		self._processed = 0
 
+	def debug(self,message):
+		self.writeToLog(message, level = 'debug')
+
 	def writeToLog(self,message,level = 'debug'):
 
 		# if self._currentlyTesting:

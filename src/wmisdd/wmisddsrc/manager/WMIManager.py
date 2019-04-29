@@ -53,6 +53,9 @@ class WMIManager(object):
 	def get_models(self):
 		return self._models
 
+	def get_model_count(self):
+		return self._result.get_model_count()
+
 	def abstract(self, hkbAsZ3, wfAsZ3 = z3.RealVal(1), keep_original_names = False):
 		try:
 			start_time = time.time()
@@ -228,6 +231,9 @@ class WMIManager(object):
 			self._result.set_sdd_creation_time(time.time() - start_time)
 			self._result.set_indicator(WmiResult.INDICATOR_KC_UNKOWN)
 			raise myExceptions.KnowledgeCompilationError
+
+	def read_from_file(self, vtree_file, sdd_file):
+		self._sdd = CreateSDD.read_sdd_from_file(self._name, vtree_file, sdd_file,self._tmpDir, self._logger)
 
 	def query_sdd(self,timeout = DEF_TIMEOUT_ME, sddTmpFile = None, vtreeTmpFile = None, setModelCount = False):
 		if not self._result.is_all_good():

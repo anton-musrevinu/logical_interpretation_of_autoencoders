@@ -65,7 +65,9 @@ def get_args():
 
     parser.add_argument('--keeptmpdir', nargs="?", type=str2bool, default=False, help='specify if the tmpdir should be deleted after the execution finished')
 
-
+    parser.add_argument('--wme_in_sdd', nargs="?", type=str, default=None, help='output path of the sdd file (not provided will write it to the tmp file)')
+    parser.add_argument('--wme_in_vtree', nargs="?", type=str, default=None, help='output path of the vtree file (not provided will write it to the tmp file)')
+    
 
     args = parser.parse_args()
     # print(args)
