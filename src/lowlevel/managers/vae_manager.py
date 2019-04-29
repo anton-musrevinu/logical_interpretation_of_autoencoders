@@ -114,7 +114,7 @@ class VAEManager(BaseManager):
 		batches_inputs = []
 		batches_targets = []
 		batches_input_idx = []
-		data_id = '{}-{}-encoded-{}'.format(self.opt.dataset,dataSet.dataset.type_of_data, key)
+		data_id = '{}-encoded-{}-{}'.format(self.opt.dataset, key,,dataSet.dataset.type_of_data)
 		con_val_data_save = os.path.join(self.experiment_saved_data,'{}.data'.format(data_id))
 
 		stored_size = 0

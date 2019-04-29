@@ -2,6 +2,7 @@ import os
 
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 LEARNPSDD_CMD = '../src/Scala-LearnPsdd/target/scala-2.11/psdd.jar'
+LEARNPSDD2_CMD = '../src/leanPSDD/target/scala-2.11/psdd.jar'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
 SDD_CMD_DIR = '../src/wmisdd/bin/'
 
@@ -69,6 +70,13 @@ def learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_fil
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
 
+def learn_ensembly_psdd_2_from_data(dataDir, vtree_file, psdd_out_dir, num_components = 10):
+	cmd = 'java -jar {} softEM {} {} {} {}'.format(\
+		LEARNPSDD2_CMD, dataDir, vtree_file, psdd_out_dir, num_components)
+
+	print('excuting: {}'.format(cmd))
+	os.system(cmd)
+
 def learn_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir):
 	cmd = 'java -jar {} learnPsdd search -d {} -b {} -t {} -v {} -m l-1 -p {} -o {}'.format(\
 		LEARNPSDD_CMD, train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file,psdd_out_dir)
@@ -102,11 +110,11 @@ if __name__ == '__main__':
 
 	for root, dir_names, file_names in os.walk(encoded_data_dir):
 		for i in file_names:
-			if 'train-encoded' in i:
+			if 'train.data' in i:
 				train_data_file = os.path.join(root, i)
-			elif 'valid-encoded' in i:
+			elif 'valid.data' in i:
 				valid_data_file = os.path.join(root, i)
-			elif 'test-encoded' in i:
+			elif 'test.data' in i:
 				test_data_file = os.path.join(root, i)
 
 	with open(train_data_file, 'r') as f:
@@ -132,7 +140,9 @@ if __name__ == '__main__':
 
 	if not os.path.exists(psdd_ens_out_dir):
 		os.mkdir(psdd_ens_out_dir)
-	learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file_learned, psdd_file_cvt, psdd_ens_out_dir, num_components = 10)
+
+	dataDir = train_data_file.replace('train.data','')
+	learn_ensembly_psdd_2_from_data(dataDir, vtree_file_learned, psdd_ens_out_dir, num_components = 10)
 
 
 
