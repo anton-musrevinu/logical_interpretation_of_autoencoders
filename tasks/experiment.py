@@ -63,8 +63,8 @@ def compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_
 
 
 def learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file, psdd_file, psdd_out_dir, num_components = 10):
-	cmd = 'java -jar {} learnEnsemblePsdd softEM -d {} -b {} -t {} -v {} -m l-1 -p {} -o {} -c {}'.format(\
-		LEARNPSDD_CMD, train_data_file, valid_data_file, test_data_file, vtree_file, psdd_file,psdd_out_dir,num_components)
+	cmd = 'java -jar {} learnEnsemblePsdd softEM -d {} -b {} -t {} -v {} -m l-1 -o {} -c {}'.format(\
+		LEARNPSDD_CMD, train_data_file, valid_data_file, test_data_file, vtree_file,psdd_out_dir,num_components)
 
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
@@ -97,6 +97,7 @@ if __name__ == '__main__':
 	psdd_file_cvt = os.path.join(symbolic_dir, 'constrains_cvt.psdd')#.format('model'))#experiment_name))
 	psdd_file_lvt = os.path.join(symbolic_dir, 'constrains_lvt.psdd')#.format('model'))#experiment_name))
 	psdd_out_dir = os.path.join(experiment_dir, 'psdd_model/')
+	psdd_ens_out_dir = os.path.join(experiment_dir, 'ensembly_psdd_model')
 
 
 	for root, dir_names, file_names in os.walk(encoded_data_dir):
@@ -125,11 +126,13 @@ if __name__ == '__main__':
 
 	# compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, sdd_file_cvt, psdd_file_cvt)
 	# compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_learned, sdd_file_lvt, psdd_file_lvt)
-	if not os.path.exists(psdd_out_dir):
-		os.mkdir(psdd_out_dir)
+	# if not os.path.exists(psdd_out_dir):
+	# 	os.mkdir(psdd_out_dir)
+	# learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, psdd_file_cvt, psdd_out_dir)
 
-	learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, psdd_file_cvt, psdd_out_dir)
-
+	if not os.path.exists(psdd_ens_out_dir):
+		os.mkdir(psdd_ens_out_dir)
+	learn_ensembly_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_file_compiled, psdd_file_cvt, psdd_ens_out_dir, num_components = 10)
 
 
 
