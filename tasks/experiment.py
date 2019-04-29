@@ -2,7 +2,7 @@ import os
 
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 LEARNPSDD_CMD = '../src/Scala-LearnPsdd/target/scala-2.11/psdd.jar'
-LEARNPSDD2_CMD = '../src/leanPSDD/target/scala-2.11/psdd.jar'
+LEARNPSDD2_CMD = '../src/learnPSDD/target/scala-2.11/psdd.jar'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
 SDD_CMD_DIR = '../src/wmisdd/bin/'
 
