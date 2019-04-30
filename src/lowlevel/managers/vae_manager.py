@@ -8,6 +8,7 @@ import os
 from util.storage_utils import save_example_image, save_feature_layer_example
 from data import create_dataset_new as create_dataset
 from util.psdd_interface import write_batch_to_file
+import tqdm
 
 class VAEManager(BaseManager):
 
@@ -100,7 +101,7 @@ class VAEManager(BaseManager):
 		self._encode_dataset(self.val_data,self.opt.for_error,self.opt.limit_conversion)
 		self._encode_dataset(test_data,self.opt.for_error,self.opt.limit_conversion)
 
-	def _encode_dataset(self, dataSet, for_error, limit_conversion = -1):
+	def _encode_dataset(self, dataSet, for_error, limit_conversion = -1, compress = True):
 		transfer_result = {}
 		key = 'valid_{}'.format(for_error.upper())
 		if not key in self.best_val_model_idx:
@@ -117,23 +118,60 @@ class VAEManager(BaseManager):
 		data_id = '{}-encoded-{}-{}'.format(self.opt.dataset, key, dataSet.dataset.type_of_data)
 		con_val_data_save = os.path.join(self.experiment_saved_data,'{}.data'.format(data_id))
 
+		cat_dim = self.opt.categorical_dim
+		fl_cat_size = self.opt.feature_layer_size
+		if compress:
+			new_cat_dim = int(np.ceil(np.log2(cat_dim)))
+			new_fl_size = new_cat_dim * fl_cat_size
+
+			fly_size = int(np.ceil(np.log2(dataSet.dataset.num_classes)))
+
 		stored_size = 0
-		for idx, data in enumerate(dataSet):  # sample batch
+		with tqdm.tqdm(total=len(dataSet)) as pbar:
+			for idx_data, data in enumerate(dataSet):  # sample batch
 
-			self.model.set_input(data)
-			self.model.run_encoder()
+				self.model.set_input(data)
+				self.model.run_encoder()
 
-			# print(data['targets'].shape, self.model.feature_layer.shape)
+				# print(data['targets'].shape, self.model.feature_layer.shape)
 
-			feature_layer_flat = self.model.feature_layer.clone().view(self.model.feature_layer.shape[0], -1)
+				feature_layer_flat = self.model.feature_layer.clone().view(self.model.feature_layer.shape[0], -1)
+				if compress:
+					new_feature_layer_flat = torch.zeros(feature_layer_flat.shape[0], new_fl_size)
+					# print('original fl_flat: {}'.format(feature_layer_flat.shape))
+					# print('new      fl_flat: {}'.format(new_feature_layer_flat.shape))
+					for batch_idx, line in enumerate(feature_layer_flat):
+						for new_idx, idx in enumerate(range(0,len(line),self.opt.categorical_dim)):
+							new_idx = new_idx * new_cat_dim
+							cat_value = torch.argmax(line[idx:idx+self.opt.categorical_dim])
+							binary_encoded_var = torch.IntTensor(list(map(int,np.binary_repr(cat_value,new_cat_dim))))
+							new_feature_layer_flat[batch_idx,new_idx:new_idx + new_cat_dim] = binary_encoded_var
+						# print('storing {}[{},{}] ({}) as {}[{},{}]'.format(line[idx:idx+4], idx, idx+3, cat_value, new_feature_layer_flat[batch_idx,new_idx:new_idx + 2], new_idx, new_idx + 1))
+					flx = new_feature_layer_flat
 
-			batch_data = torch.cat((data['targets'],feature_layer_flat),1)
-			first_line = 'fl_x: {}, fl_y: {}, categorical_dim: {}'.format(feature_layer_flat.shape[1], data['targets'].shape[1], self.opt.categorical_dim)
-			write_batch_to_file(con_val_data_save, batch_data, not idx == 0, first_line)
+					labels_as_bin = torch.zeros(feature_layer_flat.shape[0], fly_size)
+					for idx_label, line in enumerate(data['targets']):
+						cat_value_bin = np.binary_repr(torch.argmax(line),fly_size)
+						binary_list = torch.IntTensor(list(map(int,cat_value_bin)))
+						labels_as_bin[idx_label] = binary_list
 
-			stored_size += self.opt.batch_size
-			if limit_conversion != -1 and stored_size > limit_conversion:
-				break
+					fly = labels_as_bin
+				else:
+					flx = feature_layer_flat
+					fly = data['targets']
+					# print('converting {} -> {} and storing at: {}'.format(line, binary_list, idx_label))
+
+				# print(labels_as_bin)
+				batch_data = torch.cat((flx,fly),1)
+				first_line = 'flx: {}, fly: {}, fl_var_dim: {}'.format(flx.shape, fly.shape, cat_dim)
+				if idx_data == 1:
+					print(first_line)
+				write_batch_to_file(con_val_data_save, batch_data, not idx_data == 0, first_line)
+
+				stored_size += self.opt.batch_size
+				if limit_conversion != -1 and stored_size > limit_conversion:
+					break
+				pbar.update(1)
 
 		print('-- finished converting dataset: {} to {} - size: {}'.format(dataSet, data_id,stored_size))
 		return True
