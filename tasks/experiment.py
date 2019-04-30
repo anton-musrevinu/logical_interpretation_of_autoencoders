@@ -88,7 +88,7 @@ if __name__ == '__main__':
 	os.system('pwd')
 	small_data_set = False
 
-	experiment_name = 'ex_6_emnist_64_4'
+	experiment_name = 'ex_6_emnist_32_4_staff'
 	# dataset = 'mnist'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
