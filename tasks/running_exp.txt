@@ -1,9 +1,15 @@
 1. Structure learning for ex_1_fl32_c4_hard_training on staff.compute
 
-2. Structure learning for ex_5_emnist_64_4 on james02
+2. Structure learning for ex_5_emnist_64_4 on james02 
+			--- this is actually mnist
 
-3. Structure learning fro ex_6_emnist_32_4 on james03
+3. Structure learning fro ex_5_emnist_32_4 on james03
+			-- this is actually mnist
 
 4. Structure learning for ex_5_emnist_32_4_student_compute on student.compute
+			-- this is actually mnist
 
-5. Structure leraning for ex_5_emnist_64_4_bloodborn on bloodborn
+- Structure leraning for ex_5_emnist_64_4_bloodborn on bloodborn
+			-- out of memery error
+
+5. Structure learning for ex_6_emnist_64_4 on james04
