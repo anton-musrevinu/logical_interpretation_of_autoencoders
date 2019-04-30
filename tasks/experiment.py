@@ -86,17 +86,18 @@ def learn_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_
 
 if __name__ == '__main__':
 	os.system('pwd')
-	small_data_set = True
+	small_data_set = False
 
-	experiment_name = 'ex_5_emnist_64_4'
-	dataset = 'mnist'
-
-	# learn_encoder(testing = testing)
-	# encode_data(testing = small_data_set)
+	experiment_name = 'ex_5_emnist_64_4_bloodborn'
+	# dataset = 'mnist'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
-	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff')
+
+	# learn_encoder(testing = testing)
+	encode_data(testing = small_data_set)
+
+	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff/')
 	opt_file = os.path.join(experiment_dir, 'opt.txt')
 	vtree_file_learned = os.path.join(symbolic_dir, '{}_learned.vtree'.format('model'))#experiment_name))
 	vtree_file_compiled = os.path.join(symbolic_dir, '{}_compiled.vtree'.format('model'))#experiment_name))
@@ -138,11 +139,11 @@ if __name__ == '__main__':
 	# # 	os.mkdir(psdd_out_dir)
 	# # learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, psdd_file_cvt, psdd_out_dir)
 
-	# if not os.path.exists(psdd_ens_out_dir):
-	# 	os.mkdir(psdd_ens_out_dir)
+	if not os.path.exists(psdd_ens_out_dir):
+		os.mkdir(psdd_ens_out_dir)
 
-	# dataDir = train_data_file.replace('train.data','')
-	# learn_ensembly_psdd_2_from_data(dataDir, vtree_file_learned, psdd_ens_out_dir, num_components = 10)
+	dataDir = train_data_file.replace('train.data','')
+	learn_ensembly_psdd_2_from_data(dataDir, vtree_file_learned, psdd_ens_out_dir, num_components = 10)
 
 
 

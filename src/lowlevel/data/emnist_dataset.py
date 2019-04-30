@@ -40,7 +40,7 @@ class EMNISTDataset(BaseDataset):
 		self.num_classes = 47
 
 		loaded = np.load(self.dir)
-		self.inputs = loaded['inputs'].astype(np.float32)
+		self.inputs = loaded['inputs'].astype(np.float32) / 255.0
 		self.targets = loaded['targets'].astype(np.float32)
 
 		# print(np.max(self.inputs), np.min(self.inputs))
