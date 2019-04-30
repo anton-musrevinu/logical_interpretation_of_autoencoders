@@ -9,13 +9,14 @@ WMISDD_CMD = os.path.join(os.path.abspath('./../../'),'./src/wmisdd/wmisdd.py')
 os.system('pwd')
 FILES_DIR = os.path.join(os.path.abspath('.'), 'files')
 
-def compile_cnf(cnf_file_name):
-	cnfFile = os.path.join(FILES_DIR, test_file_name + '.cnf')
+def compile_cnf(cnf_file_name,test_name):
+	cnfFile = os.path.join(FILES_DIR, cnf_file_name + '.cnf')
+	test_file_name = cnf_file_name + '_' + test_name
 	sddFile = os.path.join(FILES_DIR, test_file_name + '_cnf.sdd')
 	vtreeFile = os.path.join(FILES_DIR, test_file_name + '_cnf.vtree')
 
 	precomputed_vtree = False
-	vtreeFlag = '-v' if precomputed_vtree else '-t balanced'
+	vtreeFlag = '-v' if precomputed_vtree else '-t right'
 	vtreeSearchFlag = '-r 0' if precomputed_vtree else '-r 0'
 	vtreeDotFile = vtreeFile + '.dot'
 	sddDotFiel = sddFile + '.dot'
@@ -71,10 +72,16 @@ def compile_dnf(cnf_file_name):
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
 
-if __name__ == '__main__':
-	test_file_name = '8_var_c4'
 
-	compile_cnf(test_file_name)
+
+# def write_vtree(num_vars, cat_dim, y_vec):
+
+
+if __name__ == '__main__':
+	test_file_name = '1_var_c4'
+	test_name = 'anti_sym'
+
+	compile_cnf(test_file_name, test_name)
 	# compile_dnf(test_file_name)
 
 
