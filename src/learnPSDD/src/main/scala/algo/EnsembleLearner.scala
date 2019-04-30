@@ -107,7 +107,7 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
     output.println(Array(getIt(),time,mixtureTimer,totalSize,componentsWeights.map("%1.2f".format(_)).mkString(";"),testLl).mkString(";"))
     output.flush()
 
-    0 until numLearners foreach { i => Output.savePsdds(psdds(i), "it_"+it+ "_l_"+i, asPsdd = true, asDot = true, asDot2 = false, asSdd = true, withVtree = true)}
+    0 until numLearners foreach { i => Output.savePsdds(psdds(i), "it_"+it+ "_l_"+i, asPsdd = true, asDot = true, asDot2 = false, asSdd = false, withVtree = true)}
   }
 
   protected def updateDataInPsdd(psddMgr:PsddManager, psdd:PsddDecision, trainData: Data): Unit = {

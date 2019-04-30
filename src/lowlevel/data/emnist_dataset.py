@@ -33,9 +33,9 @@ class EMNISTDataset(BaseDataset):
 		"""
 		BaseDataset.__init__(self, opt)
 		if mydir == None:
-			self.dir = os.path.join(opt.dataroot, 'mnist-{}.npz'.format(type_of_data))
+			self.dir = os.path.join(opt.dataroot, 'emnist-{}.npz'.format(type_of_data))
 		else:
-			self.dir = os.path.join(mydir, 'mnist-{}.npz'.format(type_of_data))
+			self.dir = os.path.join(mydir, 'emnist-{}.npz'.format(type_of_data))
 		self.type_of_data = type_of_data
 		self.num_classes = 47
 
