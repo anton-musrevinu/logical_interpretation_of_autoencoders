@@ -88,7 +88,8 @@ if __name__ == '__main__':
 	os.system('pwd')
 	small_data_set = False
 
-	experiment_name = 'ex_6_emnist_32_4_staff'
+	experiment_name = 'ex_6_emnist_32_4'
+	cluster_name = 'staff_compute'
 	# dataset = 'mnist'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
@@ -97,7 +98,7 @@ if __name__ == '__main__':
 	# learn_encoder(testing = testing)
 	encode_data(testing = small_data_set)
 
-	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff/')
+	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff_{}/'.format(cluster_name))
 	opt_file = os.path.join(experiment_dir, 'opt.txt')
 	vtree_file_learned = os.path.join(symbolic_dir, '{}_learned.vtree'.format('model'))#experiment_name))
 	vtree_file_compiled = os.path.join(symbolic_dir, '{}_compiled.vtree'.format('model'))#experiment_name))
@@ -106,7 +107,7 @@ if __name__ == '__main__':
 	psdd_file_cvt = os.path.join(symbolic_dir, 'constrains_cvt.psdd')#.format('model'))#experiment_name))
 	psdd_file_lvt = os.path.join(symbolic_dir, 'constrains_lvt.psdd')#.format('model'))#experiment_name))
 	psdd_out_dir = os.path.join(experiment_dir, 'psdd_model/')
-	psdd_ens_out_dir = os.path.join(experiment_dir, 'ensembly_psdd_model/')
+	psdd_ens_out_dir = os.path.join(experiment_dir, 'psdd_model_{}/'.format(cluster_name))
 
 
 	for root, dir_names, file_names in os.walk(encoded_data_dir):
