@@ -13,7 +13,9 @@
 
 5. Structure learning for ex_6_emnist_64_4 on james04
 
-1. Structure learning for ex_6_emnist_32_4_staff on staff.compute
+1. Structure learning for ex_6_emnist_32_4 on staff.compute
+
+6. Structure learning for ex_6_emnist_32_4 on james05
 
 
 

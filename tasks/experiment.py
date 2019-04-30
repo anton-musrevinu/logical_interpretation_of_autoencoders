@@ -89,14 +89,14 @@ if __name__ == '__main__':
 	small_data_set = False
 
 	experiment_name = 'ex_6_emnist_32_4'
-	cluster_name = 'staff_compute'
+	cluster_name = 'james05'
 	# dataset = 'mnist'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
 
 	# learn_encoder(testing = testing)
-	encode_data(testing = small_data_set)
+	# encode_data(testing = small_data_set)
 
 	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff_{}/'.format(cluster_name))
 	opt_file = os.path.join(experiment_dir, 'opt.txt')
