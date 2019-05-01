@@ -242,10 +242,10 @@ def _measure_classifcation_acc(vtree_file, psdd_dir, fly_catDim, flx_catDim, dat
 
 
 if __name__ == '__main__':
-	experiment_name = 'ex_5_mnist_64_4'
-	cluster_name = 'student_compute'
+	experiment_name = 'ex_5_mnist_32_4'
+	cluster_name = 'james03'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 
-	do_training(experiment_name, cluster_name)
-	# measure_classifcation_acc(experiment_dir, cluster_name, test = True)
+	# do_training(experiment_name, cluster_name)
+	measure_classifcation_acc(experiment_dir, cluster_name, test = True)
