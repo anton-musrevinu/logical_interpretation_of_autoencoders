@@ -247,5 +247,5 @@ if __name__ == '__main__':
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 
-	do_training(experiment_name, cluster_name)
+	do_training(experiment_dir, cluster_name)
 	# measure_classifcation_acc(experiment_dir, cluster_name, test = False)
