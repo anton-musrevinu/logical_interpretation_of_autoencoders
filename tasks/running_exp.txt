@@ -8,14 +8,14 @@
 
 	finished after 35 iterations, currently running evaluation
 
-====== DONE
+-------------------------------------------------------------------------------------------------------------------------
   Structure learning fro ex_5_emnist_32_4 on james03																2**64
 	tail code/msc/output/experiments/ex_5_emnist_32_4/ensembly_psdd_model/progress.txt
 			-- this is actually mnist
 
 	finished after 54 iterations, currently running evaluation
 
-======   DONE
+DONE ====
   Structure learning for ex_5_emnist_32_4_student_compute on student.compute										2**64
 			-- this is actually mnist
 
