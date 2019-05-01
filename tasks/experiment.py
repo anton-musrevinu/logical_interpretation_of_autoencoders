@@ -242,8 +242,8 @@ def _measure_classifcation_acc(vtree_file, psdd_dir, fly_catDim, flx_catDim, dat
 
 
 if __name__ == '__main__':
-	experiment_name = 'ex_5_mnist_64_4_data_bug'
-	cluster_name = 'james02'
+	experiment_name = 'ex_5_mnist_32_4_data_bug'
+	cluster_name = 'james03'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 
