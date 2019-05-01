@@ -1,0 +1,10 @@
+
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_64_16 --dataset emnist --gpu_ids 0,1 --feature_layer_size 64 --categorical_dim 16 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_16_32 --dataset emnist --gpu_ids 0,1 --feature_layer_size 16 --categorical_dim 32 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_16_16 --dataset emnist --gpu_ids 0,1 --feature_layer_size 16 --categorical_dim 16 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_32_32 --dataset emnist --gpu_ids 0,1 --feature_layer_size 32 --categorical_dim 32 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_32_16 --dataset emnist --gpu_ids 0,1 --feature_layer_size 32 --categorical_dim 16 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_64_32 --dataset emnist --gpu_ids 0,1 --feature_layer_size 64 --categorical_dim 32 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_256_2 --dataset emnist --gpu_ids 0,1 --feature_layer_size 256 --categorical_dim 2 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_256_4 --dataset emnist --gpu_ids 0,1 --feature_layer_size 256 --categorical_dim 4 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_6_emnist_128_16 --dataset emnist --gpu_ids 0,1 --feature_layer_size 128 --categorical_dim 16 --num_epochs 200
