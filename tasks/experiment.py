@@ -95,7 +95,7 @@ def do_training(experiment_dir,cluster_name):
 	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
 
 	# learn_encoder(testing = testing)
-	encode_data(testing = small_data_set)
+	# encode_data(testing = small_data_set)
 
 	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff_{}/'.format(cluster_name))
 	opt_file = os.path.join(experiment_dir, 'opt.txt')
@@ -242,10 +242,10 @@ def _measure_classifcation_acc(vtree_file, psdd_dir, fly_catDim, flx_catDim, dat
 
 
 if __name__ == '__main__':
-	experiment_name = 'ex_5_mnist_32_4_data_bug'
-	cluster_name = 'james03'
+	experiment_name = 'ex_6_emnist_64_4'
+	cluster_name = 'student_compute'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 
-	# do_training(experiment_name, cluster_name)
-	measure_classifcation_acc(experiment_dir, cluster_name, test = False)
+	do_training(experiment_name, cluster_name)
+	# measure_classifcation_acc(experiment_dir, cluster_name, test = False)
