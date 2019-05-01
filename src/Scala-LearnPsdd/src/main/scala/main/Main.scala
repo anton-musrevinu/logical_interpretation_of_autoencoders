@@ -176,7 +176,9 @@ object Main {
                      keepCloning: Boolean = false,
                      frequency: SaveFrequency = defaultFrequency,
                      parameterCalculators: Seq[ParameterCalculator] = null,
-                     entropyOrder: Boolean=false
+                     entropyOrder: Boolean=false,
+                     fly_cdim: Int = -1,
+                     flx_cdim: Int = -1
                      ){
     val configString: String = Array(
       "trainData:\t"+  (if(train == null) "null" else train.getPath),
@@ -709,27 +711,38 @@ object Main {
       valueName ("<file>").
       action { (x, c) => c.copy(vtree = x) }
 
-
     opt[String]('o', "out").
       optional().
       valueName("<path>").
       action( (x, c) => c.copy(out = x) )
 
-    // opt[Int]('c', "numComponentLearners").
-    //   required().
-    //   valueName("<numComponentLearners>").
-    //   action((x, c) => c.copy(numComponentLearners = x)).
-    //   text("The number of component learners to form the ensemble\n")
-
     opt[Seq[Double]]('a', "componentweights").
       required().
-      valueName("<double>;<double>;...").
-      action{ (x,c) => c.copy(componentweights = x) }
+      valueName("<double>,<double>,...").
+      action( (x,c) => c.copy(componentweights = x) )
 
     opt[Seq[File]]('p', "psdds").
       required().
       valueName ("<file>,<file>,...").
-      action{ (x,c) => c.copy(psdds = x)}
+      action( (x,c) => c.copy(psdds = x))
+
+    opt[Int]('y',"fly_cdim").
+      required().
+      valueName("<fly_cdim>").
+      action((x,c)=>c.copy(fly_cdim=x)).
+      text(
+        "tje categorical dimention of the FLy.\n"
+      )
+
+    opt[Int]('x',"flx_cdim").
+      required().
+      valueName("<flx_cdim>").
+      action((x,c)=>c.copy(flx_cdim=x)).
+      text(
+        "tje categorical dimention of the FLx.\n"
+      )
+
+
 
     checkConfig { c =>
       if (c.vtree==null) failure("vtree is required")
@@ -1078,20 +1091,16 @@ object Main {
 
             print("Read data...")
             val trainData = Data.readFromFile(config.train)
-            val validData = if (config.valid == null) trainData.empty else Data.readFromFile(config.valid)
-            val testData = if (config.test == null) trainData.empty else Data.readFromFile(config.test)
+            val validData = trainData.empty
+            val testData = trainData.empty
             val data = new DataSets(trainData, validData, testData)
             println(" done!")
 
-
-            val flx_size = 128
-            val fly_size = trainData.backend(0).size - flx_size
-
             println("Read Psdds from "+config.psdds+"...")
             val numComponents = config.psdds.size
-            println("Number of psdd components")
             val psdds = Seq.tabulate(numComponents)(n => psddMgr.readPsdd(config.psdds(n), vtree, data))
             val componentweights = config.componentweights
+            println("Psdd components given")
             for (i <- 0 to numComponents - 1){
               println("PSDD: " + i + " cw: " + componentweights(i) + " psdd: " + psdds(i))
             }
@@ -1099,44 +1108,73 @@ object Main {
 
             println()
 
+            val total_size = trainData.backend(0).size
+            val flx_cdim = config.flx_cdim
+            val fly_cdim = config.fly_cdim
+            
+            var log2 = (x: Double) => (Math.log(x) / Math.log(2))
+            val fly_size = 6//BigDecimal(log2(fly_cdim)).setScale(0, BigDecimal.RoundingMode.CEILING).toInt
+                          //Fixed at six, because I acidently encoded the ydata for the categorical dim of emnist (47)
+            
+            val flx_size = total_size - fly_size
+
+
+
+
+            println("total_size: " + total_size)
+            println("flx_size: " + flx_size)
+            println("flx_cdim:  " + flx_cdim)
+            println("nb_classes (fly_cdim):  " + fly_cdim)
+            println("fly_size:  " + fly_size)
+
             if(config.mode == "classify"){
               val pw = new PrintWriter(new File(config.out))
+              pw.write("total_size: " + total_size + "\n")
+              pw.write("flx_size: " + flx_size + "\n")
+              pw.write("flx_cdim:  " + flx_cdim + "\n")
+              pw.write("nb_classes (fly_cdim):  " + fly_cdim + "\n")
+              pw.write("fly_size:  " + fly_size + "\n")
 
               print("Read Assignment...")
               val assignment = Assignment.readFromFile(config.query)
               println(" done!")
 
-              println("Calculate probability for assignments...")
-              println("y_size: " + fly_size)
-              println("total_size: " + assignment.backend(0).size)
-
               var accuracy:Seq[Int] = Seq()
 
-              var priors:Seq[BigDecimal] = Seq()
-              for (j <- 1 to fly_size){
-                var ymap:Map[Int,Boolean] = Map()
-                for( a <- flx_size + 1 to flx_size + fly_size){
-                  if(a - flx_size == j){
-                    ymap += (a -> true)
-                  } else {
-                    ymap += (a -> false)
-                  }
-                }
-                var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), ymap) * componentweights(x)).sum
-                priors = priors :+ result
-              }
+              val ymaps = Seq.tabulate(fly_cdim)(x => int2map(x, fly_size, flx_size))
+              println("Calculated ymaps: " + ymaps)
+              pw.write("Calculated ymaps: " + ymaps + '\n')
 
-
+              var priors:Seq[BigDecimal] = Seq.tabulate(fly_cdim)(x =>
+                Seq.tabulate(numComponents)(xx => PsddQueries.bigDecimalProb(psdds(xx), ymaps(x)) * componentweights(xx)).sum
+                )
+              println("Calculated Priors: " + priors)
+              pw.write("Calculated Priors: " + priors + '\n')
+              // for (j <- 1 to fly_cdim){
+              //   ymap = int2map(j, fly_size, flx_size)
+              //   // println("label: " + j + " gives binary value " + int2bin(j,fly_size) + " - " + ymap)
+              //   // var ymap:Map[Int,Boolean] = Map()
+              //   // for( a <- flx_size + 1 to flx_size + fly_size){
+              //   //   if(a - flx_size == j){
+              //   //     ymap += (a -> true)
+              //   //   } else {
+              //   //     ymap += (a -> false)
+              //   //   }
+              //   // }
+              //   var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), ymap) * componentweights(x)).sum
+              //   priors = priors :+ result
+              // }
 
               for ( i <- 0 to (assignment.backend.length - 1) ) {
                 var xmap:Map[Int,Boolean] = Map()
-                var actual_label = 0
+                var actual_label:Map[Int,Boolean] = Map()
+                var actual_label_num:Int = -1
                 assignment.backend(i).keys.foreach{j =>
                   if(j <= flx_size){
                     xmap += (j -> assignment.backend(i)(j))
                   }
-                  if(j > flx_size && assignment.backend(i)(j) == true){
-                    actual_label = j - flx_size
+                  if(j > flx_size){
+                    actual_label += (j -> assignment.backend(i)(j))
                   }
                 }
 
@@ -1144,37 +1182,30 @@ object Main {
                 var class_probabilities:Seq[BigDecimal] = Seq()
                 var highestProbIdx = 0
                 var correct_class_prob:BigDecimal = 0.0
-                for (j <- 1 to fly_size){
-                  var ymap:Map[Int,Boolean] = Map()
-                  for( a <- flx_size + 1 to flx_size + fly_size){
-                    if(a - flx_size == j){
-                      ymap += (a -> true)
-                    } else {
-                      ymap += (a -> false)
-                    }
-                  }
 
-                  var assignment_tmp = xmap ++ ymap
+                for (j <- 0 to fly_cdim -1){
+                  var assignment_tmp = xmap ++ ymaps(j)
                   var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), assignment_tmp) * componentweights(x)).sum
-                  result = result/priors(j -1)
+                  result = result/priors(j)
                   class_probabilities = class_probabilities :+ result
 
                   if (result > highestProb){
                     highestProb = result
                     highestProbIdx = j
                   }
-                  if (j == actual_label){
+                  if (ymaps(j) == actual_label){
                     correct_class_prob = result
+                    actual_label_num = j
                   }
                 }
+                var outputString = "For test point " + i + " the predicted label is: " + highestProbIdx + " actual_label: " + actual_label_num
                 var wronglyclassified = ""
-                if(highestProbIdx != actual_label){
+                if(highestProbIdx != actual_label_num){
                   wronglyclassified = " -- Wrong - pcc: %.5f vs  ccc: %.5f".format(highestProb/class_probabilities.sum, correct_class_prob/class_probabilities.sum)
+                  pw.write(outputString + wronglyclassified + "\n")
                 }
-                var outputString = "For test point " + i + " the predicted label is: " + highestProbIdx + " actual_label: " + actual_label + wronglyclassified
-                println(outputString)
-                pw.write(outputString + "\n")
-                accuracy = accuracy :+ (if (highestProbIdx == actual_label) 1 else 0)
+                println(outputString + wronglyclassified)
+                accuracy = accuracy :+ (if (highestProbIdx == actual_label_num) 1 else 0)
 
               }
 
@@ -1318,4 +1349,24 @@ object Main {
       }
 
     }
+
+  def int2map(i: Int, numPos: Int, strtIdx: Int): Map[Int,Boolean] = {
+    val codeAsStr:String = int2bin(i, numPos)
+    var resmap:Map[Int,Boolean] = Map()
+    var idx:Int = -1
+    var value:Boolean = false
+    for( a <- 0 to numPos - 1){
+      idx = a + strtIdx + 1
+      value = codeAsStr(a) == '1'
+
+      resmap += (idx -> value)
+    }
+
+    return resmap
+  }
+
+  def int2bin(i: Int, numPos: Int): String = {
+    def nextPow2(i: Int, acc: Int): Int = if (i < acc) acc else nextPow2(i, 2 * acc)
+    (nextPow2(i, math.pow(2,numPos).toInt)+i).toBinaryString.substring(1)
+  }
 }
