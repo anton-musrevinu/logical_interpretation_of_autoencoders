@@ -34,7 +34,7 @@ DONE ====
 
 
 ==========================================================================================================================
-5. Structure learning for ex_5_mnist_64_4 on student_compute   													    2**128
+5. Structure learning for ex_6_emnist_64_4 on student_compute   				    							    2**128
 
 
 

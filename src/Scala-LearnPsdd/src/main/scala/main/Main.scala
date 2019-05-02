@@ -178,7 +178,8 @@ object Main {
                      parameterCalculators: Seq[ParameterCalculator] = null,
                      entropyOrder: Boolean=false,
                      fly_cdim: Int = -1,
-                     flx_cdim: Int = -1
+                     flx_cdim: Int = -1,
+                     data_bug: Boolean = false
                      ){
     val configString: String = Array(
       "trainData:\t"+  (if(train == null) "null" else train.getPath),
@@ -742,6 +743,14 @@ object Main {
         "tje categorical dimention of the FLx.\n"
       )
 
+    opt[Boolean]('g',"data_bug").
+      required().
+      valueName("<data_bug>").
+      action((x,c)=>c.copy(data_bug=x)).
+      text(
+        "If data contains bug where two 00s are added between flx and fly.\n"
+      )
+
 
 
     checkConfig { c =>
@@ -1111,12 +1120,21 @@ object Main {
             val total_size = trainData.backend(0).size
             val flx_cdim = config.flx_cdim
             val fly_cdim = config.fly_cdim
+            var fly_size:Int = -1
             
             var log2 = (x: Double) => (Math.log(x) / Math.log(2))
-            val fly_size = 6//BigDecimal(log2(fly_cdim)).setScale(0, BigDecimal.RoundingMode.CEILING).toInt
-                          //Fixed at six, because I acidently encoded the ydata for the categorical dim of emnist (47)
+            if (config.data_bug){
+              fly_size = 6
+              //Fixed at six, because I acidently encoded the ydata for the categorical dim of emnist (47)
+            }
+            else{
+              fly_size = BigDecimal(log2(fly_cdim)).setScale(0, BigDecimal.RoundingMode.CEILING).toInt
+            }
             
             val flx_size = total_size - fly_size
+
+            val flx_binVarSize = BigDecimal(log2(flx_cdim)).setScale(0, BigDecimal.RoundingMode.CEILING).toInt
+            val flx_nbvars = (flx_size / BigDecimal(log2(flx_cdim)).setScale(0, BigDecimal.RoundingMode.CEILING)).toInt
 
 
 
@@ -1275,30 +1293,33 @@ object Main {
               val num_batches_per_class = 1
               val batch_size = 100
 
-              val pw = new PrintWriter(new File(config.out))
+              val pw = new PrintWriter(new File(config.out + "info.txt"))
               pw.write("flx_size: " + flx_size + "\n")
               pw.write("fly_size: " + fly_size + "\n")
               pw.write("fl_size:  " + (flx_size + fly_size) + "\n")
               pw.write("num_batches_per_class: " + num_batches_per_class + "\n")
               pw.write("batch_size: " + batch_size + "\n")
 
+              val ymaps = Seq.tabulate(fly_cdim)(x => int2map(x, fly_size, flx_size))
+              println("Calculated ymaps: " + ymaps)
+              pw.write("Calculated ymaps: " + ymaps + '\n')
 
               //build fly
-              var fly:Map[Int,Boolean] = Map()
-              for( i <- 1 to fly_size){
-                println("\n---------------- fly = " + i + " -------------------------\n")
-                for( a <- flx_size + 1 to flx_size + fly_size){
-                  if(a - flx_size == i){
-                    fly += (a -> true)
-                  } else {
-                    fly += (a -> false)
-                  }
-                }
+              var fly:Map[Int,Boolean] = ymaps(0)
+              for( i <- 0 to fly_cdim - 1){
+                val pw_file = new PrintWriter(new File(config.out + "samples_class_" + i + ".data"))
+                var tmpStr:String = "\n---------------- fly = " + i + " " + ymaps(i) +  " -------------------------\n"
+                println(tmpStr)
+                pw.write(tmpStr)
+                fly = ymaps(i)
+                
 
                 //geneate for clas i
                 val random = new Random
-                print("class " + i + " :")
-                for(exp <- 1 to (num_batches_per_class * batch_size)){
+                tmpStr = "Drawing " + (num_batches_per_class * batch_size) + " samples from the Distribution conditioned on fly = " + i + '\n'
+                print(tmpStr)
+                pw.write(tmpStr)
+                for(exp <- 0 to (num_batches_per_class * batch_size) - 1){
                   print("#")
                   var xvalues = List.range(1, flx_size + 1)
                   var flx:Map[Int,Boolean] = Map()
@@ -1320,20 +1341,122 @@ object Main {
                     var prob_j = prob_num/prob_div_flx
                     var value_j = random.nextDouble() <= prob_j
                     flx += (j -> value_j)
-                    println("it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length))
-
+                    tmpStr = "it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length)
+                    println(tmpStr)
+                    pw.write(tmpStr)
 
                   }
                   for(idx <- 1 to flx_size){
-                    pw.write("%d,".format(if (flx(idx)) 1 else 0))
+                    pw_file.write("%d,".format(if (flx(idx)) 1 else 0))
                   }
-                  for(idx <- 1 to fly_size - 1){
-                    pw.write("%d,".format(if (fly(idx + flx_size)) 1 else 0))
+                  for(idx <- 1 to fly_size){
+                    pw_file.write("%d,".format(if (fly(idx + flx_size)) 1 else 0))
                   }
-                  pw.write("%d\n".format(if (fly(fly_size + flx_size)) 1 else 0))
+                  pw_file.write("\n")
                 }
                 print("\n")
+                pw_file.close
+              }
+              pw.close
+            }
 
+
+            if(config.mode == "fl_samples"){
+
+              val num_batches_per_class = 1
+              val batch_size = 100
+
+              val pw = new PrintWriter(new File(config.out + "info.txt"))
+              pw.write("#flx_size: " + flx_size + "\n")
+              pw.write("#fly_size: " + fly_size + "\n")
+              pw.write("#fl_size:  " + (flx_size + fly_size) + "\n")
+              pw.write("#num_batches_per_class: " + num_batches_per_class + "\n")
+              pw.write("#batch_size: " + batch_size + "\n")
+
+              val ymaps = Seq.tabulate(fly_cdim)(x => int2map(x, fly_size, flx_size))
+              println("#Calculated ymaps: " + ymaps)
+              pw.write("#Calculated ymaps: " + ymaps + '\n')
+
+              //build fly
+              for( i <- 1 to flx_nbvars){
+                for (j <- 0 to fly_cdim - 1){
+                  var offset = flx_nbvars * flx_binVarSize + 1
+                  var flx_var:Map[Int,Boolean] = int2map(j, flx_binVarSize, offset)
+                  var tmpStr:String = "#\n#---------------- Variable = " + i + " category " + j + "short: sample_v_i_c_j -------------------------\n"
+                  println(tmpStr)
+                  pw.write(tmpStr)
+                  
+
+                  //geneate for clas i
+                  val random = new Random
+                  tmpStr = "#Drawing " + (num_batches_per_class * batch_size) + " samples from the Distribution conditioned on fly = " + i + '\n'
+                  print(tmpStr)
+                  pw.write(tmpStr)
+                  for(exp <- 0 to (num_batches_per_class * batch_size) - 1){
+                    print("#")
+                    var xvalues = List.range(1, flx_size + 1)
+                    xvalues = xvalues.dropRight(xvalues.length - offset) ++ xvalues.drop(offset + flx_binVarSize)
+                    var flx:Map[Int,Boolean] = Map()
+                    var j_idx = 0
+                    var j = 0
+
+                    //Generate the rest of flx
+                    for (var_count <- 1 to flx_size - flx_binVarSize){
+                      println(xvalues)
+                      j_idx = random.nextInt(xvalues.length)
+                      j = xvalues(j_idx)
+                      xvalues = xvalues.dropRight(xvalues.length - j_idx) ++ xvalues.drop(j_idx + 1)
+                      println(xvalues)
+
+                      var fl_tmp = flx ++ flx_var
+                      fl_tmp += (j -> true)
+                      // pr(FLx_j = true| fly + flx)
+                      var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp) * componentweights(x)).sum
+                      var prob_div_flx:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), flx_var ++ flx) * componentweights(x)).sum
+
+                      var prob_j = prob_num/prob_div_flx
+                      var value_j = random.nextDouble() <= prob_j
+                      flx += (j -> value_j)
+                      tmpStr = "it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length)
+                      println(tmpStr)
+                    }
+
+                    var highestProb:BigDecimal = 0.0
+                    var class_probabilities:Seq[BigDecimal] = Seq()
+                    var highestProbIdx = 0
+
+                    var priors:Seq[BigDecimal] = Seq.tabulate(fly_cdim)(x =>
+                      Seq.tabulate(numComponents)(xx => PsddQueries.bigDecimalProb(psdds(xx), ymaps(x)) * componentweights(xx)).sum
+                      )
+
+                    for (j <- 0 to fly_cdim -1){
+                      var assignment_tmp = flx ++ flx_var ++ ymaps(j)
+                      var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), assignment_tmp) * componentweights(x)).sum
+                      result = result/priors(j)
+                      class_probabilities = class_probabilities :+ result
+
+                      if (result > highestProb){
+                        highestProb = result
+                        highestProbIdx = j
+                      }
+                    }
+                    tmpStr = "----- assigned label " + highestProbIdx + " to the sample drawn from " + i + " " + j
+                    println(tmpStr)
+                    pw.write(tmpStr)
+
+
+                    val pw_file = new PrintWriter(new File(config.out + "samples_v_" + i + "_c_" + j + ".data"))
+                    for(idx <- 1 to flx_size){
+                      pw_file.write("%d,".format(if (flx(idx)) 1 else 0))
+                    }
+                    for(idx <- 1 to fly_size){
+                      pw_file.write("%d,".format(if (ymaps(highestProbIdx)(idx + flx_size)) 1 else 0))
+                    }
+                    pw_file.write("\n")
+                  }
+                  print("\n")
+
+                }
               }
 
               pw.close

@@ -151,19 +151,13 @@ def do_training(experiment_dir,cluster_name):
 # ============================================================================================================================
 
 
-def measure_classifcation_acc(experiment_dir, cluster_id, test = False):
+def get_experiment_info(experiment_dir, cluster_id, test = False):
 	if cluster_id == '':
-		evaluationDir = os.path.join(experiment_dir, 'evaluation/')
 		psdd_dir = os.path.join(experiment_dir, 'ensembly_psdd_model/')
 		vtree_file = os.path.join(experiment_dir, 'symbolic_stuff/model_learned.vtree')
 	else:
-		evaluationDir = os.path.join(experiment_dir, 'evaluation_{}/'.format(cluster_id))
 		psdd_dir = os.path.join(experiment_dir, 'psdd_model_{}/'.format(cluster_id))
 		vtree_file = os.path.join(experiment_dir, 'symbolic_stuff_{}/model_learned.vtree'.format(cluster_id))
-
-	if not os.path.exists(evaluationDir):
-		os.mkdir(evaluationDir)
-	outputFile = os.path.join(evaluationDir, 'classification.txt')
 
 	for root, dir_names, file_names in os.walk(os.path.join(experiment_dir,'encoded_data')):
 		for i in file_names:
@@ -173,12 +167,6 @@ def measure_classifcation_acc(experiment_dir, cluster_id, test = False):
 	fly_catDim = 10 if int(experiment_dir.split('/')[-1].split('_')[1]) <= 5 else 47
 	flx_catDim = int(experiment_dir.split('/')[-1].split('_')[4])
 
-	_measure_classifcation_acc(vtree_file, psdd_dir,fly_catDim,flx_catDim, train_data_file, outputFile, test)
-	
-
-def _measure_classifcation_acc(vtree_file, psdd_dir, fly_catDim, flx_catDim, dataFile, outputFile, test = False):
-
-	# 18;1690.008417296;41879.36322377;2763;0.09;0.15;0.12;0.05;0.12;0.12;0.08;0.09;0.08;0.12;-44.754126036778328156475785
 	num_learners = -1
 	latestIt = -1 
 	weights = {}
@@ -222,12 +210,24 @@ def _measure_classifcation_acc(vtree_file, psdd_dir, fly_catDim, flx_catDim, dat
 					if a == '1' or b == '1':
 						raise Exception('looks like we messed up') 
 
+	return vtree_file, list_of_psdds, list_of_weights,fly_catDim, flx_catDim, data_set_sample
 
+def measure_classifcation_acc(experiment_dir, cluster_id, test = False):
+
+	# 18;1690.008417296;41879.36322377;2763;0.09;0.15;0.12;0.05;0.12;0.12;0.08;0.09;0.08;0.12;-44.754126036778328156475785
+
+	vtree_file, list_of_psdds, list_of_weights, fly_catDim, flx_catDim, data_set_sample =
+			get_experiment_info(experiment_dir, cluster_id)
+
+	evaluationDir = os.path.join(experiment_dir, 'evaluation_{}/'.format(cluster_id))
+	if not os.path.exists(evaluationDir):
+		os.mkdir(evaluationDir)
+	outputFile = os.path.join(evaluationDir, 'classification.txt')
 
 	if test:
 		query = data_set_sample
 	else:
-		query = dataFile.replace('train.data', 'test.data')
+		query = data_set_sample.replace('train.data.sample', 'test.data')
 	# -v vtree
 	# -p list of psdds
 	# -a list of psdd weighs
@@ -235,17 +235,48 @@ def _measure_classifcation_acc(vtree_file, psdd_dir, fly_catDim, flx_catDim, dat
 	# -fly categorical dimention of the FLy --- the number of labels
 	# -flx categorical dimention of the FLx
 	# -o output file
-	cmd = 'java -jar ' + LEARNPSDD_CMD + ' query -m classify -v {} -p {} -a {} -d {} -x {} -y {} -q {} -o {}'.format(\
-		vtree_file,list_of_psdds, list_of_weights, data_set_sample, flx_catDim, fly_catDim, query,  outputFile)
+	cmd = 'java -jar ' + LEARNPSDD_CMD + ' query -m classify -v {} -p {} -a {} -d {} -x {} -y {} -q {} -o {} -g'.format(\
+		vtree_file,list_of_psdds, list_of_weights, data_set_sample, flx_catDim, fly_catDim, query,  outputFile,\
+		'data_bug' in experiment_dir)
+	print('excuting: {}'.format(cmd))
+	os.system(cmd)
+
+def draw_class_samples(experiment_dir, cluster_id):
+
+	# 18;1690.008417296;41879.36322377;2763;0.09;0.15;0.12;0.05;0.12;0.12;0.08;0.09;0.08;0.12;-44.754126036778328156475785
+
+	vtree_file, list_of_psdds, list_of_weights, fly_catDim, flx_catDim, data_set_sample =
+			get_experiment_info(experiment_dir, cluster_id)
+
+	sampled_dir = os.path.join(experiment_dir, 'sampled_{}/'.format(cluster_id))
+	if not os.path.exists(sampled_dir):
+		os.mkdir(sampled_dir)
+
+	# -v vtree
+	# -p list of psdds
+	# -a list of psdd weighs
+	# -d data for initializing the psdd
+	# -fly categorical dimention of the FLy --- the number of labels
+	# -flx categorical dimention of the FLx
+	# -o output file
+	cmd = 'java -jar ' + LEARNPSDD_CMD + ' query -m generate -v {} -p {} -a {} -d {} -x {} -y {} -o {} -g'.format(\
+		vtree_file,list_of_psdds, list_of_weights, data_set_sample, flx_catDim, fly_catDim,  sampled_dir, \
+		'data_bug' in experiment_dir)
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
 
 
+
 if __name__ == '__main__':
-	experiment_name = 'ex_6_emnist_64_4'
-	cluster_name = 'student_compute'
+	experiment_name = 'ex_5_mnist_32_4_data_bug'
+	cluster_id = 'student_compute'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 
-	do_training(experiment_dir, cluster_name)
-	# measure_classifcation_acc(experiment_dir, cluster_name, test = False)
+	# do_training(experiment_dir, cluster_id)
+	# measure_classifcation_acc(experiment_dir, cluster_id, test = False)
+	draw_class_samples(experiment_dir, cluster_id)
+
+
+
+
