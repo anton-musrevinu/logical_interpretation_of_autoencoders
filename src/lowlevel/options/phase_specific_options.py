@@ -36,3 +36,9 @@ def phase_encode_options(parser):
     parser.add_argument('--for_error', type=str, default='mse', help='picking the best model for the given error on the validation set')
     parser.add_argument('--limit_conversion', type=int, default=-1, help='the maximum size of the datset the is bening created')
     return parser
+
+def phase_decode_options(parser):
+    parser.add_argument('--for_error', type=str, default='mse', help='picking the best model for the given error on the validation set')
+    parser.add_argument('--file_to_decode', type=str)
+    return parser
+

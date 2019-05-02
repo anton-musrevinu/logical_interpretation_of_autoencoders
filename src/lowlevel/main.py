@@ -24,3 +24,5 @@ if __name__ == '__main__':
 		manager.print_info()
 	elif opt.phase == 'encode':
 		manager.convert_all_data()
+	elif opt.phase == 'decode':
+		manager.decode_specific_file(opt.file_to_decode)

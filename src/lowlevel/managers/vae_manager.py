@@ -176,6 +176,55 @@ class VAEManager(BaseManager):
 		print('-- finished converting dataset: {} to {} - size: {}'.format(dataSet, data_id,stored_size))
 		return True
 
+	def decode_specific_file(self, file_to_decode):
+		key = 'valid_{}'.format(self.opt.for_error.upper())
+		if not key in self.best_val_model_idx:
+			raise Exception('The network does not hold information for the provided error: {} (key: {})'.format(for_error, key))
+
+		# print(file_to_decode.split('/')[-1],'/'.join(file_to_decode.split('/')[:-1]))
+		sampled_data = create_dataset(self.opt, domain = 'fl_sample', type_of_data = file_to_decode.split('/')[-1], \
+			mydir = '/'.join(file_to_decode.split('/')[:-1]))
+
+		epoch_idx = self.best_val_model_idx[key]
+		#Load the best model for the given key
+		self.model.load_networks(epoch_idx)
+		self.model.annealing_temp = self.annealing_temp_min
+
+		for idx, data in enumerate(sampled_data):  # sample batch
+			self.model.set_fl(data)
+			self.model.run_decoder()
+			path = file_to_decode.replace('.data', 'b{}.png'.format(idx))
+			save_example_image(self.model.rec_input.cpu().float(), path)
+
+		# num_batches = -1
+		# flx_data = []
+		# fly_data = []
+		# new_cat_dim = int(np.ceil(np.log2(self.opt.categorical_dim)))
+		# new_fl_size = new_cat_dim * self.opt.feature_layer_size
+		# print('original fl_flat size {} and binary fl size {}'.format(self.model.netAE.fl_flat_shape[1],new_fl_size))
+
+		# with open(file_to_decode, 'r') as f:
+		# 	for line in f:
+		# 		line = line.split(',')
+		# 		flx_elem = np.zeros((self.opt.feature_layer_size,self.opt.categorical_dim))
+		# 		# print(line)
+		# 		for new_idx, idx in enumerate(range(0,new_fl_size,new_cat_dim)):
+		# 			cat_var_as_bin_list = line[idx:new_cat_dim + idx]
+		# 			flx_elem[new_idx] = self._decode_binary_to_onehot(cat_var_as_bin_list, self.opt.categorical_dim)
+
+		# 		fly_elem = self._decode_binary_to_int(line[new_fl_size:])
+
+		# 		flx_data.append(flx_elem)
+		# 		fly_data.append(fly_elem)
+
+		# num_elements_found = len(flx_data)
+		# flx_tensor = torch.FloatTensor(flx_data)
+		# fly_tensor = torch.FloatTensor(fly_data)
+
+		# for idx in range(num_elements_found// opt.batch_size)
+
+
+
 	def decode_dataset(self, dataSet):
 		transfer_result = {}
 		for key, best_val_model_idx_for_loss in self.best_val_model_idx.items():

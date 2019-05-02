@@ -22,6 +22,7 @@ class EMNISTDataset(BaseDataset):
 		By default, the number of channels for input image  is 1 (L) and
 		the nubmer of channels for output image is 2 (ab). The direction is from A to B
 		"""
+		parser.add_argument('--num_classes', type=int, default=47)
 		parser.set_defaults(input_nc=1, batch_size=100, image_width = 28, image_height = 28)
 		return parser
 

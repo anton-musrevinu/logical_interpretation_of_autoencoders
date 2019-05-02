@@ -1308,15 +1308,11 @@ object Main {
               var fly:Map[Int,Boolean] = ymaps(0)
               for( i <- 0 to fly_cdim - 1){
                 val pw_file = new PrintWriter(new File(config.out + "samples_class_" + i + ".data"))
-                var tmpStr:String = "\n---------------- fly = " + i + " " + ymaps(i) +  " -------------------------\n"
-                println(tmpStr)
-                pw.write(tmpStr)
                 fly = ymaps(i)
                 
-
                 //geneate for clas i
                 val random = new Random
-                tmpStr = "Drawing " + (num_batches_per_class * batch_size) + " samples from the Distribution conditioned on fly = " + i + '\n'
+                var tmpStr:String  = "Drawing " + (num_batches_per_class * batch_size) + " samples from the Distribution conditioned on fly = " + i + " " + fly + '\n'
                 print(tmpStr)
                 pw.write(tmpStr)
                 for(exp <- 0 to (num_batches_per_class * batch_size) - 1){
@@ -1326,11 +1322,11 @@ object Main {
                   var j_idx = 0
                   var j = 0
                   for (var_count <- 1 to flx_size){
-                    println(xvalues)
+                    // println(xvalues)
                     j_idx = random.nextInt(xvalues.length)
                     j = xvalues(j_idx)
                     xvalues = xvalues.dropRight(xvalues.length - j_idx) ++ xvalues.drop(j_idx + 1)
-                    println(xvalues)
+                    // println(xvalues)
 
                     var fl_tmp = flx ++ fly
                     fl_tmp += (j -> true)
@@ -1341,18 +1337,19 @@ object Main {
                     var prob_j = prob_num/prob_div_flx
                     var value_j = random.nextDouble() <= prob_j
                     flx += (j -> value_j)
-                    tmpStr = "it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length)
-                    println(tmpStr)
+                    tmpStr = "it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d\n".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length)
+                    // print(tmpStr)
                     pw.write(tmpStr)
 
                   }
                   for(idx <- 1 to flx_size){
                     pw_file.write("%d,".format(if (flx(idx)) 1 else 0))
                   }
-                  for(idx <- 1 to fly_size){
+                  for(idx <- 1 to fly_size - 1){
                     pw_file.write("%d,".format(if (fly(idx + flx_size)) 1 else 0))
                   }
-                  pw_file.write("\n")
+                  pw_file.write("%d\n".format(if (fly(fly_size + flx_size)) 1 else 0))
+                  print('\n')
                 }
                 print("\n")
                 pw_file.close

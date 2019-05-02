@@ -1,70 +1,61 @@
 
--------------------------------------------------------------------------------------------------------------------------
+DONE ====
   Structure learning for ex_5_mnist_64_4_data_bug on james02														2**128
-			--- this is actually mnist
 
-	27;2483.908406817;69320.347274188;5029;0.10;0.10;0.11;0.14;0.07;0.08;0.17;0.11;0.05;0.06;-80.414459273356824855414827
-
-	finished after 35 iterations, currently running evaluation
-
--------------------------------------------------------------------------------------------------------------------------
-  Structure learning fro ex_5_emnist_32_4_dat_bug on james03														2**64
-	tail code/msc/output/experiments/ex_5_mnist_32_4/ensembly_psdd_model/progress.txt
-			-- this is actually mnist
-
-	finished after 54 iterations, currently running evaluation
+	-- finished after 35 iterations
+	-- classification acc 0.6937
 
 DONE ====
-  Structure learning for ex_5_emnist_32_4_student_compute on student.compute										2**64
-			-- this is actually mnist
+  Structure learning fro ex_5_mnist_32_4_dat_bug on james03														     2**64
 
+	-- finished after 54 iterations
+	-- classification acc 0.8351
 
+DONE ====
+  Structure learning for ex_5_mnist_32_4_data_bug on student_compute								          		2**64		
+    -- finished after 65 iterations
+    -- classification acc 0.8616
+    -- generating classes
 
----. Structure learning for ex_5_emnist_64_2 on james09											        			2**64
-			-- this is actually mnist
+DONE ====
+  Structure learning for ex_6_emnist_32_4 on staff.compute															2**64
+    -- finished after 36 iterations
+	-- 0.0900
 
-			-- wrong data converted - deleted element
+EVAL ====
+  Structure learning for ex_6_emnist_64_4 on james04																2**128
+	-- finished after 12 iterations
+		12;8823.898406312;120222.88263997802;4620;0.07;0.13;0.05;0.09;0.13;0.10;0.10;0.10;0.12;0.11;-87.6650916882104159
 
+	-- running evaluation
 
+DONE ==== 
+ Structure learning for ex_6_emnist_32_4 on james05											     					2**64
+	-- finished after 24 iterations
+		24;3182.441271051;89583.25298112199;2952;0.11;0.12;0.10;0.08;0.10;0.04;0.14;0.11;0.11;0.09;-44.628588590
 
----. Structure learning for ex_4_emnist_32_8 on james10																2**96
-			-- this is actually mnist
+	-- 0.100253
 
-			-- no running           - deleted element
+==========================================================================================================================
+1. Structure learning for ex_5_mnist_64_4 on staff_compute   				    							    2**128
 
 
 ==========================================================================================================================
 5. Structure learning for ex_6_emnist_64_4 on student_compute   				    							    2**128
+   10;2725.1485842250004;41545.828035603;4799;0.10;0.11;0.13;0.09;0.10;0.12;0.10;0.05;0.11;0.10;-87.87956348
 
-
-
-
-
-
-==========================================================================================================================
-5. Structure learning for ex_6_emnist_64_4 on james04																2**128
-
-	4;8316.382062241;38527.255768408;4197;0.08;0.11;0.07;0.09;0.12;0.10;0.10;0.11;0.12;0.11;-87.95482935768
 
 ==========================================================================================================================
 8. Structure leraning for ex_6_emnist_128_2 on james07																2**128
+  -- 9;9499.121065974;67128.497639764;4486;0.10;0.06;0.07;0.10;0.09;0.11;0.13;0.10;0.09;0.14;-82.69509081
 
 ==========================================================================================================================
 9. Structure leraning for ex_6_emnist_32_8 on james08																2**96
-
-==========================================================================================================================
-1. Structure learning for ex_6_emnist_32_4 on staff.compute															2**64
-
-	18;1690.008417296;41879.36322377;2763;0.09;0.15;0.12;0.05;0.12;0.12;0.08;0.09;0.08;0.12;-44.754126036778328156475785
-	33;4615.334897715;82983.630925315;3495;0.09;0.14;0.12;0.05;0.12;0.10;0.08;0.11;0.08;0.11;-44.52744476990782005724975
-
-==========================================================================================================================
-6. Structure learning for ex_6_emnist_32_4 on james05																2**64
-	11;3204.035038168;41952.088292823;2575;0.11;0.12;0.11;0.08;0.09;0.05;0.14;0.11;0.11;0.08;-44.93272723179618355547465
+  -- 13;7384.044515226001;68708.51617608301;3685;0.09;0.09;0.11;0.11;0.11;0.08;0.12;0.10;0.11;0.08;-67.39292224836
 
 ==========================================================================================================================
 7. Structure learning for ex_6_emnist_64_2 on james06																2**64
-
+	-- 20;3059.368395589;71014.12746419;2683;0.10;0.08;0.09;0.09;0.08;0.08;0.09;0.11;0.14;0.13;-39.4648708
 
 
 

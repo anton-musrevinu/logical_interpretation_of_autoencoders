@@ -12,11 +12,17 @@ def learn_encoder(testing = False):
 	else:
 		os.system('python {} --phase train --experiment_name {} --gpu_ids 0,1 --feature_layer_size 1 --categorical_dim 10 --num_epochs 200'.format(LOWLEVEL_CMD, experiment_name))
 
-def encode_data(testing = False):
+def encode_data(experiment_name, testing = False):
 	if testing:
 		os.system('python {} --phase encode --experiment_name {} --limit_conversion 100'.format(LOWLEVEL_CMD, experiment_name))
 	else:
 		os.system('python {} --phase encode --experiment_name {}'.format(LOWLEVEL_CMD, experiment_name))
+
+def decode_data(experiment_name, file_to_decode):
+	print(experiment_name)
+	cmd = 'python {} --phase decode --experiment_name {} --file_to_decode {}'.format(LOWLEVEL_CMD, experiment_name, file_to_decode)
+	print('executing: {}'.format(cmd))
+	os.system(cmd)
 
 def learn_vtree(train_data_file,vtree_file):
 	# training_data = 
@@ -95,7 +101,7 @@ def do_training(experiment_dir,cluster_name):
 	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
 
 	# learn_encoder(testing = testing)
-	# encode_data(testing = small_data_set)
+	encode_data(experiment_dir.split('/')[-1], testing = small_data_set)
 
 	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff_{}/'.format(cluster_name))
 	opt_file = os.path.join(experiment_dir, 'opt.txt')
@@ -195,12 +201,12 @@ def get_experiment_info(experiment_dir, cluster_id, test = False):
 	list_of_psdds = list_of_psdds[:-1]
 	list_of_weights = list_of_weights[:-1]
 
-	data_set_sample = dataFile + '.sample'
+	data_set_sample = train_data_file + '.sample'
 	if os.path.exists(data_set_sample):
 		os.remove(data_set_sample)
 
 	with open(data_set_sample, 'w') as f_to:
-		with open(dataFile, 'r') as f_from:
+		with open(train_data_file, 'r') as f_from:
 			for idx, line in enumerate(f_from):
 				if idx < 100:
 					f_to.write(line)
@@ -216,7 +222,7 @@ def measure_classifcation_acc(experiment_dir, cluster_id, test = False):
 
 	# 18;1690.008417296;41879.36322377;2763;0.09;0.15;0.12;0.05;0.12;0.12;0.08;0.09;0.08;0.12;-44.754126036778328156475785
 
-	vtree_file, list_of_psdds, list_of_weights, fly_catDim, flx_catDim, data_set_sample =
+	vtree_file, list_of_psdds, list_of_weights, fly_catDim, flx_catDim, data_set_sample =\
 			get_experiment_info(experiment_dir, cluster_id)
 
 	evaluationDir = os.path.join(experiment_dir, 'evaluation_{}/'.format(cluster_id))
@@ -235,7 +241,7 @@ def measure_classifcation_acc(experiment_dir, cluster_id, test = False):
 	# -fly categorical dimention of the FLy --- the number of labels
 	# -flx categorical dimention of the FLx
 	# -o output file
-	cmd = 'java -jar ' + LEARNPSDD_CMD + ' query -m classify -v {} -p {} -a {} -d {} -x {} -y {} -q {} -o {} -g'.format(\
+	cmd = 'java -jar ' + LEARNPSDD_CMD + ' query -m classify -v {} -p {} -a {} -d {} -x {} -y {} -q {} -o {} -g {}'.format(\
 		vtree_file,list_of_psdds, list_of_weights, data_set_sample, flx_catDim, fly_catDim, query,  outputFile,\
 		'data_bug' in experiment_dir)
 	print('excuting: {}'.format(cmd))
@@ -245,8 +251,8 @@ def draw_class_samples(experiment_dir, cluster_id):
 
 	# 18;1690.008417296;41879.36322377;2763;0.09;0.15;0.12;0.05;0.12;0.12;0.08;0.09;0.08;0.12;-44.754126036778328156475785
 
-	vtree_file, list_of_psdds, list_of_weights, fly_catDim, flx_catDim, data_set_sample =
-			get_experiment_info(experiment_dir, cluster_id)
+	vtree_file, list_of_psdds, list_of_weights, fly_catDim, flx_catDim, data_set_sample =\
+		 get_experiment_info(experiment_dir, cluster_id)
 
 	sampled_dir = os.path.join(experiment_dir, 'sampled_{}/'.format(cluster_id))
 	if not os.path.exists(sampled_dir):
@@ -259,13 +265,27 @@ def draw_class_samples(experiment_dir, cluster_id):
 	# -fly categorical dimention of the FLy --- the number of labels
 	# -flx categorical dimention of the FLx
 	# -o output file
-	cmd = 'java -jar ' + LEARNPSDD_CMD + ' query -m generate -v {} -p {} -a {} -d {} -x {} -y {} -o {} -g'.format(\
+	cmd = 'java -jar ' + LEARNPSDD_CMD + ' query -m generate -v {} -p {} -a {} -d {} -x {} -y {} -o {} -g {}'.format(\
 		vtree_file,list_of_psdds, list_of_weights, data_set_sample, flx_catDim, fly_catDim,  sampled_dir, \
 		'data_bug' in experiment_dir)
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
 
+def decode_class_samples(experiment_dir, cluster_id):
+	sampled_dir = os.path.join(experiment_dir, 'sampled_{}/'.format(cluster_id))
+	if not os.path.exists(sampled_dir):
+		raise Exception('no samples could be found')
 
+	files_to_decode = {}
+	for root, dir_names, file_names in os.walk(sampled_dir):
+		for i in file_names:
+			if 'samples_class_' in i and '.data' in i:
+				class_id = int(i.split('_')[-1].split('.')[0])
+				files_to_decode[class_id] = os.path.join(root, i)
+
+	for class_id, file in files_to_decode.items():
+		decode_data(experiment_name.split('/')[-1], file)
+		# return
 
 if __name__ == '__main__':
 	experiment_name = 'ex_5_mnist_32_4_data_bug'
@@ -275,8 +295,8 @@ if __name__ == '__main__':
 
 	# do_training(experiment_dir, cluster_id)
 	# measure_classifcation_acc(experiment_dir, cluster_id, test = False)
-	draw_class_samples(experiment_dir, cluster_id)
-
+	# draw_class_samples(experiment_dir, cluster_id)
+	decode_class_samples(experiment_dir, cluster_id)
 
 
 
