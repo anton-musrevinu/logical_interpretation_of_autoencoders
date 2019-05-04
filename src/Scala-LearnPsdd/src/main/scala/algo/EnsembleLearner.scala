@@ -51,6 +51,54 @@ abstract class EnsembleLearner(data: DataSets,
     x.flush()
   }
 
+    /**
+    * Save the current psdd
+    * Saving is only attempted every k cycles.
+    * There are different saving strategies:
+    *   saving all or only keeping the best according to the validation set log likelihood (more space efficient)
+    *
+    * As a side effect, the characteristics of the best model are always written away.
+    *
+    * For debugging purpose, the last psdd is also always saved.
+    */
+  def savePsdd(): Unit = {
+
+    val validLlImprovement = validLl > bestSavedValidLl
+
+    val saveCurrentPsdd = saveFrequency match {
+      case All(k) => it%k==0
+      case Best(k) => it % k == 0 && validLlImprovement
+    }
+
+
+    if (saveCurrentPsdd) {
+      if (validLlImprovement) {
+        bestSavedValidLl = validLl
+
+        // write out the characteristics of the best model.
+        Output.addWriter("best")
+        Output.writeln("cycle,it,size,trainLl, validLl, testLl", "best")
+        Output.writeln(Array[Any](cycle, it, size, trainLl / trainDataSize, validLl / validDataSize, testLl / testDataSize).mkString(","), "best")
+        Output.closeWriter("best")
+      }
+
+
+      // delete files if needed
+      saveFrequency match {
+        case All(_) =>
+        case Best(k) => Output.modelFolder.listFiles().filterNot(_.isDirectory).foreach(_.delete()) // delete all other models
+      }
+
+      0 until numComponentLearners foreach { i => Output.savePsdds(psdds(i), "it_"+it+ "_l_"+i, asPsdd = true, asDot = true, asDot2 = true)}
+
+    }
+
+    // always keep last model too (for debug purpose)
+    val previousLast = Output.modelFolder.listFiles().filter(_.getName.contains("last")) // delete the previous last model
+    Output.savePsdds(root,"last_"+cycle + "-" + it, asPsdd = true, asDot = true)
+    previousLast.foreach(_.delete())
+  }
+
 
   def learn(psdds: IndexedSeq[PsddDecision], psddMgr: PsddManager): Unit = {}  //implement by concrete ensemble learner class
 }
