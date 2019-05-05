@@ -1,25 +1,6 @@
 import os, platform, shutil
 
-
-#DEPENDENCIES:
-
-# - PYTHON 3.+
-
-# - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
-# 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
-LEARNPSDD_ROOT_DIR = os.path.join(os.environ['HOME'],'/code/msc/src/Scala-LearnPsdd/')
-
-# - GRAPHVIZ   			(graphing software)     -   Without this please specify:
-GRAPHVIZ_INSTALLED = True
-
-# - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
-SDDLIB_BIN = os.path.join(os.environ['HOME'],'/code/msc/src/wmisdd/bin/')
-
-
-#============================================================================================================================
-#============================================================================================================================
-#============================================================================================================================
-# Write function has to be at beginning of the scipt
+# function that have to be at beginning of the scipt
 
 def write(message, level = 'info'):
 	out_string = '[{}]\t- {}'.format(level.upper(), message)
@@ -33,32 +14,6 @@ def write(message, level = 'info'):
 		out_string = '=' * 15 + 'CMD OUTPUT END' + '=' * 15 + '\n' + out_string
 
 	print(out_string)
-
-#============================================================================================================================
-#============================================================================================================================
-#============================================================================================================================
-
-LEARNPSDD_ROOT_DIR = os.path.abspath(LEARNPSDD_ROOT_DIR)
-write("LEARNPSDD_ROOT_DIR", LEARNPSDD_ROOT_DIR)
-LEARNPSDD_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
-LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR, './lib/')) + '/'
-
-#For personal use as the libary used has an updated source
-write("LEARNPSDD_LIB", LEARNPSDD_LIB)
-LEARNPSDD2_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'../learnPSDD/target/scala-2.11/psdd.jar'))
-
-SDDLIB_BIN = os.path.abspath(SDDLIB_BIN)
-write("SDDLIB_BIN", SDDLIB_BIN)
-if 'Linux' in platform.system():
-	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-linux'))
-else:
-	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-darwin'))
-	write('the program only works fully on linux based systems, so some aspects might not work for you\n --> Assuming OSX', 'warning')
-
-
-#============================================================================================================================
-#============================================ AUXILIARY FUNCTIONS ====================================================
-#============================================================================================================================
 
 def _check_if_file_exists(file_path, raiseException = True):
 	if os.path.isfile(file_path):
@@ -75,6 +30,58 @@ def _check_if_dir_exists(dir_path, raiseException = True):
 		write('Trying to use directory that does not exist: {}'.format(dir_path), 'error')
 	else:
 		return False
+
+#============================================================================================================================
+#============================================================================================================================
+#============================================================================================================================
+
+#DEPENDENCIES:
+
+# - PYTHON 3.+
+
+# - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
+# 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
+LEARNPSDD_ROOT_DIR = os.path.join(os.environ['HOME'],'./code/msc/src/Scala-LearnPsdd/')
+LEARNPSDD_ROOT_DIR = os.path.abspath(LEARNPSDD_ROOT_DIR)
+write('LEARNPSDD_ROOT_DIR'.format(LEARNPSDD_ROOT_DIR),'init')
+_check_if_dir_exists(LEARNPSDD_ROOT_DIR)
+LEARNPSDD_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
+LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR, './lib/')) + '/'
+_check_if_file_exists(LEARNPSDD_CMD)
+_check_if_dir_exists(LEARNPSDD_LIB)
+# -------------------------------------------------------------------------------------------------------------------------
+#
+# - GRAPHVIZ   			(graphing software)     -   Without this please specify:
+#
+GRAPHVIZ_INSTALLED = True
+# -------------------------------------------------------------------------------------------------------------------------
+#
+# - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
+#
+SDDLIB_BIN = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/src/wmisdd/bin/'))
+write('SDDLIB_BIN'.format(SDDLIB_BIN),'init')
+_check_if_dir_exists(SDDLIB_BIN)
+if 'Linux' in platform.system():
+	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-linux'))
+else:
+	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-darwin'))
+	write('the program only works fully on linux based systems, so some aspects might not work for you\n --> Assuming OSX', 'warning')
+write('SDDLIB_CMD'.format(SDDLIB_CMD),'init')
+_check_if_file_exists(SDDLIB_BIN)
+# -------------------------------------------------------------------------------------------------------------------------
+#
+# - Updated Source version of LearnPSDD (STAR-UCLA Software) - Link:
+#
+LEARNPSDD2_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'../learnPSDD/target/scala-2.11/psdd.jar'))
+write('LEARNPSDD2_CMD'.format(LEARNPSDD2_CMD),'init')
+_check_if_file_exists(LEARNPSDD2_CMD)
+
+
+
+#============================================================================================================================
+#============================================ AUXILIARY FUNCTIONS ====================================================
+#============================================================================================================================
+
 
 def convert_dot_to_pdf(file_path, do_this = True):
 	if not do_this or not _check_if_file_exists(file_path + '.dot', raiseException = False) or not GRAPHVIZ_INSTALLED:
@@ -521,7 +528,7 @@ def learn_psdd(experiment_name, train_data_path,
 
 
 if __name__ == '__main__':
-	experiment_dir = os.path.join(os.environ['HOME'],'/code/msc/output/experiments/ex_1_fl16_c2')
+	experiment_dir = os.path.join(os.environ['HOME'],'./code/msc/output/experiments/ex_1_fl16_c2')
 	experiment_name = 'psdd_search_v0'
 	experiment_dir_path = os.path.abspath(experiment_dir)
 	test_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-test.data')
