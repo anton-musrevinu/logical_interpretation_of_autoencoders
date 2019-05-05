@@ -5,16 +5,16 @@ import os, platform, shutil
 def write(message, level = 'info'):
 	out_string = '[{}]'.format(level.upper())
 	message_start_idx = 20
-	out_string += ' ' * (len(out_string) - message_start_idx)
+	out_string += ' ' * (message_start_idx - len(out_string))
 	out_string += '- {}'.format(message)
 	if level == 'error':
 		print(out_string)
 		raise Exception(out_string)
 	elif level == 'cmd-start':
 		out_string = '\n{}\n'.format(out_string)
-		out_string += '-'* 25 + ' CMD OUTPUT ' + '-'*25
+		out_string += '-'* 40 + ' CMD OUTPUT ' + '-'*40
 	elif level == 'cmd-end':
-		out_string = '=' * 25 + 'CMD OUTPUT END' + '=' * 25 + '\n' + out_string + '\n'
+		out_string = '=' * 40 + 'CMD OUTPUT END' + '=' * 40 + '\n' + out_string + '\n'
 
 	print(out_string)
 
