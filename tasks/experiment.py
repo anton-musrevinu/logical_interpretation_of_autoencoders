@@ -92,7 +92,7 @@ def learn_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_
 
 def do_training(experiment_dir,cluster_name):
 	os.system('pwd')
-	small_data_set = False
+	small_data_set = True
 
 	# experiment_name = 'ex_4_emnist_32_8'
 	# cluster_name = 'james10'
@@ -102,6 +102,7 @@ def do_training(experiment_dir,cluster_name):
 
 	# learn_encoder(testing = testing)
 	encode_data(experiment_dir.split('/')[-1], testing = small_data_set)
+	return
 
 	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff_{}/'.format(cluster_name))
 	opt_file = os.path.join(experiment_dir, 'opt.txt')
@@ -288,15 +289,15 @@ def decode_class_samples(experiment_dir, cluster_id):
 		# return
 
 if __name__ == '__main__':
-	experiment_name = 'ex_5_mnist_32_4_data_bug'
+	experiment_name = 'ex_1_fl16_c2'
 	cluster_id = 'student_compute'
 
 	experiment_dir = os.path.abspath('../output/experiments/{}/'.format(experiment_name))
 
-	# do_training(experiment_dir, cluster_id)
+	do_training(experiment_dir, cluster_id)
 	# measure_classifcation_acc(experiment_dir, cluster_id, test = False)
 	# draw_class_samples(experiment_dir, cluster_id)
-	decode_class_samples(experiment_dir, cluster_id)
+	# decode_class_samples(experiment_dir, cluster_id)
 
 
 
