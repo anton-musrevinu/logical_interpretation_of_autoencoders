@@ -15,7 +15,19 @@ GRAPHVIZ_INSTALLED = True
 # - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
 SDDLIB_BIN = '~/code/msc/src/wmisdd/bin/'
 
+def write(message, level = 'info'):
+	out_string = '[{}]\t- {}'.format(level.upper(), message)
+	if level == 'error':
+		print(out_string)
+		raise Exception(out_string)
+	elif level == 'cmd-start':
+		out_string = '\n{}\n'.format(out_string)
+		out_string += '-'* 15 + ' CMD OUTPUT ' + '-'*15
+	else:
+		out_string = '=' * 15 + 'CMD OUTPUT END' + '=' * 15 + '\n' + out_string
 
+	print(out_string)
+	
 #============================================================================================================================
 #============================================================================================================================
 #============================================================================================================================
@@ -57,19 +69,6 @@ def _check_if_dir_exists(dir_path, raiseException = True):
 		write('Trying to use directory that does not exist: {}'.format(dir_path), 'error')
 	else:
 		return False
-
-def write(message, level = 'info'):
-	out_string = '[{}]\t- {}'.format(level.upper(), message)
-	if level == 'error':
-		print(out_string)
-		raise Exception(out_string)
-	elif level == 'cmd-start':
-		out_string = '\n{}\n'.format(out_string)
-		out_string += '-'* 15 + ' CMD OUTPUT ' + '-'*15
-	else:
-		out_string = '=' * 15 + 'CMD OUTPUT END' + '=' * 15 + '\n' + out_string
-
-	print(out_string)
 
 def convert_dot_to_pdf(file_path, do_this = True):
 	if not do_this or not _check_if_file_exists(file_path + '.dot', raiseException = False) or not GRAPHVIZ_INSTALLED:
