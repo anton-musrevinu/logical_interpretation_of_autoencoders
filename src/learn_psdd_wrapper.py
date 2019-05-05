@@ -409,8 +409,8 @@ def learn_ensembly_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_
 		cmd_str += ' -p {}'.format(psdd_input_path)
 
 	cmd_str += ' --smooth {}'.format(smoothing) + \
-			   ' --opTypes clone-{},split-{}'.format(clone_k, split_k) + \
-			   ' --completion {}'.format(completion) + \
+			   ' --structureChangeIt {}'.format(structureChangeIt) + \
+			   ' --parameterLearningIt {}'.format(parameterLearningIt) + \
 			   ' --scorer {}'.format(scorer) + \
 			   ' --maxIt {}'.format(maxIt)# + \
 			   # ' --freq {}'.format(save_freq)
