@@ -244,7 +244,7 @@ def compile_sdd_to_psdd(train_data_path, vtree_path, sdd_path, psdd_path, valid_
 		  ' -d {}'.format(train_data_path) + \
 		  ' -v {}'.format(vtree_path) + \
 		  ' -s {}'.format(sdd_path) + \
-		  ' -o {}'.format(psdd_path.replace('.psdd', '')) + \
+		  ' -o {}'.format(psdd_path) + \
 		  ' -m {}'.format(smoothing)
 
 	if valid_data_path != None and _check_if_file_exists(valid_data_path, raiseException = False):
@@ -257,7 +257,7 @@ def compile_sdd_to_psdd(train_data_path, vtree_path, sdd_path, psdd_path, valid_
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	# _check_if_file_exists(psdd_path)
+	_check_if_file_exists(psdd_path)
 	write('Finished compiling SDD to PSDD. File location: {}'.format(psdd_path), 'cmd-end')
 
 def learn_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_path = None, 
