@@ -468,12 +468,15 @@ def learn_psdd(experiment_name, train_data_path,
 
 	final_psdd_file = os.path.join(psdd_learner_tmp_dir,'./models/final.psdd')
 	if not _check_if_file_exists(final_psdd_file, raiseException = False):
-		write('final psdd file counld not be found at location: {}'.format('final_psdd_file'),'error')
-
+		write('final psdd file counld not be found at location: {}'.format(final_psdd_file),'error')	
 	shutil.copyfile(final_psdd_file, output_psdd_file)
-	shutil.copyfile(final_psdd_file + '.dot', output_psdd_file + '.dot')
 
-	convert_dot_to_pdf(final_psdd_file + '.dot', convert_to_pdf)
+	final_psdd_dot_file = os.path.join(psdd_learner_tmp_dir,'./models/final.dot')
+	if not _check_if_file_exists(final_psdd_dot_file, raiseException = False):
+		write('final psdd dot file counld not be found at location: {}'.format(final_psdd_dot_file),'warning')
+	else:
+		shutil.copyfile(final_psdd_dot_file, output_psdd_file + '.dot')
+		convert_dot_to_pdf(output_psdd_file + '.dot', convert_to_pdf)
 
 	if not keep_generated_files:
 		if _check_if_dir_exists(psdd_learner_tmp_dir, raiseException = False):
