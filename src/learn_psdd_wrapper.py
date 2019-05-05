@@ -3,7 +3,10 @@ import os, platform, shutil
 # function that have to be at beginning of the scipt
 
 def write(message, level = 'info'):
-	out_string = '[{}]\t- {}'.format(level.upper(), message)
+	out_string = '[{}]'.format(level.upper())
+	message_start_idx = 20
+	out_string += ' ' * (len(out_string) - message_start_idx)
+	out_string += '- {}'.format(message)
 	if level == 'error':
 		print(out_string)
 		raise Exception(out_string)
