@@ -354,7 +354,7 @@ def learn_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_pat
 
 def learn_ensembly_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_path = None, num_compent_learners = 5, 
 		valid_data_path = None, test_data_path = None, smoothing = 'l-1', structureChangeIt = 3, parameterLearningIt = 1, scorer = 'dll/ds',
-		maxIt = 'maxInt', save_freq = 'best-3'):
+		maxIt = 'max', save_freq = 'best-3'):
 	'''
 	  -p, --psdd <file>        If no psdd is provided, the learning starts from a mixture of marginals.
 
@@ -411,8 +411,9 @@ def learn_ensembly_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_
 	cmd_str += ' --smooth {}'.format(smoothing) + \
 			   ' --structureChangeIt {}'.format(structureChangeIt) + \
 			   ' --parameterLearningIt {}'.format(parameterLearningIt) + \
-			   ' --scorer {}'.format(scorer) + \
-			   ' --maxIt {}'.format(maxIt)# + \
+			   ' --scorer {}'.format(scorer)
+	if not maxIt == 'max':
+		cmd_str += ' --maxIt {}'.format(maxIt)
 			   # ' --freq {}'.format(save_freq)
 
 
