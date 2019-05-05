@@ -15,6 +15,12 @@ GRAPHVIZ_INSTALLED = True
 # - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
 SDDLIB_BIN = '~/code/msc/src/wmisdd/bin/'
 
+
+#============================================================================================================================
+#============================================================================================================================
+#============================================================================================================================
+# Write function has to be at beginning of the scipt
+
 def write(message, level = 'info'):
 	out_string = '[{}]\t- {}'.format(level.upper(), message)
 	if level == 'error':
@@ -23,11 +29,11 @@ def write(message, level = 'info'):
 	elif level == 'cmd-start':
 		out_string = '\n{}\n'.format(out_string)
 		out_string += '-'* 15 + ' CMD OUTPUT ' + '-'*15
-	else:
+	elif level == 'cmd-end':
 		out_string = '=' * 15 + 'CMD OUTPUT END' + '=' * 15 + '\n' + out_string
 
 	print(out_string)
-	
+
 #============================================================================================================================
 #============================================================================================================================
 #============================================================================================================================
@@ -515,9 +521,9 @@ def learn_psdd(experiment_name, train_data_path,
 
 
 if __name__ == '__main__':
-	experiment_dir = './output/experiments/ex_1_fl16_c2'
+	experiment_dir = '~/code/msc/output/experiments/ex_1_fl16_c2'
 	experiment_name = 'psdd_search_v0'
-	experiment_dir_path = os.path.join(BASE_DIR, experiment_dir)
+	experiment_dir_path = os.path.abspath(experiment_dir)
 	test_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-test.data')
 	valid_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-valid.data')
 	train_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-train.data')
