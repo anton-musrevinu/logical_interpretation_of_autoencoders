@@ -478,7 +478,7 @@ def learn_psdd(experiment_name, train_data_path,
 	if constraints_cnf_file != None and psdd_in_file == None:
 		_check_if_file_exists(constraints_cnf_file, raiseException = True)
 
-		contraints_tmp_dir = os.path.join(experiment_dir, './constraints_tmp/')
+		contraints_tmp_dir = os.path.join(experiment_path, './constraints_tmp/')
 		os.mkdir(contraints_tmp_dir)
 
 		constraints_sdd_file = os.path.join(contraints_tmp_dir, './constraints_as.sdd')
