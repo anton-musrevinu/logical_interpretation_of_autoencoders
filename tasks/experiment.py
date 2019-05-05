@@ -92,7 +92,7 @@ def learn_psdd_from_data(train_data_file,valid_data_file, test_data_file, vtree_
 
 def do_training(experiment_dir,cluster_name):
 	os.system('pwd')
-	small_data_set = True
+	small_data_set = False
 
 	# experiment_name = 'ex_4_emnist_32_8'
 	# cluster_name = 'james10'
