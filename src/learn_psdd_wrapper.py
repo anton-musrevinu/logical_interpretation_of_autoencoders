@@ -1,24 +1,31 @@
 import os, platform, shutil
 
 
+#DEPENDENCIES:
+
+# - PYTHON 3.+
+# - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
+# 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
+LEARNSDD_ROOT_DIR = '~/code/msc/src/Scala-LearnPsdd/'
+# - GRAPHVIZ   			(graphing software)     -   Without this please specify:
+GRAPHVIZ_INSTALLED = True
 
 #============================================================================================================================
 #============================================================================================================================
 #============================================================================================================================
 
-BASE_DIR = os.path.abspath('./../')
-print("BASE_DIR", BASE_DIR)
-LEARNPSDD_CMD = os.path.join(BASE_DIR,'./src/Scala-LearnPsdd/target/scala-2.11/psdd.jar')
-LEARNPSDD_LIB = os.path.abspath(os.path.join(BASE_DIR, './src/Scala-LearnPsdd/lib/')) + '/'
+LEARNSDD_ROOT_DIR = os.path.abspath(LEARNSDD_ROOT_DIR)
+print("LEARNSDD_ROOT_DIR", LEARNSDD_ROOT_DIR)
+LEARNPSDD_CMD = os.path.abspath(os.path.join(LEARNSDD_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
+LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNSDD_ROOT_DIR, './lib/')) + '/'
 print("LEARNPSDD_LIB", LEARNPSDD_LIB)
-LEARNPSDD2_CMD = os.path.join(BASE_DIR,'./src/learnPSDD/target/scala-2.11/psdd.jar')
-WMISDD_CMD = os.path.join(BASE_DIR,'./src/wmisdd/wmisdd.py')
-SDD_LIB_DIR = os.path.join(BASE_DIR,'./src/wmisdd/bin/')
+LEARNPSDD2_CMD = os.path.abspath(os.path.join(BASE_DIR,'../learnPSDD/target/scala-2.11/psdd.jar'))
+SDD_LIB_DIR = os.path.abspath(os.path.join(BASE_DIR,'./src/wmisdd/bin/'))
 if 'Linux' in platform.system():
-	SDD_LIB_CMD = os.path.join(SDD_LIB_DIR, 'sdd-linux')
+	SDD_LIB_CMD = os.path.abspath(os.path.join(SDD_LIB_DIR, 'sdd-linux'))
 else:
-	SDD_LIB_CMD = os.path.join(SDD_LIB_DIR, 'sdd-darwin')
-
+	SDD_LIB_CMD = os.path.abspath(os.path.join(SDD_LIB_DIR, 'sdd-darwin'))
+	write('the program only works fully on linux based systems, so some aspects might not work for you\n --> Assuming OSX', 'warning')
 
 
 #============================================================================================================================
@@ -46,13 +53,16 @@ def write(message, level = 'info'):
 	if level == 'error':
 		print(out_string)
 		raise Exception(out_string)
-	elif level == 'cmd':
+	elif level == 'cmd-start':
 		out_string = '\n{}\n'.format(out_string)
+		out_string += '-'* 15 + ' CMD OUTPUT ' + '-'*15
+	else:
+		out_string = '=' * 15 + 'CMD OUTPUT END' + '=' * 15 + '\n' + out_string
 
 	print(out_string)
 
 def convert_dot_to_pdf(file_path, do_this = True):
-	if not do_this or not _check_if_file_exists(file_path + '.dot', raiseException = False):
+	if not do_this or not _check_if_file_exists(file_path + '.dot', raiseException = False) or not GRAPHVIZ_INSTALLED:
 		return
 
 	cmd_str = 'dot -Tpdf {}.dot -o {}.pdf'.format(file_path,file_path)
@@ -109,13 +119,15 @@ def learn_vtree(train_data_path, vtree_path, vtree_method = 'miBlossom', convert
 		  ' --vtreeMethod {}'.format(vtree_method) + \
 		  ' --out {}'.format(vtree_path.replace('.vtree',''))
 
-	write(cmd_str,'cmd')
-	
+
 	add_learn_psdd_lib_to_path()
+
+	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	if _check_if_file_exists(vtree_path, raiseException = False):
-		write('Finished leraning Vtree from data. File location: {}'.format(vtree_path))
+	_check_if_file_exists(vtree_path):
+	
+	write('Finished leraning Vtree from data. File location: {}'.format(vtree_path), 'cmd-end')
 
 	convert_dot_to_pdf(vtree_path, convert_to_pdf)
 
@@ -173,12 +185,12 @@ def compile_cnf_to_sdd(cnf_path, sdd_path, vtree_out_path, vtree_in_path = None,
 	if post_compilation_vtree_search:
 		cmd_str += ' -q'
 
-	write(cmd_str,'cmd')
 	add_learn_psdd_lib_to_path()
+	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	if _check_if_file_exists(vtree_out_path, raiseException = False) and _check_if_file_exists(sdd_path, raiseException = False):
-		write('Finished compiling CNF to SDD. File location: {}'.format(sdd_path))
+	_check_if_file_exists(vtree_out_path) and _check_if_file_exists(sdd_path)
+	write('Finished compiling CNF to SDD. File location: {}'.format(sdd_path), 'cmd-end')
 
 	convert_dot_to_pdf(vtree_out_path,convert_to_pdf)
 	convert_dot_to_pdf(sdd_path,convert_to_pdf)
@@ -218,12 +230,12 @@ def compile_sdd_to_psdd(train_data_path, vtree_path, sdd_path, psdd_path, valid_
 		cmd_str += ' -t {}'.format(test_data_path)
 
 
-	write(cmd_str,'cmd')
 	add_learn_psdd_lib_to_path()
+	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	if _check_if_file_exists(psdd_path, raiseException = False):
-		write('Finished compiling SDD to PSDD. File location: {}'.format(psdd_path))
+	_check_if_file_exists(psdd_path):
+	write('Finished compiling SDD to PSDD. File location: {}'.format(psdd_path), 'cmd-end')
 
 def learn_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_path = None, 
 		valid_data_path = None, test_data_path = None, smoothing = 'l-1', clone_k = 3, split_k = 1, completion = 'maxDepth-3', scorer = 'dll/ds',
@@ -307,13 +319,14 @@ def learn_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_pat
 		cmd_str += ' --maxIt {}'.format(maxIt)
 
 
-	write(cmd_str,'cmd')
 	add_learn_psdd_lib_to_path()
+	write(cmd_str,'cmd')
 	os.system(cmd_str)
 
+	final_psdd_file = os.path.join(psdd_learner_tmp_dir,'./models/final.psdd')
+	_check_if_file_exists(final_psdd_file)
 
-	# TODO: ADD FILE CHECK AT THE END OF SEARCH
-
+	write('Finished PSDD learnin. File location: {}'.format(final_psdd_file), 'cmd-end')
 	# if _check_if_file_exists(psdd_path, raiseException = False):
 	# 	write('Finished compiling SDD to PSDD. File location: {}'.format(psdd_path))
 
@@ -382,8 +395,8 @@ def learn_ensembly_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_
 			   # ' --freq {}'.format(save_freq)
 
 
-	write(cmd_str,'cmd')
 	add_learn_psdd_lib_to_path()
+	write(cmd_str,'cmd')
 	os.system(cmd_str)
 
 	# cmd = 'java -jar {} learnEnsemblePsdd softEM -d {} -b {} -t {} -v {} -m l-1 -o {} -c {}'.format(\
