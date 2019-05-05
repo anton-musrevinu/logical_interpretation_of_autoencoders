@@ -125,7 +125,7 @@ def learn_vtree(train_data_path, vtree_path, vtree_method = 'miBlossom', convert
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	_check_if_file_exists(vtree_path):
+	_check_if_file_exists(vtree_path)
 	
 	write('Finished leraning Vtree from data. File location: {}'.format(vtree_path), 'cmd-end')
 
