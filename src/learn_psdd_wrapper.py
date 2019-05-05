@@ -529,15 +529,15 @@ def learn_psdd(experiment_name, train_data_path,
 
 if __name__ == '__main__':
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/ex_1_fl16_c2'))
-	test_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-test.data')
+	# test_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-test.data')
 	valid_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-valid.data')
 	train_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-train.data')
 
 	#Test without constraints
-	learn_psdd('psdd_search_miBlossom', train_data_path, experiment_dir_path, constraints_cnf_file = test_contraints, \
+	learn_psdd('psdd_search_miBlossom', train_data_path, experiment_dir_path, valid_data_path = valid_data_path, \
 	 			replace_existing = True, vtree_method = 'miBlossom')
 
-	learn_psdd('psdd_search_miMetis', train_data_path, experiment_dir_path, constraints_cnf_file = test_contraints, \
+	learn_psdd('psdd_search_miMetis', train_data_path, experiment_dir_path, valid_data_path = valid_data_path, \
 	 			replace_existing = True, vtree_method = 'miMetis')
 
 
