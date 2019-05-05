@@ -9,9 +9,9 @@ def write(message, level = 'info'):
 		raise Exception(out_string)
 	elif level == 'cmd-start':
 		out_string = '\n{}\n'.format(out_string)
-		out_string += '-'* 15 + ' CMD OUTPUT ' + '-'*15
+		out_string += '-'* 25 + ' CMD OUTPUT ' + '-'*25
 	elif level == 'cmd-end':
-		out_string = '=' * 15 + 'CMD OUTPUT END' + '=' * 15 + '\n' + out_string
+		out_string = '=' * 25 + 'CMD OUTPUT END' + '=' * 25 + '\n' + out_string + '\n'
 
 	print(out_string)
 
@@ -43,7 +43,7 @@ def _check_if_dir_exists(dir_path, raiseException = True):
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
 LEARNPSDD_ROOT_DIR = os.path.join(os.environ['HOME'],'./code/msc/src/Scala-LearnPsdd/')
 LEARNPSDD_ROOT_DIR = os.path.abspath(LEARNPSDD_ROOT_DIR)
-write('LEARNPSDD_ROOT_DIR {}'.format(LEARNPSDD_ROOT_DIR),'init')
+write('LEARNPSDD_ROOT_DIR \t{}'.format(LEARNPSDD_ROOT_DIR),'init')
 _check_if_dir_exists(LEARNPSDD_ROOT_DIR)
 LEARNPSDD_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
 LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR, './lib/')) + '/'
@@ -59,21 +59,21 @@ GRAPHVIZ_INSTALLED = True
 # - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
 #
 SDDLIB_BIN = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/src/wmisdd/bin/'))
-write('SDDLIB_BIN {}'.format(SDDLIB_BIN),'init')
+write('SDDLIB_BIN \t{}'.format(SDDLIB_BIN),'init')
 _check_if_dir_exists(SDDLIB_BIN)
 if 'Linux' in platform.system():
 	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-linux'))
 else:
 	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-darwin'))
 	write('the program only works fully on linux based systems, so some aspects might not work for you\n --> Assuming OSX', 'warning')
-write('SDDLIB_CMD {}'.format(SDDLIB_CMD),'init')
+write('SDDLIB_CMD \t{}'.format(SDDLIB_CMD),'init')
 _check_if_file_exists(SDDLIB_CMD)
 # -------------------------------------------------------------------------------------------------------------------------
 #
 # - Updated Source version of LearnPSDD (STAR-UCLA Software) - Link:
 #
 LEARNPSDD2_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'../learnPSDD/target/scala-2.11/psdd.jar'))
-write('LEARNPSDD2_CMD {}'.format(LEARNPSDD2_CMD),'init')
+write('LEARNPSDD2_CMD \t{}'.format(LEARNPSDD2_CMD),'init')
 _check_if_file_exists(LEARNPSDD2_CMD)
 
 
@@ -95,11 +95,11 @@ def add_learn_psdd_lib_to_path():
 	# os.environ['LD_LIBRARY_PATH'] = ''
 	if 'LD_LIBRARY_PATH' not in os.environ:
 		os.environ['LD_LIBRARY_PATH'] = LEARNPSDD_LIB# + os.pathsep + SDD_LIB_DIR
-		write('variable LD_LIBRARY_PATH created and set to: {}'.format(os.environ['LD_LIBRARY_PATH']))
+		write('variable LD_LIBRARY_PATH created and set to: {}'.format(os.environ['LD_LIBRARY_PATH']), 'init')
 	
 	if not LEARNPSDD_LIB in os.environ['LD_LIBRARY_PATH']:
 		os.environ['LD_LIBRARY_PATH'] += os.pathsep + LEARNPSDD_LIB
-		write('variable LD_LIBRARY_PATH updated to: {}'.format(os.environ['LD_LIBRARY_PATH']))
+		write('variable LD_LIBRARY_PATH updated to: {}'.format(os.environ['LD_LIBRARY_PATH']), 'init')
 	
 	# if not SDD_LIB_DIR in os.environ['LD_LIBRARY_PATH']:
 	# 	os.environ['LD_LIBRARY_PATH'] += os.pathsep + SDD_LIB_DIR
@@ -107,9 +107,7 @@ def add_learn_psdd_lib_to_path():
 
 	if not LEARNPSDD_LIB in os.environ['PATH']:
 		os.environ['PATH'] += str(os.pathsep + LEARNPSDD_LIB)
-		write('variable PATH updated to: {}'.format(os.environ['PATH']))
-
-	write(os.environ['LD_LIBRARY_PATH'])
+		write('variable PATH updated to: {}'.format(os.environ['PATH']), 'init')
 
 #============================================================================================================================
 #============================================================================================================================
@@ -342,15 +340,13 @@ def learn_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_pat
 
 
 	add_learn_psdd_lib_to_path()
-	write(cmd_str,'cmd')
+	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	final_psdd_file = os.path.join(psdd_learner_tmp_dir,'./models/final.psdd')
+	final_psdd_file = os.path.join(output_dir,'./models/final.psdd')
 	_check_if_file_exists(final_psdd_file)
 
 	write('Finished PSDD learnin. File location: {}'.format(final_psdd_file), 'cmd-end')
-	# if _check_if_file_exists(psdd_path, raiseException = False):
-	# 	write('Finished compiling SDD to PSDD. File location: {}'.format(psdd_path))
 
 
 def learn_ensembly_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_path = None, num_compent_learners = 5, 
