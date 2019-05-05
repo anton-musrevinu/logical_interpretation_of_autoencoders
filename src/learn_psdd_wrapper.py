@@ -14,7 +14,7 @@ def write(message, level = 'info'):
 		out_string = '\n{}\n'.format(out_string)
 		out_string += '-'* 40 + ' CMD OUTPUT ' + '-'*40
 	elif level == 'cmd-end':
-		out_string = '=' * 40 + 'CMD OUTPUT END' + '=' * 40 + '\n' + out_string + '\n'
+		out_string = '=' * 40 + ' CMD OUTPUT END ' + '=' * 40 + '\n' + out_string + '\n'
 
 	print(out_string)
 
@@ -497,8 +497,8 @@ def learn_psdd(experiment_name, train_data_path,
 			test_data_path = test_data_path, psdd_input_path = psdd_in_file)
 	else:
 		raise Expection('not yet supported')
-		# learn_ensembly_psdd_from_data(train_data_path, output_vtree_file, psdd_learner_tmp_dir,psdd_input_path = psdd_in_file\
-		# 	 num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, test_data_path = test_data_path)
+		learn_ensembly_psdd_from_data(train_data_path, output_vtree_file, psdd_learner_tmp_dir,psdd_input_path = psdd_in_file\
+			 num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, test_data_path = test_data_path)
 
 	final_psdd_file = os.path.join(psdd_learner_tmp_dir,'./models/final.psdd')
 	if not _check_if_file_exists(final_psdd_file, raiseException = False):
@@ -534,7 +534,7 @@ if __name__ == '__main__':
 	valid_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-valid.data')
 	train_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-train.data')
 
-	learn_psdd(experiment_name, train_data_path, experiment_dir_path, replace_existing = True)
+	learn_psdd(experiment_name, train_data_path, experiment_dir_path, replace_existing = True, num_compent_learners = 2)
 
 	# def learn_psdd(experiment_name, train_data_path, 
 	# 	experiment_dir_path = './experiments/', valid_data_path = None, test_data_path = None, \
