@@ -7,13 +7,13 @@ import os, platform, shutil
 
 # - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
-LEARNPSDD_ROOT_DIR = '~/code/msc/src/Scala-LearnPsdd/'
+LEARNPSDD_ROOT_DIR = os.path.join(os.environ['HOME'],'/code/msc/src/Scala-LearnPsdd/')
 
 # - GRAPHVIZ   			(graphing software)     -   Without this please specify:
 GRAPHVIZ_INSTALLED = True
 
 # - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
-SDDLIB_BIN = '~/code/msc/src/wmisdd/bin/'
+SDDLIB_BIN = os.path.join(os.environ['HOME'],'/code/msc/src/wmisdd/bin/')
 
 
 #============================================================================================================================
@@ -521,7 +521,7 @@ def learn_psdd(experiment_name, train_data_path,
 
 
 if __name__ == '__main__':
-	experiment_dir = '~/code/msc/output/experiments/ex_1_fl16_c2'
+	experiment_dir = os.path.join(os.environ['HOME'],'/code/msc/output/experiments/ex_1_fl16_c2')
 	experiment_name = 'psdd_search_v0'
 	experiment_dir_path = os.path.abspath(experiment_dir)
 	test_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-test.data')
