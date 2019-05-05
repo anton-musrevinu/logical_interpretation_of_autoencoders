@@ -496,7 +496,6 @@ def learn_psdd(experiment_name, train_data_path,
 		learn_psdd_from_data(train_data_path, output_vtree_file, psdd_learner_tmp_dir, valid_data_path = valid_data_path, \
 			test_data_path = test_data_path, psdd_input_path = psdd_in_file)
 	else:
-		raise Expection('not yet supported')
 		learn_ensembly_psdd_from_data(train_data_path, output_vtree_file, psdd_learner_tmp_dir,psdd_input_path = psdd_in_file,\
 			 num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, test_data_path = test_data_path)
 
