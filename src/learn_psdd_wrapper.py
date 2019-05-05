@@ -486,7 +486,7 @@ def learn_psdd(experiment_name, train_data_path,
 							vtree_in_path = output_vtree_file, post_compilation_vtree_search = False, convert_to_pdf = convert_to_pdf)
 		
 		constraints_psdd_file = os.path.join(contraints_tmp_dir, './constraints_as.psdd')
-		compile_sdd_to_psdd(train_data_path, output_vtree_file, sdd_path, psdd_path, \
+		compile_sdd_to_psdd(train_data_path, output_vtree_file, constraints_sdd_file, constraints_psdd_file, \
 							valid_data_path = valid_data_path, test_data_path = test_data_path)
 
 		psdd_in_file = constraints_psdd_file
