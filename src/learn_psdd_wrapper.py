@@ -43,7 +43,7 @@ def _check_if_dir_exists(dir_path, raiseException = True):
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
 LEARNPSDD_ROOT_DIR = os.path.join(os.environ['HOME'],'./code/msc/src/Scala-LearnPsdd/')
 LEARNPSDD_ROOT_DIR = os.path.abspath(LEARNPSDD_ROOT_DIR)
-write('LEARNPSDD_ROOT_DIR'.format(LEARNPSDD_ROOT_DIR),'init')
+write('LEARNPSDD_ROOT_DIR {}'.format(LEARNPSDD_ROOT_DIR),'init')
 _check_if_dir_exists(LEARNPSDD_ROOT_DIR)
 LEARNPSDD_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
 LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR, './lib/')) + '/'
@@ -59,21 +59,21 @@ GRAPHVIZ_INSTALLED = True
 # - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
 #
 SDDLIB_BIN = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/src/wmisdd/bin/'))
-write('SDDLIB_BIN'.format(SDDLIB_BIN),'init')
+write('SDDLIB_BIN {}'.format(SDDLIB_BIN),'init')
 _check_if_dir_exists(SDDLIB_BIN)
 if 'Linux' in platform.system():
 	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-linux'))
 else:
 	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-darwin'))
 	write('the program only works fully on linux based systems, so some aspects might not work for you\n --> Assuming OSX', 'warning')
-write('SDDLIB_CMD'.format(SDDLIB_CMD),'init')
-_check_if_file_exists(SDDLIB_BIN)
+write('SDDLIB_CMD {}'.format(SDDLIB_CMD),'init')
+_check_if_file_exists(SDDLIB_CMD)
 # -------------------------------------------------------------------------------------------------------------------------
 #
 # - Updated Source version of LearnPSDD (STAR-UCLA Software) - Link:
 #
 LEARNPSDD2_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'../learnPSDD/target/scala-2.11/psdd.jar'))
-write('LEARNPSDD2_CMD'.format(LEARNPSDD2_CMD),'init')
+write('LEARNPSDD2_CMD {}'.format(LEARNPSDD2_CMD),'init')
 _check_if_file_exists(LEARNPSDD2_CMD)
 
 
