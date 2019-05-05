@@ -57,7 +57,7 @@ def convert_dot_to_pdf(file_path, do_this = True):
 
 	cmd_str = 'dot -Tpdf {}.dot -o {}.pdf'.format(file_path,file_path)
 	os.system(cmd_str)
-	write('Converted learned Vtree to pdf (graphical depictoin). Location: {}'.format(file_path + '.pdf'))
+	write('Converted file to pdf (graphical depictoin). Location: {}'.format(file_path + '.pdf'))
 
 def add_learn_psdd_lib_to_path():
 	# os.environ['LD_LIBRARY_PATH'] = ''
@@ -476,7 +476,7 @@ def learn_psdd(experiment_name, train_data_path,
 		write('final psdd dot file counld not be found at location: {}'.format(final_psdd_dot_file),'warning')
 	else:
 		shutil.copyfile(final_psdd_dot_file, output_psdd_file + '.dot')
-		convert_dot_to_pdf(output_psdd_file + '.dot', convert_to_pdf)
+		convert_dot_to_pdf(output_psdd_file, convert_to_pdf)
 
 	if not keep_generated_files:
 		if _check_if_dir_exists(psdd_learner_tmp_dir, raiseException = False):
