@@ -4,27 +4,37 @@ import os, platform, shutil
 #DEPENDENCIES:
 
 # - PYTHON 3.+
+
 # - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
-LEARNSDD_ROOT_DIR = '~/code/msc/src/Scala-LearnPsdd/'
+LEARNPSDD_ROOT_DIR = '~/code/msc/src/Scala-LearnPsdd/'
+
 # - GRAPHVIZ   			(graphing software)     -   Without this please specify:
 GRAPHVIZ_INSTALLED = True
 
+# - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
+SDDLIB_BIN = '~/code/msc/src/wmisdd/bin/'
+
+
 #============================================================================================================================
 #============================================================================================================================
 #============================================================================================================================
 
-LEARNSDD_ROOT_DIR = os.path.abspath(LEARNSDD_ROOT_DIR)
-print("LEARNSDD_ROOT_DIR", LEARNSDD_ROOT_DIR)
-LEARNPSDD_CMD = os.path.abspath(os.path.join(LEARNSDD_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
-LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNSDD_ROOT_DIR, './lib/')) + '/'
-print("LEARNPSDD_LIB", LEARNPSDD_LIB)
-LEARNPSDD2_CMD = os.path.abspath(os.path.join(BASE_DIR,'../learnPSDD/target/scala-2.11/psdd.jar'))
-SDD_LIB_DIR = os.path.abspath(os.path.join(BASE_DIR,'./src/wmisdd/bin/'))
+LEARNPSDD_ROOT_DIR = os.path.abspath(LEARNPSDD_ROOT_DIR)
+write("LEARNPSDD_ROOT_DIR", LEARNPSDD_ROOT_DIR)
+LEARNPSDD_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
+LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR, './lib/')) + '/'
+
+#For personal use as the libary used has an updated source
+write("LEARNPSDD_LIB", LEARNPSDD_LIB)
+LEARNPSDD2_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'../learnPSDD/target/scala-2.11/psdd.jar'))
+
+SDDLIB_BIN = os.path.abspath(SDDLIB_BIN)
+write("SDDLIB_BIN", SDDLIB_BIN)
 if 'Linux' in platform.system():
-	SDD_LIB_CMD = os.path.abspath(os.path.join(SDD_LIB_DIR, 'sdd-linux'))
+	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-linux'))
 else:
-	SDD_LIB_CMD = os.path.abspath(os.path.join(SDD_LIB_DIR, 'sdd-darwin'))
+	SDDLIB_CMD = os.path.abspath(os.path.join(SDDLIB_BIN, 'sdd-darwin'))
 	write('the program only works fully on linux based systems, so some aspects might not work for you\n --> Assuming OSX', 'warning')
 
 
@@ -72,16 +82,16 @@ def convert_dot_to_pdf(file_path, do_this = True):
 def add_learn_psdd_lib_to_path():
 	# os.environ['LD_LIBRARY_PATH'] = ''
 	if 'LD_LIBRARY_PATH' not in os.environ:
-		os.environ['LD_LIBRARY_PATH'] = LEARNPSDD_LIB + os.pathsep + SDD_LIB_DIR
+		os.environ['LD_LIBRARY_PATH'] = LEARNPSDD_LIB# + os.pathsep + SDD_LIB_DIR
 		write('variable LD_LIBRARY_PATH created and set to: {}'.format(os.environ['LD_LIBRARY_PATH']))
 	
 	if not LEARNPSDD_LIB in os.environ['LD_LIBRARY_PATH']:
 		os.environ['LD_LIBRARY_PATH'] += os.pathsep + LEARNPSDD_LIB
 		write('variable LD_LIBRARY_PATH updated to: {}'.format(os.environ['LD_LIBRARY_PATH']))
 	
-	if not SDD_LIB_DIR in os.environ['LD_LIBRARY_PATH']:
-		os.environ['LD_LIBRARY_PATH'] += os.pathsep + SDD_LIB_DIR
-		write('variable LD_LIBRARY_PATH updated to: {}'.format(os.environ['LD_LIBRARY_PATH']))
+	# if not SDD_LIB_DIR in os.environ['LD_LIBRARY_PATH']:
+	# 	os.environ['LD_LIBRARY_PATH'] += os.pathsep + SDD_LIB_DIR
+	# 	write('variable LD_LIBRARY_PATH updated to: {}'.format(os.environ['LD_LIBRARY_PATH']))
 
 	if not LEARNPSDD_LIB in os.environ['PATH']:
 		os.environ['PATH'] += str(os.pathsep + LEARNPSDD_LIB)
@@ -163,7 +173,7 @@ def compile_cnf_to_sdd(cnf_path, sdd_path, vtree_out_path, vtree_in_path = None,
 	if not generate_vtree:
 		_check_if_file_exists(vtree_in_path)
 
-	cmd_str = '{} '.format(SDD_LIB_CMD) + \
+	cmd_str = '{} '.format(SDDLIB_CMD) + \
 		  ' -c {}'.format(cnf_path)
 	
 	if generate_vtree:
