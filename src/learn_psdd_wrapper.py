@@ -497,6 +497,7 @@ def learn_psdd(experiment_name, train_data_path,
 		learn_psdd_from_data(train_data_path, output_vtree_file, psdd_learner_tmp_dir, valid_data_path = valid_data_path, \
 			test_data_path = test_data_path, psdd_input_path = psdd_in_file)
 	else:
+		raise Exception('Ensemply learning is not working')
 		learn_ensembly_psdd_from_data(train_data_path, output_vtree_file, psdd_learner_tmp_dir,psdd_input_path = psdd_in_file,\
 			 num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, test_data_path = test_data_path)
 
@@ -527,14 +528,16 @@ def learn_psdd(experiment_name, train_data_path,
 
 
 if __name__ == '__main__':
-	experiment_dir = os.path.join(os.environ['HOME'],'./code/msc/output/experiments/ex_1_fl16_c2')
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/ex_1_fl16_c2'))
 	experiment_name = 'psdd_search_v0'
-	experiment_dir_path = os.path.abspath(experiment_dir)
 	test_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-test.data')
 	valid_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-valid.data')
 	train_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-train.data')
 
-	learn_psdd(experiment_name, train_data_path, experiment_dir_path, replace_existing = True, num_compent_learners = 2)
+	test_contraints = os.path.join(experiment_dir_path, 'test_contraints.cnf')
+
+	learn_psdd(experiment_name, train_data_path, experiment_dir_path, constraints_cnf_file = test_contraints, \
+				replace_existing = True, vtree_method = 'miBlossom')
 
 	# def learn_psdd(experiment_name, train_data_path, 
 	# 	experiment_dir_path = './experiments/', valid_data_path = None, test_data_path = None, \
