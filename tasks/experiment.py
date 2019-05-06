@@ -1,4 +1,6 @@
-import os
+import os,sys
+sys.path.append('..')
+from src import learn_psdd_wrapper 
 
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 LEARNPSDD_CMD = '../src/Scala-LearnPsdd/target/scala-2.11/psdd.jar'

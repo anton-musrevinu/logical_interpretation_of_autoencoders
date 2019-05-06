@@ -1,6 +1,6 @@
 import os, platform, shutil
 
-# function that have to be at beginning of the scipt
+# function that have to be at the beginning of the scipt
 
 def write(message, level = 'info'):
 	out_string = '[{}]'.format(level.upper())
@@ -79,12 +79,9 @@ LEARNPSDD2_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'../learnPSDD/t
 write('LEARNPSDD2_CMD \t{}'.format(LEARNPSDD2_CMD),'init')
 _check_if_file_exists(LEARNPSDD2_CMD)
 
-
-
 #============================================================================================================================
 #============================================ AUXILIARY FUNCTIONS ====================================================
 #============================================================================================================================
-
 
 def convert_dot_to_pdf(file_path, do_this = True):
 	if not do_this or not _check_if_file_exists(file_path + '.dot', raiseException = False) or not GRAPHVIZ_INSTALLED:
@@ -116,7 +113,9 @@ def add_learn_psdd_lib_to_path():
 #============================================================================================================================
 #============================================================================================================================
 
-def learn_vtree(train_data_path, vtree_path, vtree_method = 'miBlossom', convert_to_pdf = True):
+def learn_vtree(train_data_path, vtree_out_path, 
+		out_learnvtree_tmp_dir = '.learnVtree_tmp/', vtree_method = 'miBlossom', convert_to_pdf = True, keep_generated_files = False):
+	
 	'''
 	-d, --trainData <file>   
 	-v, --vtreeMethod leftLinear-rand|leftLinea-ord|pairwiseWeights|balanced-rand|rightLinear-ord|rightLinear-rand|balanced-ord|miBlossom|miGreedyBU|miMetis
@@ -134,13 +133,18 @@ def learn_vtree(train_data_path, vtree_path, vtree_method = 'miBlossom', convert
 	-o, --out <path>         
 	-e, --entropyOrder       choose prime variables to have lower entropy
 	'''
-	_check_if_file_exists(train_data_path)
+	_check_if_dir_exists(train_data_path)
+
+	out_learnvtree_tmp_dir = os.path.abs(out_learnvtree_tmp_dir)
+	if _check_if_dir_exists(out_learnvtree_tmp_dir, raiseException = False):
+		shutil.rmtree(out_learnvtree_tmp_dir)
+	os.mkdir(out_learnvtree_tmp_dir)
 
 
 	cmd_str = 'java -jar {} learnVtree '.format(LEARNPSDD_CMD) + \
 		  ' --trainData {}'.format(train_data_path) + \
 		  ' --vtreeMethod {}'.format(vtree_method) + \
-		  ' --out {}'.format(vtree_path.replace('.vtree',''))
+		  ' --out {}'.format(out_learnvtree_tmp_dir)
 
 
 	add_learn_psdd_lib_to_path()
@@ -148,15 +152,24 @@ def learn_vtree(train_data_path, vtree_path, vtree_method = 'miBlossom', convert
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	_check_if_file_exists(vtree_path)
+	vtree_tmp_output_file = os.path.join(out_learnvtree_tmp_dir, '.vtree')
+	_check_if_file_exists(vtree_tmp_output_file)
+	
+	shutil.copyfile(vtree_tmp_output_file, vtree_out_path)
+	shutil.copyfile(vtree_tmp_output_file + '.dot', vtree_out_path + '.dot')
+	convert_dot_to_pdf(vtree_out_path, convert_to_pdf)
+
+	if not keep_generated_files and _check_if_file_exists(vtree_out_path):
+		shutil.rmtree(out_learnvtree_tmp_dir)
 	
 	write('Finished leraning Vtree from data. File location: {}'.format(vtree_path), 'cmd-end')
 
-	convert_dot_to_pdf(vtree_path, convert_to_pdf)
+def compile_cnf_to_sdd(cnf_path, sdd_path, vtree_out_path, \
+	vtree_in_path = None, initial_vtree_type = 'random', vtree_search_freq = 5, post_compilation_vtree_search = True, \
+	convert_to_pdf = True):
 
-def compile_cnf_to_sdd(cnf_path, sdd_path, vtree_out_path, vtree_in_path = None, initial_vtree_type = 'random', vtree_search_freq = 5, post_compilation_vtree_search = True, convert_to_pdf = True):
 	'''
-	If vtree_in_path == None, invoke vtree search every k clauses
+	If vtree_in_path == None, invoke vtree search every vtree_search_freq clauses
 
 	libsdd version 2.0, January 08, 2018
 	sdd (-c FILE | -d FILE | -s FILE) [-v FILE | -t TYPE] [-WVRS FILE] [-r MODE] [-mhqp]
@@ -212,13 +225,15 @@ def compile_cnf_to_sdd(cnf_path, sdd_path, vtree_out_path, vtree_in_path = None,
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	_check_if_file_exists(vtree_out_path) and _check_if_file_exists(sdd_path)
 	write('Finished compiling CNF to SDD. File location: {}'.format(sdd_path), 'cmd-end')
+	_check_if_file_exists(vtree_out_path) and _check_if_file_exists(sdd_path)
 
 	convert_dot_to_pdf(vtree_out_path,convert_to_pdf)
 	convert_dot_to_pdf(sdd_path,convert_to_pdf)
 
-def compile_sdd_to_psdd(train_data_path, vtree_path, sdd_path, psdd_path, valid_data_path = None, test_data_path = None, smoothing = 'l-1'):
+def compile_sdd_to_psdd(train_data_path, vtree_path, sdd_path, psdd_path, 
+			valid_data_path = None, test_data_path = None, smoothing = 'l-1'):
+
 	'''
 	  -d, --trainData <file>   
 	  -b, --validData <file>   
@@ -260,9 +275,11 @@ def compile_sdd_to_psdd(train_data_path, vtree_path, sdd_path, psdd_path, valid_
 	_check_if_file_exists(psdd_path)
 	write('Finished compiling SDD to PSDD. File location: {}'.format(psdd_path), 'cmd-end')
 
-def learn_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_path = None, 
-		valid_data_path = None, test_data_path = None, smoothing = 'l-1', clone_k = 3, split_k = 1, completion = 'maxDepth-3', scorer = 'dll/ds',
-		maxIt = 'max', save_freq = 'best-3'):
+def learn_psdd_from_data(train_data_path, vtree_path, out_psdd_file, \
+		out_learnpsdd_tmp_dir = './.out_learnpsdd_tmp_dir/', psdd_input_path = None, valid_data_path = None, 
+		test_data_path = None, smoothing = 'l-1', clone_k = 3, split_k = 1, completion = 'maxDepth-3', scorer = 'dll/ds',
+		maxIt = 'max', save_freq = 'best-3', keep_generated_files = False, convert_to_pdf = True):
+	
 	'''
 	  -p, --psdd <file>        If no psdd is provided, the learning starts from a mixture of marginals.
 	  -v, --vtree <file>
@@ -319,12 +336,16 @@ def learn_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_pat
 	'''
 	_check_if_file_exists(train_data_path)
 	_check_if_file_exists(vtree_path)
-	_check_if_dir_exists(output_dir)
+
+	out_learnpsdd_tmp_dir = os.path.abs(out_learnpsdd_tmp_dir)
+	if _check_if_dir_exists(out_learnpsdd_tmp_dir, raiseException = False):
+		shutil.rmtree(out_learnpsdd_tmp_dir)
+	os.mkdir(out_learnpsdd_tmp_dir)
 
 	cmd_str = 'java -jar {} learnPsdd search '.format(LEARNPSDD_CMD) + \
 		  ' --trainData {}'.format(train_data_path) + \
 		  ' --vtree {}'.format(vtree_path) + \
-		  ' --out {}'.format(output_dir)
+		  ' --out {}'.format(out_learnpsdd_tmp_dir)
 
 	if valid_data_path != None and _check_if_file_exists(valid_data_path, raiseException = False):
 		cmd_str += ' --validData {}'.format(valid_data_path)
@@ -346,15 +367,26 @@ def learn_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_pat
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	final_psdd_file = os.path.join(output_dir,'./models/final.psdd')
-	_check_if_file_exists(final_psdd_file)
-
+	final_psdd_file = os.path.join(out_learnpsdd_tmp_dir,'./models/final.psdd')
 	write('Finished PSDD learnin. File location: {}'.format(final_psdd_file), 'cmd-end')
+	_check_if_file_exists(final_psdd_file)
+	
+	shutil.copyfile(final_psdd_file, out_psdd_file)
 
+	final_psdd_dot_file = os.path.join(out_learnpsdd_tmp_dir,'./models/final.dot')
+	if not _check_if_file_exists(final_psdd_dot_file, raiseException = False):
+		write('final psdd dot file counld not be found at location: {}'.format(final_psdd_dot_file),'warning')
+	else:
+		shutil.copyfile(final_psdd_dot_file, out_psdd_file + '.dot')
+		convert_dot_to_pdf(out_psdd_file, convert_to_pdf)
 
-def learn_ensembly_psdd_from_data(train_data_path, vtree_path, output_dir, psdd_input_path = None, num_compent_learners = 5, 
-		valid_data_path = None, test_data_path = None, smoothing = 'l-1', structureChangeIt = 3, parameterLearningIt = 1, scorer = 'dll/ds',
-		maxIt = 'max', save_freq = 'best-3'):
+	if not keep_generated_files:
+		shutil.rmtree(out_learnpsdd_tmp_dir)
+
+def learn_ensembly_psdd_from_data(train_data_path, vtree_path, output_dir, \
+		 psdd_input_path = None, num_compent_learners = 5,valid_data_path = None, test_data_path = None, smoothing = 'l-1', \
+		 structureChangeIt = 3, parameterLearningIt = 1, scorer = 'dll/ds',maxIt = 'max', save_freq = 'best-3'):
+	
 	'''
 	  -p, --psdd <file>        If no psdd is provided, the learning starts from a mixture of marginals.
 
@@ -443,17 +475,30 @@ def learn_ensembly_psdd2_from_data(dataDir, vtree_path, output_dir, num_componen
 	print('excuting: {}'.format(cmd_str))
 	os.system(cmd_str)
 
-
 # ====================================================================================================================
 # ========================================   Higher level methods    =================================================
 # ====================================================================================================================
 
-def learn_psdd(experiment_name, train_data_path, 
-		experiment_dir_path = './experiments/', valid_data_path = None, test_data_path = None, \
-		replace_existing = False, vtree_method = 'miBlossom', num_compent_learners = 1, psdd_in_file = None, \
-		constraints_cnf_file = None, keep_generated_files = True, convert_to_pdf = True):
-
-	experiment_path = os.path.join(experiment_dir_path, experiment_name)
+def learn_psdd(psdd_out_dir, train_data_path, 
+		valid_data_path = None, test_data_path = None, replace_existing = False, vtree_method = 'miBlossom', \
+		num_compent_learners = 1, constraints_cnf_file = None, keep_generated_files = True, convert_to_pdf = True):
+	# For ease of use, I have create one function that takes care of almost all subpart when it comes to psdd learning
+	# It learnes a vtree from data, compiles constraints to sdd/psdd if present, and learnes a psdd with the vtree and constaints (if present)
+	# Arguments:
+	#	psdd_out_dir           a directory will be created with this name
+	#   train_data_path       pretty self expanitory i think - Validation/test data are optional
+	#
+	# Options:
+	#	constraints_cnf_file  constraints that should be enfoced in the psdd structure before learning starts,
+	#						  	this can be handed to the method by cnf (DEMACS) file see example at the bottom of file
+	#	num_compent_learners  curretnly only '1' supported, as the emsnebly learning scala code fails
+	#	vtree_method		  method used for learning the vtree from data, please refer to learn_vtree method for more details
+	#   convert_to_pdf        specify if generated dot files should be converted to pdf, Graphviz has to be installed
+	#	keep_generated_files  keep the files generated by the individual learners, otherwise they are deleted
+	#	repace_existsing      replaces the existing dir, if present 
+	
+	#Set up experiment directory
+	experiment_path = os.path.abspath(psdd_out_dir)
 	write('experiment dir path: {}'.format(experiment_path),'files')
 	if _check_if_dir_exists(experiment_path, raiseException = False):
 		if not replace_existing:
@@ -462,213 +507,86 @@ def learn_psdd(experiment_name, train_data_path,
 			shutil.rmtree(experiment_path)
 	os.mkdir(experiment_path)
 
-	psdd_learner_tmp_dir = os.path.join(experiment_path, './psdd_learner/')
-	os.mkdir(psdd_learner_tmp_dir)
-	write('psdd learner dir: {}'.format(psdd_learner_tmp_dir), 'files')
-	output_vtree_file = os.path.join(experiment_path, './model.vtree')
-	write('output vtree file: {}'.format(output_vtree_file), 'files')
-	output_psdd_file = os.path.join(experiment_path, './model.psdd')
-	write('output psdd dir: {}'.format(output_psdd_file), 'files')
-	contraints_tmp_dir = None
+	#Set up learner directories
+	out_learnpsdd_tmp_dir = os.path.join(experiment_path, './.learnerPsdd_tmp/')
+	os.mkdir(out_learnpsdd_tmp_dir)
+	write('psdd learner dir: {}'.format(out_learnpsdd_tmp_dir), 'files')
+
+	out_learnvtree_tmp_dir = os.path.join(experiment_path, './.learnVtree_tmp/')
+	os.mkdir(out_learnvtree_tmp_dir)
+	write('vtere learner dir: {}'.format(out_learnvtree_tmp_dir), 'files')
+
+	#Set up resulting vtree/psdd file at the root of the psdd_out_dir
+	out_vtree_file = os.path.join(experiment_path, './model.vtree')
+	write('output vtree file: {}'.format(out_vtree_file), 'files')
+	out_psdd_file = os.path.join(experiment_path, './model.psdd')
+	write('output psdd file: {}'.format(out_psdd_file), 'files')
 
 	#Learn vtree from data 
-	learn_vtree(train_data_path, output_vtree_file, vtree_method = vtree_method, convert_to_pdf = convert_to_pdf)
+	learn_vtree(train_data_path, out_vtree_file, out_learnvtree_tmp_dir = out_learnvtree_tmp_dir,\
+						 vtree_method = vtree_method, convert_to_pdf = convert_to_pdf, keep_generated_files = True)
 
 	#Compile constraints to sdd/psdd if present
-	if constraints_cnf_file != None and psdd_in_file == None:
+	if constraints_cnf_file != None:
 		_check_if_file_exists(constraints_cnf_file, raiseException = True)
 
-		contraints_tmp_dir = os.path.join(experiment_path, './constraints_tmp/')
+		contraints_tmp_dir = os.path.join(experiment_path, './.constraints_tmp/')
 		os.mkdir(contraints_tmp_dir)
 
 		constraints_sdd_file = os.path.join(contraints_tmp_dir, './constraints_as.sdd')
-		compile_cnf_to_sdd(constraints_cnf_file, constraints_sdd_file, output_vtree_file, \
-							vtree_in_path = output_vtree_file, post_compilation_vtree_search = False, convert_to_pdf = convert_to_pdf)
+		compile_cnf_to_sdd(constraints_cnf_file, constraints_sdd_file, out_vtree_file, \
+							vtree_in_path = out_vtree_file, post_compilation_vtree_search = False, convert_to_pdf = convert_to_pdf)
 		
 		constraints_psdd_file = os.path.join(contraints_tmp_dir, './constraints_as.psdd')
-		compile_sdd_to_psdd(train_data_path, output_vtree_file, constraints_sdd_file, constraints_psdd_file, \
+		compile_sdd_to_psdd(train_data_path, out_vtree_file, constraints_sdd_file, constraints_psdd_file, \
 							valid_data_path = valid_data_path, test_data_path = test_data_path)
+	else:
+		constraints_psdd_file = None
 
-		psdd_in_file = constraints_psdd_file
-
+	#Learn Psdd with all data avaliable 
 	if num_compent_learners < 1:
 		write('The number of psdd_compents (for ensembly learning) has to be > 0', 'error')
 	elif num_compent_learners == 1:
-		learn_psdd_from_data(train_data_path, output_vtree_file, psdd_learner_tmp_dir, valid_data_path = valid_data_path, \
-			test_data_path = test_data_path, psdd_input_path = psdd_in_file)
+		learn_psdd_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir = out_learnpsdd_tmp_dir, valid_data_path = valid_data_path, \
+			test_data_path = test_data_path, psdd_input_path = constraints_psdd_file, keep_generated_files = True, convert_to_pdf = convert_to_pdf)
 	else:
 		raise Exception('Ensemply learning is not working')
-		learn_ensembly_psdd_from_data(train_data_path, output_vtree_file, psdd_learner_tmp_dir,psdd_input_path = psdd_in_file,\
+		learn_ensembly_psdd_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir,psdd_input_path = constraints_psdd_file,\
 			 num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, test_data_path = test_data_path)
 
-	final_psdd_file = os.path.join(psdd_learner_tmp_dir,'./models/final.psdd')
-	if not _check_if_file_exists(final_psdd_file, raiseException = False):
-		write('final psdd file counld not be found at location: {}'.format(final_psdd_file),'error')	
-	shutil.copyfile(final_psdd_file, output_psdd_file)
-
-	final_psdd_dot_file = os.path.join(psdd_learner_tmp_dir,'./models/final.dot')
-	if not _check_if_file_exists(final_psdd_dot_file, raiseException = False):
-		write('final psdd dot file counld not be found at location: {}'.format(final_psdd_dot_file),'warning')
-	else:
-		shutil.copyfile(final_psdd_dot_file, output_psdd_file + '.dot')
-		convert_dot_to_pdf(output_psdd_file, convert_to_pdf)
-
-	if not keep_generated_files:
-		if _check_if_dir_exists(psdd_learner_tmp_dir, raiseException = False):
-			shutil.rmtree(psdd_learner_tmp_dir)
+	#Remove tmp files
+	if not keep_generated_files and constraints_cnf_file != None:
 		if _check_if_dir_exists(contraints_tmp_dir, raiseException = False):
 			shutil.rmtree(contraints_tmp_dir)
 
-	write('Program finished.','final')
-
+	write('learn_psdd method finished.','final')
 
 # ============================================================================================================================
 # ============================================================================================================================
 # ============================================================================================================================
-
 
 if __name__ == '__main__':
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/ex_1_fl16_c2'))
 	# test_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-test.data')
-	valid_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-valid.data')
-	train_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-valid_MSE-train.data')
+	valid_data_path = os.path.join(experiment_dir_path, './encoded_data/mnist-encoded-valid_MSE-valid.data')
+	train_data_path = os.path.join(experiment_dir_path, './encoded_data/mnist-encoded-valid_MSE-train.data')
 
 	#Test without constraints
-	learn_psdd('psdd_search_miBlossom', train_data_path, experiment_dir_path, valid_data_path = valid_data_path, \
-	 			replace_existing = True, vtree_method = 'miBlossom')
+	psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_miBlossom/')
+	learn_psdd(psdd_out_dir, train_data_path, valid_data_path = valid_data_path, replace_existing = True, \
+		vtree_method = 'miBlossom')
 
-	learn_psdd('psdd_search_miMetis', train_data_path, experiment_dir_path, valid_data_path = valid_data_path, \
-	 			replace_existing = True, vtree_method = 'miMetis')
+	psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_miMetis/')
+	learn_psdd(psdd_out_dir, train_data_path, valid_data_path = valid_data_path, replace_existing = True, \
+		vtree_method = 'miMetis')
 
 
 	#Test with constraints
 
-	# test_contraints = os.path.join(experiment_dir_path, 'test_contraints.cnf')
+	# test_contraints = os.path.join(experiment_dir_path, './test_contraints.cnf')
 	# learn_psdd(experiment_name, train_data_path, experiment_dir_path, constraints_cnf_file = test_contraints, \
 	# 			replace_existing = True, vtree_method = 'miBlossom')
 
-
-def do_training(experiment_dir,cluster_name):
-	os.system('pwd')
-	small_data_set = False
-
-	# experiment_name = 'ex_4_emnist_32_8'
-	# cluster_name = 'james10'
-	# dataset = 'mnist'
-
-	encoded_data_dir = os.path.join(experiment_dir,'encoded_data')
-
-	# learn_encoder(testing = testing)
-	encode_data(experiment_dir.split('/')[-1], testing = small_data_set)
-
-	symbolic_dir = os.path.join(experiment_dir, 'symbolic_stuff_{}/'.format(cluster_name))
-	opt_file = os.path.join(experiment_dir, 'opt.txt')
-	vtree_file_learned = os.path.join(symbolic_dir, '{}_learned.vtree'.format('model'))#experiment_name))
-	vtree_file_compiled = os.path.join(symbolic_dir, '{}_compiled.vtree'.format('model'))#experiment_name))
-	sdd_file_lvt = os.path.join(symbolic_dir, 'constrains_lvt.sdd')#.format('model'))#experiment_name))
-	sdd_file_cvt = os.path.join(symbolic_dir, 'constrains_cvt.sdd')#.format('model'))#experiment_name))
-	psdd_file_cvt = os.path.join(symbolic_dir, 'constrains_cvt.psdd')#.format('model'))#experiment_name))
-	psdd_file_lvt = os.path.join(symbolic_dir, 'constrains_lvt.psdd')#.format('model'))#experiment_name))
-	psdd_out_dir = os.path.join(experiment_dir, 'psdd_model/')
-	psdd_ens_out_dir = os.path.join(experiment_dir, 'psdd_model_{}/'.format(cluster_name))
-
-
-	for root, dir_names, file_names in os.walk(encoded_data_dir):
-		for i in file_names:
-			if 'train.data' in i:
-				train_data_file = os.path.join(root, i)
-			# elif 'valid.data' in i:
-			# 	valid_data_file = os.path.join(root, i)
-			# elif 'test.data' in i:
-			# 	test_data_file = os.path.join(root, i)
-
-	# with open(train_data_file, 'r') as f:
-	# 	for line in f:
-	# 		total_num_variables = len(line.split(','))
-	# 		break
-
-	if not os.path.exists(symbolic_dir):
-		os.mkdir(symbolic_dir)
-
-	#Make vtree (from data or constraints) make sdd from contraints
-	learn_vtree(train_data_file, vtree_file_learned)
-
-	# # compile_constraints_to_sdd(opt_file, sdd_file_cvt, vtree_file_compiled, total_num_variables, symbolic_dir, precomputed_vtree = False)
-	# # compile_constraints_to_sdd(opt_file, sdd_file_lvt, vtree_file_learned, total_num_variables, symbolic_dir, precomputed_vtree = True)
-	
-
-	# # compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, sdd_file_cvt, psdd_file_cvt)
-	# # compile_sdd_to_psdd(train_data_file, valid_data_file, test_data_file, vtree_file_learned, sdd_file_lvt, psdd_file_lvt)
-	# # if not os.path.exists(psdd_out_dir):
-	# # 	os.mkdir(psdd_out_dir)
-	# # learn_psdd_from_data(train_data_file, valid_data_file, test_data_file, vtree_file_compiled, psdd_file_cvt, psdd_out_dir)
-
-	if not os.path.exists(psdd_ens_out_dir):
-		os.mkdir(psdd_ens_out_dir)
-
-	dataDir = train_data_file.replace('train.data','')
-	learn_ensembly_psdd_2_from_data(dataDir, vtree_file_learned, psdd_ens_out_dir, num_components = 10)
-
-def get_experiment_info(experiment_dir, cluster_id, test = False):
-	if cluster_id == '':
-		psdd_dir = os.path.join(experiment_dir, 'ensembly_psdd_model/')
-		vtree_file = os.path.join(experiment_dir, 'symbolic_stuff/model_learned.vtree')
-	else:
-		psdd_dir = os.path.join(experiment_dir, 'psdd_model_{}/'.format(cluster_id))
-		vtree_file = os.path.join(experiment_dir, 'symbolic_stuff_{}/model_learned.vtree'.format(cluster_id))
-
-	for root, dir_names, file_names in os.walk(os.path.join(experiment_dir,'encoded_data')):
-		for i in file_names:
-			if 'train.data' in i and not 'sample' in i:
-				train_data_file = os.path.join(root, i)
-
-	fly_catDim = 10 if int(experiment_dir.split('/')[-1].split('_')[1]) <= 5 else 47
-	flx_catDim = int(experiment_dir.split('/')[-1].split('_')[4])
-
-	num_learners = -1
-	latestIt = -1 
-	weights = {}
-	with open(os.path.join(psdd_dir, 'progress.txt'),'r') as prg:
-		for line_idx, line in enumerate(prg):
-			splitted = line.split(';')
-			if len(splitted) < 5 or line_idx == 0:
-				continue
-			num_learners = len(splitted) - 5
-			latestIt = int(splitted[0].strip())
-			for idx, i in enumerate(range(4,num_learners + 4)):
-				weights[idx] = float(splitted[i].strip())
-	if latestIt == -1 or num_learners == -1:
-		print('no iteration results found')
-		return
-
-	print('latest iteraion found: {}'.format(latestIt))
-	print('corresponding weights: {}'.format(weights))
-
-	list_of_psdds = ''
-	list_of_weights = ''
-	models = os.path.join(psdd_dir, 'models/')
-	for i in range(num_learners):
-		list_of_psdds = list_of_psdds + os.path.join(models, 'it_{}_l_{}.psdd'.format(latestIt,i)) + ','
-		list_of_weights = list_of_weights + str(weights[i]) + ','
-	list_of_psdds = list_of_psdds[:-1]
-	list_of_weights = list_of_weights[:-1]
-
-	data_set_sample = train_data_file + '.sample'
-	if os.path.exists(data_set_sample):
-		os.remove(data_set_sample)
-
-	with open(data_set_sample, 'w') as f_to:
-		with open(train_data_file, 'r') as f_from:
-			for idx, line in enumerate(f_from):
-				if idx < 100:
-					f_to.write(line)
-				if fly_catDim == 10:
-					a = line.split(',')[-5]
-					b = line.split(',')[-6]
-					if a == '1' or b == '1':
-						raise Exception('looks like we messed up') 
-
-	return vtree_file, list_of_psdds, list_of_weights,fly_catDim, flx_catDim, data_set_sample
 
 def measure_classifcation_acc(experiment_dir, cluster_id, test = False):
 
@@ -699,7 +617,23 @@ def measure_classifcation_acc(experiment_dir, cluster_id, test = False):
 	print('excuting: {}'.format(cmd))
 	os.system(cmd)
 
+'''
+cnf file example: 8 Variables, 7 Clauses
+	the kb sepcifies that variables {1,2,3,4} are onehot encoded
 
+example.cnf file content:
+
+c this the Abstacted SMT Formalu in CNF (DEMACS)
+p cnf 8 7
+1 2 3 4 0
+-1 -2 0
+-1 -3 0
+-1 -4 0
+-2 -3 0
+-2 -4 0
+-3 -4 0
+
+'''
 
 
 
