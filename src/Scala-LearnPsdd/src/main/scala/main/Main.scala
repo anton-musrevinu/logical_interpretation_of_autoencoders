@@ -177,8 +177,8 @@ object Main {
                      frequency: SaveFrequency = defaultFrequency,
                      parameterCalculators: Seq[ParameterCalculator] = null,
                      entropyOrder: Boolean=false,
-                     fly_cdim: Int = -1,
-                     flx_cdim: Int = -1,
+                     fly_info: Seq[Int] = null,
+                     flx_info: Seq[Int]  = null,
                      data_bug: Boolean = false
                      ){
     val configString: String = Array(
@@ -727,20 +727,20 @@ object Main {
       valueName ("<file>,<file>,...").
       action( (x,c) => c.copy(psdds = x))
 
-    opt[Int]('y',"fly_cdim").
+    opt[Int]('y',"fly_info").
       required().
-      valueName("<fly_cdim>").
-      action((x,c)=>c.copy(fly_cdim=x)).
+      valueName("<int>,<int>,...").
+      action((x,c) => c.copy(fly_info=x)).
       text(
-        "tje categorical dimention of the FLy.\n"
+        "the fly info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
       )
 
-    opt[Int]('x',"flx_cdim").
+    opt[Int]('x',"flx_info").
       required().
-      valueName("<flx_cdim>").
-      action((x,c)=>c.copy(flx_cdim=x)).
+      valueName("<int>,<int>,...").
+      action((x,c)=>c.copy(flx_info=x)).
       text(
-        "tje categorical dimention of the FLx.\n"
+        "the flx info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
       )
 
     opt[Boolean]('g',"data_bug").
@@ -1117,81 +1117,69 @@ object Main {
 
             println()
 
+            println("getting fl information")
             val total_size = trainData.backend(0).size
-            val flx_cdim = config.flx_cdim
-            val fly_cdim = config.fly_cdim
-            var fly_size:Int = -1
-            
-            var log2 = (x: Double) => (Math.log(x) / Math.log(2))
-            if (config.data_bug){
-              fly_size = 6
-              //Fixed at six, because I acidently encoded the ydata for the categorical dim of emnist (47)
-            }
-            else{
-              fly_size = BigDecimal(log2(fly_cdim)).setScale(0, BigDecimal.RoundingMode.CEILING).toInt
-            }
-            
-            val flx_size = total_size - fly_size
+            // nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx
+            val flx_nb_vars =         config.flx_info(0)
+            val flx_var_cat_dim =     config.flx_info(1)
+            val flx_binary_encoded =  config.flx_info(2)
+            val flx_start_idx =       config.flx_info(3)
+            val flx_end_idx =         config.flx_info(4)
 
-            val flx_binVarSize = BigDecimal(log2(flx_cdim)).setScale(0, BigDecimal.RoundingMode.CEILING).toInt
-            val flx_nbvars = (flx_size / BigDecimal(log2(flx_cdim)).setScale(0, BigDecimal.RoundingMode.CEILING)).toInt
+            val fly_nb_vars =         config.fly_info(0)
+            val fly_var_cat_dim =     config.fly_info(1)
+            val fly_binary_encoded =  config.fly_info(2)
+            val fly_start_idx =       config.fly_info(3)
+            val fly_end_idx =         config.fly_info(4)
 
-
-
-
-            println("total_size: " + total_size)
-            println("flx_size: " + flx_size)
-            println("flx_cdim:  " + flx_cdim)
-            println("nb_classes (fly_cdim):  " + fly_cdim)
-            println("fly_size:  " + fly_size)
+            val fl_info_str:String = "total_size          : " + total_size 
+                                     + "\nflx_nb_vars         : " + flx_nb_vars
+                                     + "\nflx_var_cat_dim     : " + flx_var_cat_dim
+                                     + "\nflx_binary_encoded  : " + flx_binary_encoded
+                                     + "\nflx_start_idx       : " + flx_start_idx
+                                     + "\nflx_end_idx         : " + flx_end_idx
+                                     + "\n\nfly_nb_vars         : " + fly_nb_vars
+                                     + "\nfly_var_cat_dim     : " + fly_var_cat_dim
+                                     + "\nfly_binary_encoded  : " + fly_binary_encoded
+                                     + "\nfly_start_idx       : " + fly_start_idx
+                                     + "\nfly_end_idx         : " + fly_end_idx
+            println(fl_info_str)
 
             if(config.mode == "classify"){
               val pw = new PrintWriter(new File(config.out))
-              pw.write("total_size: " + total_size + "\n")
-              pw.write("flx_size: " + flx_size + "\n")
-              pw.write("flx_cdim:  " + flx_cdim + "\n")
-              pw.write("nb_classes (fly_cdim):  " + fly_cdim + "\n")
-              pw.write("fly_size:  " + fly_size + "\n")
+              pw.write(fl_info_str + "\n")
 
-              print("Read Assignment...")
-              val assignment = Assignment.readFromFile(config.query)
-              println(" done!")
-
-              var accuracy:Seq[Int] = Seq()
-
-              val ymaps = Seq.tabulate(fly_cdim)(x => int2map(x, fly_size, flx_size))
-              println("Calculated ymaps: " + ymaps)
+              var ymaps:Seq[Map[Int,Boolean]] = null
+              if (fly_binary_encoded == 1){
+                ymaps = Seq.tabulate(fly_var_cat_dim)(x => int2map(x, fly_end_idx - fly_start_idx, fly_start_idx))
+              }else {
+                ymaps = Seq.tabulate(fly_var_cat_dim)(x => int2onehot(x, fly_end_idx - fly_start_idx, fly_start_idx))
+              }
+              println( "Calculated ymaps: " + ymaps)
               pw.write("Calculated ymaps: " + ymaps + '\n')
 
-              var priors:Seq[BigDecimal] = Seq.tabulate(fly_cdim)(x =>
+              var priors:Seq[BigDecimal] = Seq.tabulate(fly_var_cat_dim)(x =>
                 Seq.tabulate(numComponents)(xx => PsddQueries.bigDecimalProb(psdds(xx), ymaps(x)) * componentweights(xx)).sum
                 )
               println("Calculated Priors: " + priors)
               pw.write("Calculated Priors: " + priors + '\n')
-              // for (j <- 1 to fly_cdim){
-              //   ymap = int2map(j, fly_size, flx_size)
-              //   // println("label: " + j + " gives binary value " + int2bin(j,fly_size) + " - " + ymap)
-              //   // var ymap:Map[Int,Boolean] = Map()
-              //   // for( a <- flx_size + 1 to flx_size + fly_size){
-              //   //   if(a - flx_size == j){
-              //   //     ymap += (a -> true)
-              //   //   } else {
-              //   //     ymap += (a -> false)
-              //   //   }
-              //   // }
-              //   var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), ymap) * componentweights(x)).sum
-              //   priors = priors :+ result
-              // }
 
+              print("Read Assignment...")
+              val assignment = Assignment.readFromFile(config.query)
+              println(" done!")
+              var accuracy:Seq[Int] = Seq()
               for ( i <- 0 to (assignment.backend.length - 1) ) {
                 var xmap:Map[Int,Boolean] = Map()
                 var actual_label:Map[Int,Boolean] = Map()
                 var actual_label_num:Int = -1
                 assignment.backend(i).keys.foreach{j =>
-                  if(j <= flx_size){
+                  if (j == 0){
+                    println("INDEXING MISTAKE AT POS: adsfadsfasfd (assuming 1 - )")
+                  }
+                  if(flx_start_idx < j && j <= flx_end_idx){
                     xmap += (j -> assignment.backend(i)(j))
                   }
-                  if(j > flx_size){
+                  if(fly_start_idx < j && j <= fly_end_idx){
                     actual_label += (j -> assignment.backend(i)(j))
                   }
                 }
@@ -1201,7 +1189,7 @@ object Main {
                 var highestProbIdx = 0
                 var correct_class_prob:BigDecimal = 0.0
 
-                for (j <- 0 to fly_cdim -1){
+                for (j <- 0 to fly_var_cat_dim - 1){
                   var assignment_tmp = xmap ++ ymaps(j)
                   var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), assignment_tmp) * componentweights(x)).sum
                   result = result/priors(j)
@@ -1234,230 +1222,230 @@ object Main {
               pw.close
             }
 
-            if(config.mode == "analyse"){
+            // if(config.mode == "analyse"){
 
-              //top k infulencers
-              val pw = new PrintWriter(new File(config.out))
-              pw.write("flx_size: " + flx_size + "\n")
-              pw.write("fly_size: " + fly_size + "\n")
-              pw.write("fl_size:  " + (flx_size + fly_size) + "\n")
+            //   //top k infulencers
+            //   val pw = new PrintWriter(new File(config.out))
+            //   pw.write("flx_size: " + flx_size + "\n")
+            //   pw.write("fly_size: " + fly_size + "\n")
+            //   pw.write("fl_size:  " + (flx_size + fly_size) + "\n")
 
 
-              //build fly
-              for( i <- 1 to fly_size){
-                var fly:Map[Int,Boolean] = Map()
-                println("\n---------------- fly = " + i + " -------------------------\n")
-                for( a <- flx_size + 1 to flx_size + fly_size){
-                  if(a - flx_size == i){
-                    fly += (a -> true)
-                  } else {
-                    fly += (a -> false)
-                  }
-                }
+            //   //build fly
+            //   for( i <- 1 to fly_size){
+            //     var fly:Map[Int,Boolean] = Map()
+            //     println("\n---------------- fly = " + i + " -------------------------\n")
+            //     for( a <- flx_size + 1 to flx_size + fly_size){
+            //       if(a - flx_size == i){
+            //         fly += (a -> true)
+            //       } else {
+            //         fly += (a -> false)
+            //       }
+            //     }
 
-                //build flx
-                for ( j <- 1 to flx_size){
-                  var flx:Map[Int,Boolean] = Map()
-                  flx += (j -> true)
+            //     //build flx
+            //     for ( j <- 1 to flx_size){
+            //       var flx:Map[Int,Boolean] = Map()
+            //       flx += (j -> true)
 
-                  //query psdds
-                  var fl = flx ++ fly
-                  var prob_num = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl) * componentweights(x)).sum
+            //       //query psdds
+            //       var fl = flx ++ fly
+            //       var prob_num = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl) * componentweights(x)).sum
 
-                  //compute pr(fly = i| flxj = True)
-                  var prob_div_fly = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), flx) * componentweights(x)).sum
-                  var prob_fly = prob_num/prob_div_fly
+            //       //compute pr(fly = i| flxj = True)
+            //       var prob_div_fly = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), flx) * componentweights(x)).sum
+            //       var prob_fly = prob_num/prob_div_fly
 
-                  //compute pr(flxj = True| fly = i)
-                  var prob_div_flx = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fly) * componentweights(x)).sum
-                  var prob_flx = prob_num/prob_div_flx
+            //       //compute pr(flxj = True| fly = i)
+            //       var prob_div_flx = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fly) * componentweights(x)).sum
+            //       var prob_flx = prob_num/prob_div_flx
 
-                  // println("pr(fly = " + i + " | flx" + j + " = T) = " + prob_fly)
-                  // println("pr(flx" + j + " = T | fly = " + i + " ) = " + prob_fly)
-                  println("flx =" + j + "; fly = " + i + ";\t pr(fly|flx) = " + prob_fly + ";\t pr(flx|fly) = " + prob_flx)
-                  pw.write("flx =" + j + "; fly = " + i + ";\t pr(fly|flx) = " + prob_fly + ";\t pr(flx|fly) = " + prob_flx + "\n")
-                }
-              }
+            //       // println("pr(fly = " + i + " | flx" + j + " = T) = " + prob_fly)
+            //       // println("pr(flx" + j + " = T | fly = " + i + " ) = " + prob_fly)
+            //       println("flx =" + j + "; fly = " + i + ";\t pr(fly|flx) = " + prob_fly + ";\t pr(flx|fly) = " + prob_flx)
+            //       pw.write("flx =" + j + "; fly = " + i + ";\t pr(fly|flx) = " + prob_fly + ";\t pr(flx|fly) = " + prob_flx + "\n")
+            //     }
+            //   }
 
-              pw.close
-            }
-            //
-            // val assignment2 = Map(1 -> false, 2 -> false, 3 -> true)
-            // print("Calculate log probability for map...")
-            // println("\t" + PsddQueries.logProb(psdd, assignment2))
-            // print("Calculate log probability for map...")
-            // println("\t" + PsddQueries.bigDecimalProb(psdd, assignment2))
+            //   pw.close
+            // }
+            // //
+            // // val assignment2 = Map(1 -> false, 2 -> false, 3 -> true)
+            // // print("Calculate log probability for map...")
+            // // println("\t" + PsddQueries.logProb(psdd, assignment2))
+            // // print("Calculate log probability for map...")
+            // // println("\t" + PsddQueries.bigDecimalProb(psdd, assignment2))
 
-            if(config.mode == "generate"){
+            // if(config.mode == "generate"){
 
-              val num_batches_per_class = 1
-              val batch_size = 100
+            //   val num_batches_per_class = 1
+            //   val batch_size = 100
 
-              val pw = new PrintWriter(new File(config.out + "info.txt"))
-              pw.write("flx_size: " + flx_size + "\n")
-              pw.write("fly_size: " + fly_size + "\n")
-              pw.write("fl_size:  " + (flx_size + fly_size) + "\n")
-              pw.write("num_batches_per_class: " + num_batches_per_class + "\n")
-              pw.write("batch_size: " + batch_size + "\n")
+            //   val pw = new PrintWriter(new File(config.out + "info.txt"))
+            //   pw.write("flx_size: " + flx_size + "\n")
+            //   pw.write("fly_size: " + fly_size + "\n")
+            //   pw.write("fl_size:  " + (flx_size + fly_size) + "\n")
+            //   pw.write("num_batches_per_class: " + num_batches_per_class + "\n")
+            //   pw.write("batch_size: " + batch_size + "\n")
 
-              val ymaps = Seq.tabulate(fly_cdim)(x => int2map(x, fly_size, flx_size))
-              println("Calculated ymaps: " + ymaps)
-              pw.write("Calculated ymaps: " + ymaps + '\n')
+            //   val ymaps = Seq.tabulate(fly_cdim)(x => int2map(x, fly_size, flx_size))
+            //   println("Calculated ymaps: " + ymaps)
+            //   pw.write("Calculated ymaps: " + ymaps + '\n')
 
-              //build fly
-              var fly:Map[Int,Boolean] = ymaps(0)
-              for( i <- 0 to fly_cdim - 1){
-                val pw_file = new PrintWriter(new File(config.out + "samples_class_" + i + ".data"))
-                fly = ymaps(i)
+            //   //build fly
+            //   var fly:Map[Int,Boolean] = ymaps(0)
+            //   for( i <- 0 to fly_cdim - 1){
+            //     val pw_file = new PrintWriter(new File(config.out + "samples_class_" + i + ".data"))
+            //     fly = ymaps(i)
                 
-                //geneate for clas i
-                val random = new Random
-                var tmpStr:String  = "Drawing " + (num_batches_per_class * batch_size) + " samples from the Distribution conditioned on fly = " + i + " " + fly + '\n'
-                print(tmpStr)
-                pw.write(tmpStr)
-                for(exp <- 0 to (num_batches_per_class * batch_size) - 1){
-                  print("#")
-                  var xvalues = List.range(1, flx_size + 1)
-                  var flx:Map[Int,Boolean] = Map()
-                  var j_idx = 0
-                  var j = 0
-                  for (var_count <- 1 to flx_size){
-                    // println(xvalues)
-                    j_idx = random.nextInt(xvalues.length)
-                    j = xvalues(j_idx)
-                    xvalues = xvalues.dropRight(xvalues.length - j_idx) ++ xvalues.drop(j_idx + 1)
-                    // println(xvalues)
+            //     //geneate for clas i
+            //     val random = new Random
+            //     var tmpStr:String  = "Drawing " + (num_batches_per_class * batch_size) + " samples from the Distribution conditioned on fly = " + i + " " + fly + '\n'
+            //     print(tmpStr)
+            //     pw.write(tmpStr)
+            //     for(exp <- 0 to (num_batches_per_class * batch_size) - 1){
+            //       print("#")
+            //       var xvalues = List.range(1, flx_size + 1)
+            //       var flx:Map[Int,Boolean] = Map()
+            //       var j_idx = 0
+            //       var j = 0
+            //       for (var_count <- 1 to flx_size){
+            //         // println(xvalues)
+            //         j_idx = random.nextInt(xvalues.length)
+            //         j = xvalues(j_idx)
+            //         xvalues = xvalues.dropRight(xvalues.length - j_idx) ++ xvalues.drop(j_idx + 1)
+            //         // println(xvalues)
 
-                    var fl_tmp = flx ++ fly
-                    fl_tmp += (j -> true)
-                    // pr(FLx_j = true| fly + flx)
-                    var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp) * componentweights(x)).sum
-                    var prob_div_flx:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fly ++ flx) * componentweights(x)).sum
+            //         var fl_tmp = flx ++ fly
+            //         fl_tmp += (j -> true)
+            //         // pr(FLx_j = true| fly + flx)
+            //         var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp) * componentweights(x)).sum
+            //         var prob_div_flx:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fly ++ flx) * componentweights(x)).sum
 
-                    var prob_j = prob_num/prob_div_flx
-                    var value_j = random.nextDouble() <= prob_j
-                    flx += (j -> value_j)
-                    tmpStr = "it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d\n".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length)
-                    // print(tmpStr)
-                    pw.write(tmpStr)
+            //         var prob_j = prob_num/prob_div_flx
+            //         var value_j = random.nextDouble() <= prob_j
+            //         flx += (j -> value_j)
+            //         tmpStr = "it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d\n".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length)
+            //         // print(tmpStr)
+            //         pw.write(tmpStr)
 
-                  }
-                  for(idx <- 1 to flx_size){
-                    pw_file.write("%d,".format(if (flx(idx)) 1 else 0))
-                  }
-                  for(idx <- 1 to fly_size - 1){
-                    pw_file.write("%d,".format(if (fly(idx + flx_size)) 1 else 0))
-                  }
-                  pw_file.write("%d\n".format(if (fly(fly_size + flx_size)) 1 else 0))
-                  print('\n')
-                }
-                print("\n")
-                pw_file.close
-              }
-              pw.close
-            }
+            //       }
+            //       for(idx <- 1 to flx_size){
+            //         pw_file.write("%d,".format(if (flx(idx)) 1 else 0))
+            //       }
+            //       for(idx <- 1 to fly_size - 1){
+            //         pw_file.write("%d,".format(if (fly(idx + flx_size)) 1 else 0))
+            //       }
+            //       pw_file.write("%d\n".format(if (fly(fly_size + flx_size)) 1 else 0))
+            //       print('\n')
+            //     }
+            //     print("\n")
+            //     pw_file.close
+            //   }
+            //   pw.close
+            // }
 
 
-            if(config.mode == "fl_samples"){
+            // if(config.mode == "fl_samples"){
 
-              val num_batches_per_class = 1
-              val batch_size = 100
+            //   val num_batches_per_class = 1
+            //   val batch_size = 100
 
-              val pw = new PrintWriter(new File(config.out + "info.txt"))
-              pw.write("#flx_size: " + flx_size + "\n")
-              pw.write("#fly_size: " + fly_size + "\n")
-              pw.write("#fl_size:  " + (flx_size + fly_size) + "\n")
-              pw.write("#num_batches_per_class: " + num_batches_per_class + "\n")
-              pw.write("#batch_size: " + batch_size + "\n")
+            //   val pw = new PrintWriter(new File(config.out + "info.txt"))
+            //   pw.write("#flx_size: " + flx_size + "\n")
+            //   pw.write("#fly_size: " + fly_size + "\n")
+            //   pw.write("#fl_size:  " + (flx_size + fly_size) + "\n")
+            //   pw.write("#num_batches_per_class: " + num_batches_per_class + "\n")
+            //   pw.write("#batch_size: " + batch_size + "\n")
 
-              val ymaps = Seq.tabulate(fly_cdim)(x => int2map(x, fly_size, flx_size))
-              println("#Calculated ymaps: " + ymaps)
-              pw.write("#Calculated ymaps: " + ymaps + '\n')
+            //   val ymaps = Seq.tabulate(fly_cdim)(x => int2map(x, fly_size, flx_size))
+            //   println("#Calculated ymaps: " + ymaps)
+            //   pw.write("#Calculated ymaps: " + ymaps + '\n')
 
-              //build fly
-              for( i <- 1 to flx_nbvars){
-                for (j <- 0 to fly_cdim - 1){
-                  var offset = flx_nbvars * flx_binVarSize + 1
-                  var flx_var:Map[Int,Boolean] = int2map(j, flx_binVarSize, offset)
-                  var tmpStr:String = "#\n#---------------- Variable = " + i + " category " + j + "short: sample_v_i_c_j -------------------------\n"
-                  println(tmpStr)
-                  pw.write(tmpStr)
+            //   //build fly
+            //   for( i <- 1 to flx_nbvars){
+            //     for (j <- 0 to fly_cdim - 1){
+            //       var offset = flx_nbvars * flx_binVarSize + 1
+            //       var flx_var:Map[Int,Boolean] = int2map(j, flx_binVarSize, offset)
+            //       var tmpStr:String = "#\n#---------------- Variable = " + i + " category " + j + "short: sample_v_i_c_j -------------------------\n"
+            //       println(tmpStr)
+            //       pw.write(tmpStr)
                   
 
-                  //geneate for clas i
-                  val random = new Random
-                  tmpStr = "#Drawing " + (num_batches_per_class * batch_size) + " samples from the Distribution conditioned on fly = " + i + '\n'
-                  print(tmpStr)
-                  pw.write(tmpStr)
-                  for(exp <- 0 to (num_batches_per_class * batch_size) - 1){
-                    print("#")
-                    var xvalues = List.range(1, flx_size + 1)
-                    xvalues = xvalues.dropRight(xvalues.length - offset) ++ xvalues.drop(offset + flx_binVarSize)
-                    var flx:Map[Int,Boolean] = Map()
-                    var j_idx = 0
-                    var j = 0
+            //       //geneate for clas i
+            //       val random = new Random
+            //       tmpStr = "#Drawing " + (num_batches_per_class * batch_size) + " samples from the Distribution conditioned on fly = " + i + '\n'
+            //       print(tmpStr)
+            //       pw.write(tmpStr)
+            //       for(exp <- 0 to (num_batches_per_class * batch_size) - 1){
+            //         print("#")
+            //         var xvalues = List.range(1, flx_size + 1)
+            //         xvalues = xvalues.dropRight(xvalues.length - offset) ++ xvalues.drop(offset + flx_binVarSize)
+            //         var flx:Map[Int,Boolean] = Map()
+            //         var j_idx = 0
+            //         var j = 0
 
-                    //Generate the rest of flx
-                    for (var_count <- 1 to flx_size - flx_binVarSize){
-                      println(xvalues)
-                      j_idx = random.nextInt(xvalues.length)
-                      j = xvalues(j_idx)
-                      xvalues = xvalues.dropRight(xvalues.length - j_idx) ++ xvalues.drop(j_idx + 1)
-                      println(xvalues)
+            //         //Generate the rest of flx
+            //         for (var_count <- 1 to flx_size - flx_binVarSize){
+            //           println(xvalues)
+            //           j_idx = random.nextInt(xvalues.length)
+            //           j = xvalues(j_idx)
+            //           xvalues = xvalues.dropRight(xvalues.length - j_idx) ++ xvalues.drop(j_idx + 1)
+            //           println(xvalues)
 
-                      var fl_tmp = flx ++ flx_var
-                      fl_tmp += (j -> true)
-                      // pr(FLx_j = true| fly + flx)
-                      var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp) * componentweights(x)).sum
-                      var prob_div_flx:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), flx_var ++ flx) * componentweights(x)).sum
+            //           var fl_tmp = flx ++ flx_var
+            //           fl_tmp += (j -> true)
+            //           // pr(FLx_j = true| fly + flx)
+            //           var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp) * componentweights(x)).sum
+            //           var prob_div_flx:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), flx_var ++ flx) * componentweights(x)).sum
 
-                      var prob_j = prob_num/prob_div_flx
-                      var value_j = random.nextDouble() <= prob_j
-                      flx += (j -> value_j)
-                      tmpStr = "it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length)
-                      println(tmpStr)
-                    }
+            //           var prob_j = prob_num/prob_div_flx
+            //           var value_j = random.nextDouble() <= prob_j
+            //           flx += (j -> value_j)
+            //           tmpStr = "it: %d, j_idx: %d, j: %d, prob_j: %.2f, value_j: %s, xvlaues.length: %d".format(var_count,j_idx,j, prob_j, value_j.toString, xvalues.length)
+            //           println(tmpStr)
+            //         }
 
-                    var highestProb:BigDecimal = 0.0
-                    var class_probabilities:Seq[BigDecimal] = Seq()
-                    var highestProbIdx = 0
+            //         var highestProb:BigDecimal = 0.0
+            //         var class_probabilities:Seq[BigDecimal] = Seq()
+            //         var highestProbIdx = 0
 
-                    var priors:Seq[BigDecimal] = Seq.tabulate(fly_cdim)(x =>
-                      Seq.tabulate(numComponents)(xx => PsddQueries.bigDecimalProb(psdds(xx), ymaps(x)) * componentweights(xx)).sum
-                      )
+            //         var priors:Seq[BigDecimal] = Seq.tabulate(fly_cdim)(x =>
+            //           Seq.tabulate(numComponents)(xx => PsddQueries.bigDecimalProb(psdds(xx), ymaps(x)) * componentweights(xx)).sum
+            //           )
 
-                    for (j <- 0 to fly_cdim -1){
-                      var assignment_tmp = flx ++ flx_var ++ ymaps(j)
-                      var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), assignment_tmp) * componentweights(x)).sum
-                      result = result/priors(j)
-                      class_probabilities = class_probabilities :+ result
+            //         for (j <- 0 to fly_cdim -1){
+            //           var assignment_tmp = flx ++ flx_var ++ ymaps(j)
+            //           var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), assignment_tmp) * componentweights(x)).sum
+            //           result = result/priors(j)
+            //           class_probabilities = class_probabilities :+ result
 
-                      if (result > highestProb){
-                        highestProb = result
-                        highestProbIdx = j
-                      }
-                    }
-                    tmpStr = "----- assigned label " + highestProbIdx + " to the sample drawn from " + i + " " + j
-                    println(tmpStr)
-                    pw.write(tmpStr)
+            //           if (result > highestProb){
+            //             highestProb = result
+            //             highestProbIdx = j
+            //           }
+            //         }
+            //         tmpStr = "----- assigned label " + highestProbIdx + " to the sample drawn from " + i + " " + j
+            //         println(tmpStr)
+            //         pw.write(tmpStr)
 
 
-                    val pw_file = new PrintWriter(new File(config.out + "samples_v_" + i + "_c_" + j + ".data"))
-                    for(idx <- 1 to flx_size){
-                      pw_file.write("%d,".format(if (flx(idx)) 1 else 0))
-                    }
-                    for(idx <- 1 to fly_size){
-                      pw_file.write("%d,".format(if (ymaps(highestProbIdx)(idx + flx_size)) 1 else 0))
-                    }
-                    pw_file.write("\n")
-                  }
-                  print("\n")
+            //         val pw_file = new PrintWriter(new File(config.out + "samples_v_" + i + "_c_" + j + ".data"))
+            //         for(idx <- 1 to flx_size){
+            //           pw_file.write("%d,".format(if (flx(idx)) 1 else 0))
+            //         }
+            //         for(idx <- 1 to fly_size){
+            //           pw_file.write("%d,".format(if (ymaps(highestProbIdx)(idx + flx_size)) 1 else 0))
+            //         }
+            //         pw_file.write("\n")
+            //       }
+            //       print("\n")
 
-                }
-              }
+            //     }
+            //   }
 
-              pw.close
-            }
+            //   pw.close
+            // }
 
         }
 
@@ -1488,5 +1476,20 @@ object Main {
   def int2bin(i: Int, numPos: Int): String = {
     def nextPow2(i: Int, acc: Int): Int = if (i < acc) acc else nextPow2(i, 2 * acc)
     (nextPow2(i, math.pow(2,numPos).toInt)+i).toBinaryString.substring(1)
+  }
+
+  def int2onehot(i: Int, numPos: int, strtIdx: Int): Map[Int,Boolean] = {
+    var resmap:Map[Int,Boolean] = Map()
+    var idx:Int = -1
+    var value:Boolean = false
+    for( a <- 0 to numPos - 1){
+      idx = a + strtIdx + 1
+      if (a == i){
+        resmap += (idx -> true)
+      } else {
+        resmap += (idx -> false)
+      }
+    }
+    return resmap
   }
 }
