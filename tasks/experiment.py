@@ -1,6 +1,6 @@
 import os,sys
 sys.path.append('..')
-from src import learn_psdd_wrapper 
+from src import learn_psdd_wrapper as learn_psdd_wrapper
 
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
@@ -24,20 +24,13 @@ def decode_data(experiment_name, file_to_decode):
 	os.system(cmd)
 
 
-def do_training(experiment_dir_path,cluster_name):
+def do_psdd_training(experiment_dir_path,cluster_name, compress_fly = True, small_data_set = False, do_encode_data = True):
 	os.system('pwd')
-	small_data_set = True
-
-	# experiment_name = 'ex_4_emnist_32_8'
-	# cluster_name = 'james10'
-	# dataset = 'mnist'
 
 	encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
 
-	test_constraints = os.path.join(experiment_dir_path, 'test_constraints.cnf')
-
-	# learn_encoder(testing = testing)
-	encode_data(experiment_dir_path.split('/')[-1], testing = small_data_set,compress_fly = False)
+	if do_encode_data:
+		encode_data(experiment_dir_path.split('/')[-1], testing = small_data_set, compress_fly = compress_fly)
 
 	for root, dir_names, file_names in os.walk(encoded_data_dir):
 		for i in file_names:
@@ -49,8 +42,29 @@ def do_training(experiment_dir_path,cluster_name):
 				test_data_file = os.path.join(root, i)
 
 	psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
-	learn_psdd_wrapper.learn_psdd(psdd_out_dir, train_data_path, valid_data_path = valid_data_path,\
-				replace_existing = True, vtree_method = 'miBlossom', constraints_cnf_file = test_constraints)
+	vtree_path, psdds, weights = learn_psdd_wrapper.learn_psdd(psdd_out_dir, train_data_path, valid_data_path = valid_data_path,\
+				replace_existing = True, vtree_method = 'miBlossom')
+
+def do_evaluation(experiment_dir_path, cluster_id):
+
+	encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
+	for root, dir_names, file_names in os.walk(encoded_data_dir):
+		for i in file_names:
+			if i.endswith('test.data'):
+				test_data_file = os.path.join(root, i)
+
+	psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
+
+	vtree_path = os.path.abspath(os.path.join(psdd_out_dir, './model.vtree'))
+	print('output vtree file: {}'.format(vtree_path), 'files')
+	psdd_path = os.path.abspath(os.path.join(psdd_out_dir, './model.psdd'))
+	print('output psdd file: {}'.format(psdd_path), 'files')
+
+	evaluation_data_dir = os.path.join(experiment_dir_path,'evaluation_{}/'.format(cluster_id))
+	classification_out_file = os.path.join(evaluation_data_dir, 'classification.txt')
+
+	learn_psdd_wrapper.measure_classifcation_accuracy_on_file(test_data_file, vtree_path, list([psdd_path]), list([1]), \
+								 classification_out_file, test = False)
 
 # ============================================================================================================================
 # ============================================================================================================================
@@ -189,11 +203,15 @@ def decode_class_samples(experiment_dir, cluster_id):
 
 if __name__ == '__main__':
 	experiment_name = 'ex_1_fl16_c2'
-	cluster_id = 'student_compute'
+	cluster_id = 'bloodborn'
 
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 
-	do_training(experiment_dir_path, cluster_id)
+	# do_psdd_training(experiment_dir_path, cluster_id, small_data_set = True, do_encode_data = False, compress_fly = True)
+	do_evaluation(experiment_dir_path, cluster_id)
+
+
+
 	# measure_classifcation_acc(experiment_dir, cluster_id, test = False)
 	# draw_class_samples(experiment_dir, cluster_id)
 	# decode_class_samples(experiment_dir, cluster_id)

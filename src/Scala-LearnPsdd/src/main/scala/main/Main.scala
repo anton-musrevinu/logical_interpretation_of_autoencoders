@@ -727,18 +727,18 @@ object Main {
       valueName ("<file>,<file>,...").
       action( (x,c) => c.copy(psdds = x))
 
-    opt[Int]('y',"fly_info").
+    opt[Seq[Int]]('y',"fly_info").
       required().
       valueName("<int>,<int>,...").
-      action((x,c) => c.copy(fly_info=x)).
+      action((x,c) => c.copy(fly_info = x)).
       text(
         "the fly info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
       )
 
-    opt[Int]('x',"flx_info").
+    opt[Seq[Int]]('x',"flx_info").
       required().
       valueName("<int>,<int>,...").
-      action((x,c)=>c.copy(flx_info=x)).
+      action((x,c)=>c.copy(flx_info = x)).
       text(
         "the flx info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
       )
@@ -1132,17 +1132,17 @@ object Main {
             val fly_start_idx =       config.fly_info(3)
             val fly_end_idx =         config.fly_info(4)
 
-            val fl_info_str:String = "total_size          : " + total_size 
-                                     + "\nflx_nb_vars         : " + flx_nb_vars
-                                     + "\nflx_var_cat_dim     : " + flx_var_cat_dim
-                                     + "\nflx_binary_encoded  : " + flx_binary_encoded
-                                     + "\nflx_start_idx       : " + flx_start_idx
-                                     + "\nflx_end_idx         : " + flx_end_idx
-                                     + "\n\nfly_nb_vars         : " + fly_nb_vars
-                                     + "\nfly_var_cat_dim     : " + fly_var_cat_dim
-                                     + "\nfly_binary_encoded  : " + fly_binary_encoded
-                                     + "\nfly_start_idx       : " + fly_start_idx
-                                     + "\nfly_end_idx         : " + fly_end_idx
+            val fl_info_str:String =("total_size          :  " + total_size 
+                                 + "\nflx_nb_vars         : " + flx_nb_vars
+                                 + "\nflx_var_cat_dim     : " + flx_var_cat_dim
+                                 + "\nflx_binary_encoded  : " + flx_binary_encoded
+                                 + "\nflx_start_idx       : " + flx_start_idx
+                                 + "\nflx_end_idx         : " + flx_end_idx
+                                 + "\n\nfly_nb_vars         : " + fly_nb_vars
+                                 + "\nfly_var_cat_dim     : " + fly_var_cat_dim
+                                 + "\nfly_binary_encoded  : " + fly_binary_encoded
+                                 + "\nfly_start_idx       : " + fly_start_idx
+                                 + "\nfly_end_idx         : " + fly_end_idx)
             println(fl_info_str)
 
             if(config.mode == "classify"){
@@ -1478,7 +1478,7 @@ object Main {
     (nextPow2(i, math.pow(2,numPos).toInt)+i).toBinaryString.substring(1)
   }
 
-  def int2onehot(i: Int, numPos: int, strtIdx: Int): Map[Int,Boolean] = {
+  def int2onehot(i: Int, numPos: Int, strtIdx: Int): Map[Int,Boolean] = {
     var resmap:Map[Int,Boolean] = Map()
     var idx:Int = -1
     var value:Boolean = false

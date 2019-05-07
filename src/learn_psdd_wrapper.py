@@ -15,6 +15,7 @@
 #				
 #=============================================================================================================================================
 import os, platform, shutil
+from src.lowlevel.util.psdd_interface import read_info_file
 
 #DEPENDENCIES and USER variables:
 
@@ -23,7 +24,7 @@ import os, platform, shutil
 # - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
 LEARNPSDD_ROOT_DIR_USER = './code/msc/src/Scala-LearnPsdd/'
-RECOMPILE_PSDD_SOURCE = False
+RECOMPILE_PSDD_SOURCE = True
 # -------------------------------------------------------------------------------------------------------------------------
 #
 # - GRAPHVIZ   			(graphing software)     -   Please specify if finstalled:
@@ -34,6 +35,12 @@ GRAPHVIZ_INSTALLED = True
 # - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
 #
 SDD_LIB_DIR_USER = './code/msc/src/wmisdd/bin/'
+#
+# - Updated Source version of LearnPSDD (STAR-UCLA Software) - Link:
+#
+LEARNPSDD_PAPER_ROOT_DIR_USER = './code/msc/src/learnPSDD/'
+USE_LEARN_PSDD_PAPER = True
+RECOMPILE_PSDD_PAPER_SOURCE = False
 #
 #============================================================================================================================
 #============================ SCRIPT METHODS (need to be at the top of the file =============================================
@@ -123,6 +130,15 @@ else:
 write('SDDLIB_CMD \t{}'.format(SDDLIB_CMD),'init')
 _check_if_file_exists(SDDLIB_CMD)
 
+if USE_LEARN_PSDD_PAPER:
+	LEARNPSDD_PAPER_ROOT_DIR = os.path.abspath(os.path.join(os.environ['HOME'],LEARNPSDD_PAPER_ROOT_DIR_USER))
+	write('LEARNPSDD_PAPER_ROOT_DIR \t{}'.format(LEARNPSDD_PAPER_ROOT_DIR),'init')
+	_check_if_dir_exists(LEARNPSDD_PAPER_ROOT_DIR)
+	if RECOMPILE_PSDD_PAPER_SOURCE:
+		_recompile_source(LEARNPSDD_PAPER_ROOT_DIR)
+	LEARNPSDD_PAPER_CMD = os.path.abspath(os.path.join(LEARNPSDD_PAPER_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
+	write('LEARN_PSDD_PAPER_CMD \t{}'.format(LEARNPSDD_PAPER_CMD),'init')
+	_check_if_file_exists(LEARNPSDD_PAPER_CMD)
 #============================================================================================================================
 #============================================ AUXILIARY FUNCTIONS ====================================================
 #============================================================================================================================
@@ -159,6 +175,7 @@ def learn_vtree(train_data_path, vtree_out_path,
 	-o, --out <path>         
 	-e, --entropyOrder       choose prime variables to have lower entropy
 	'''
+
 	_check_if_file_exists(train_data_path)
 
 	out_learnvtree_tmp_dir = os.path.abspath(out_learnvtree_tmp_dir)
@@ -499,9 +516,77 @@ def learn_ensembly_psdd_from_data(train_data_path, vtree_path, out_psdd_file, \
 	# if not keep_generated_files:
 	# 	shutil.rmtree(out_learnpsdd_tmp_dir)
 
-# ====================================================================================================================
-# ========================================   Higher level methods    =================================================
-# ====================================================================================================================
+#============================================================================================================================
+#============================================  methods that work with updated source ========================================
+#============================================================================================================================
+
+def learn_ensembly_psdd2_from_data(dataDir, vtree_path, output_dir, num_components = 10):
+
+	# Method for running the psdd code from the paper with (updated source)
+
+	_check_if_file_exists(dataDir + 'train.data')
+	_check_if_file_exists(dataDir + 'valid.data')
+	_check_if_file_exists(dataDir + 'test.data')
+	_check_if_file_exists(vtree_path)
+	_check_if_dir_exists(output_dir)
+
+	cmd_str = 'java -jar {} SoftEM {} {} {} {}'.format(\
+		LEARNPSDD_PAPER_CMD, dataDir, vtree_file, psdd_out_dir, num_components)
+
+	print('excuting: {}'.format(cmd_str))
+	os.system(cmd_str)
+
+def measure_classifcation_accuracy_on_file(query_data_path, vtree_path, psdds, weights, out_file, test = False):
+
+	_check_if_file_exists(query_data_path)
+	_check_if_file_exists(vtree_path)
+	for i in psdds:
+		_check_if_file_exists(i)
+
+	evaluationDir = '/'.join(out_file.split('/')[:-1])
+	if not _check_if_dir_exists(evaluationDir, raiseException = False):
+		os.mkdir(evaluationDir)
+
+	sample_data_path = query_data_path + '.sample'
+	with open(sample_data_path, 'w') as f:
+		with open(query_data_path, 'r') as f2:
+			for line_idx, line in enumerate(f2):
+				f.write(line)
+				if line_idx > 100:
+					break
+
+	fl_info = read_info_file(query_data_path)
+
+	if test:
+		query_data_path = sample_data_path
+	# -v vtree
+	# -p list of psdds
+	# -a list of psdd weighs
+	# -d data for initializing the psdd
+	# -fly categorical dimention of the FLy --- the number of labels
+	# -flx categorical dimention of the FLx
+	# -o output file
+	cmd_str = 'java -jar ' + LEARNPSDD_CMD + ' query --mode classify ' + \
+			' --vtree {}'.format(vtree_path) + \
+			' --query {}'.format(query_data_path) + \
+			' --psdds {}'.format(*psdds) + \
+			' --out {}'.format(out_file) + \
+			' --componentweights {}'.format(*weights) + \
+			' -d {}'.format(sample_data_path) + \
+			' --fly_info {}'.format(fl_info['fly'].get_values_as_str_list()) + \
+			' --flx_info {}'.format(fl_info['flx'].get_values_as_str_list()) + \
+			' --data_bug {}'.format('data_bug' in query_data_path)
+	
+	write(cmd_str,'cmd-start')
+	os.system(cmd_str)
+
+	_check_if_file_exists(out_file)
+
+	write('Finished measureing classfication acc. File location: {}'.format(out_file), 'cmd-end')
+
+#============================================================================================================================
+# ==========================================   Higher level methods    ======================================================
+#============================================================================================================================
 
 def learn_psdd(psdd_out_dir, train_data_path, 
 		valid_data_path = None, test_data_path = None, replace_existing = False, vtree_method = 'miBlossom', \
@@ -584,6 +669,9 @@ def learn_psdd(psdd_out_dir, train_data_path,
 			shutil.rmtree(contraints_tmp_dir)
 
 	write('learn_psdd method finished.','final')
+
+	if num_compent_learners == 1:
+		return out_vtree_file, list([out_psdd_file]), list([1.0])
 
 # ============================================================================================================================
 # ============================================================================================================================

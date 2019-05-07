@@ -13,6 +13,9 @@ class FlDomainInfo(object):
 	def __str__(self):
 		return '{},{},{},{},{},{}'.format(self.name, self.nb_vars, self.var_cat_dim, self.bin_encoded, self.encoded_start_idx, self.encoded_end_idx)
 
+	def get_values_as_str_list(self):
+		return '{},{},{},{},{}'.format(self.nb_vars, self.var_cat_dim, self.bin_encoded, self.encoded_start_idx, self.encoded_end_idx)
+
 def write_fl_batch_to_file(file_encoded_path, flx_categorical, fly_onehot, batch_idx, compress_fly = True):
 	flx_binary = encode_flx_to_binary_batch(flx_categorical)
 	if compress_fly:
@@ -50,8 +53,8 @@ def create_info_file(file_encoded_path, fl_info):
 
 def read_info_file(file_encoded_path):
 	domains = {}
-	with open(info_file, 'r') as f:
-		for line_idx, line in enumerate(info_file):
+	with open(file_encoded_path + '.info', 'r') as f:
+		for line_idx, line in enumerate(f):
 			if line_idx == 0:
 				continue
 			fl_info = FlDomainInfo(*line.split(','))
