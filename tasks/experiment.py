@@ -45,26 +45,24 @@ def do_psdd_training(experiment_dir_path,cluster_name, compress_fly = True, smal
 	vtree_path, psdds, weights = learn_psdd_wrapper.learn_psdd(psdd_out_dir, train_data_path, valid_data_path = valid_data_path,\
 				replace_existing = True, vtree_method = 'miBlossom')
 
-def do_evaluation(experiment_dir_path, cluster_id):
-
+def do_evaluation(experiment_dir_path, cluster_id, test = False):
+	print('experiment_dir_path',experiment_dir_path)
 	encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
 	for root, dir_names, file_names in os.walk(encoded_data_dir):
 		for i in file_names:
-			if i.endswith('test.data'):
+			if i.endswith('train.data'):
+				train_data_path = os.path.join(root, i)
+			elif i.endswith('valid.data'):
+				valid_data_path = os.path.join(root, i)
+			elif i.endswith('test.data'):
 				test_data_file = os.path.join(root, i)
 
-	psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
+	if 'ex_5' in experiment_dir_path or 'ex_6' in experiment_dir_path:
+		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_model_{}/'.format(cluster_id))
+	else:
+		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
 
-	vtree_path = os.path.abspath(os.path.join(psdd_out_dir, './model.vtree'))
-	print('output vtree file: {}'.format(vtree_path), 'files')
-	psdd_path = os.path.abspath(os.path.join(psdd_out_dir, './model.psdd'))
-	print('output psdd file: {}'.format(psdd_path), 'files')
-
-	evaluation_data_dir = os.path.join(experiment_dir_path,'evaluation_{}/'.format(cluster_id))
-	classification_out_file = os.path.join(evaluation_data_dir, 'classification.txt')
-
-	learn_psdd_wrapper.measure_classifcation_accuracy_on_file(test_data_file, vtree_path, list([psdd_path]), list([1]), \
-								 classification_out_file, test = False)
+	learn_psdd_wrapper.measure_classifcation_accuracy_on_file(psdd_out_dir, test_data_file, train_data_path, valid_data_path = valid_data_path, test = test, psdd_init_data_per = 0.1)
 
 # ============================================================================================================================
 # ============================================================================================================================
@@ -201,16 +199,57 @@ def decode_class_samples(experiment_dir, cluster_id):
 		decode_data(experiment_name.split('/')[-1], file)
 		# return
 
-if __name__ == '__main__':
-	experiment_name = 'ex_1_fl16_c2'
-	cluster_id = 'bloodborn'
+def classify_all_missing():
 
+	experiment_name = 'ex_5_mnist_32_4_data_bug'
+	cluster_id = 'student_compute'
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	do_evaluation(experiment_dir_path, cluster_id)
 
-	# do_psdd_training(experiment_dir_path, cluster_id, small_data_set = True, do_encode_data = False, compress_fly = True)
+	experiment_name = 'ex_5_mnist_64_4'
+	cluster_id = 'staff_compute'
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	do_evaluation(experiment_dir_path, cluster_id)
+
+	experiment_name = 'ex_6_emnist_64_4'
+	cluster_id = 'james04'
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	do_evaluation(experiment_dir_path, cluster_id)
+
+	experiment_name = 'ex_6_emnist_64_4'
+	cluster_id = 'student_compute'
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	do_evaluation(experiment_dir_path, cluster_id)
+
+	experiment_name = 'ex_6_emnist_128_2'
+	cluster_id = 'james07'
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	do_evaluation(experiment_dir_path, cluster_id)
+
+	experiment_name = 'ex_6_emnist_32_8'
+	cluster_id = 'james08'
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	do_evaluation(experiment_dir_path, cluster_id)
+
+	experiment_name = 'ex_6_emnist_64_2'
+	cluster_id = 'james06'
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 	do_evaluation(experiment_dir_path, cluster_id)
 
 
+if __name__ == '__main__':
+	# experiment_name = 'ex_5_mnist_64_4'
+	# cluster_id = 'staff_compute'
+	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	# # do_psdd_training(experiment_dir_path, cluster_id, small_data_set = True, do_encode_data = False, compress_fly = True)
+	# do_evaluation(experiment_dir_path, cluster_id)
+
+	classify_all_missing()
+
+	# experiment_name = 'ex_5_mnist_32_4_data_bug'
+	# cluster_id = 'student_compute'
+	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	# do_evaluation(experiment_dir_path, cluster_id, test = True)
 
 	# measure_classifcation_acc(experiment_dir, cluster_id, test = False)
 	# draw_class_samples(experiment_dir, cluster_id)

@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 class FlDomainInfo(object):
 
@@ -60,6 +61,29 @@ def read_info_file(file_encoded_path):
 			fl_info = FlDomainInfo(*line.split(','))
 			domains[fl_info.name] = fl_info
 	return domains
+
+def recreate_fl_info_for_old_experiments(exeriment_dir):
+	exeriment_dir = os.path.abspath(exeriment_dir)
+	domains = {}
+	experiment_name = exeriment_dir.split('/')[-2]
+	print('recreate_fl_info_for_old_experiments', 'experiment_name',experiment_name, exeriment_dir)
+
+	flx_nb_vars = int(experiment_name.split('_')[3])
+	flx_var_cat_dim = int(experiment_name.split('_')[4])
+	flx_bin_encoded = 1
+	flx_encoded_start_idx = 0
+	flx_encoded_end_idx = int(np.ceil(np.log2(flx_var_cat_dim))) * flx_nb_vars
+	domains['flx'] = FlDomainInfo('flx', flx_nb_vars, flx_var_cat_dim, flx_bin_encoded, flx_encoded_start_idx, flx_encoded_end_idx)
+
+	fly_nb_vars = 1
+	fly_var_cat_dim = 47 if 'emnist' in experiment_name else 10
+	fly_bin_encoded = 1
+	fly_encoded_start_idx = flx_encoded_end_idx
+	fly_encoded_end_idx = 6 + fly_encoded_start_idx if 'data_bug' in experiment_name else int(np.ceil(np.log2(fly_var_cat_dim))) + fly_encoded_start_idx
+	domains['fly'] = FlDomainInfo('fly', fly_nb_vars, fly_var_cat_dim, fly_bin_encoded, fly_encoded_start_idx, fly_encoded_end_idx)
+
+	return domains
+
 
 def encode_flx_to_binary_batch(flx_categorical):
 	flx_binary_size = int(np.ceil(np.log2(flx_categorical.shape[2])))

@@ -20,8 +20,8 @@ if __name__ == '__main__':
 
 	if opt.phase == 'train':
 		manager.do_training()
-	elif opt.phase == 'info':
-		manager.print_info()
+	elif opt.phase == 'graph':
+		manager.make_graphs()
 	elif opt.phase == 'encode':
 		manager.convert_all_data()
 	elif opt.phase == 'decode':

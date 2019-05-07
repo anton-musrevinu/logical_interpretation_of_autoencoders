@@ -378,3 +378,10 @@ class BaseManager():
 
 		plot_stats_in_graph(self.total_losses, self.manager_dir)
 		make_time_image(self.experiment_logs)
+
+
+
+	def make_graphs(self):
+		plot_stats_in_graph(self.total_losses, self.manager_dir)
+		make_time_image(self.experiment_logs)
+		

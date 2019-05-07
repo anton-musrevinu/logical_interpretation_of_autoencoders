@@ -15,7 +15,7 @@
 #				
 #=============================================================================================================================================
 import os, platform, shutil
-from src.lowlevel.util.psdd_interface import read_info_file
+from src.lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_for_old_experiments
 
 #DEPENDENCIES and USER variables:
 
@@ -24,7 +24,7 @@ from src.lowlevel.util.psdd_interface import read_info_file
 # - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
 LEARNPSDD_ROOT_DIR_USER = './code/msc/src/Scala-LearnPsdd/'
-RECOMPILE_PSDD_SOURCE = True
+RECOMPILE_PSDD_SOURCE = False
 # -------------------------------------------------------------------------------------------------------------------------
 #
 # - GRAPHVIZ   			(graphing software)     -   Please specify if finstalled:
@@ -150,6 +150,71 @@ def convert_dot_to_pdf(file_path, do_this = True):
 	cmd_str = 'dot -Tpdf {}.dot -o {}.pdf'.format(file_path,file_path)
 	os.system(cmd_str)
 	write('Converted file to pdf (graphical depictoin). Location: {}'.format(file_path + '.pdf'))
+
+def get_file_names_and_check(psdd_out_dir):
+
+	vtree_path = os.path.join(psdd_out_dir, './model.vtree')
+	write('output vtree file: {}'.format(vtree_path), 'files')
+	psdd_file = os.path.join(psdd_out_dir, './model.psdd')
+	write('output psdd file: {}'.format(psdd_file), 'files')
+
+	_check_if_file_exists(vtree_path)
+
+	psdds = list([psdd_file])
+	for psdd_path in psdds:
+		_check_if_file_exists(psdd_path)
+
+	weights = list([1])
+
+	return vtree_path, psdds, weights
+
+def get_old_file_names_and_check(psdd_out_dir):
+	cluster_id = psdd_out_dir.split('psdd_model')[1]
+	vtree_path = os.path.abspath(os.path.join(psdd_out_dir, '../symbolic_stuff{}/model_learned.vtree'.format(cluster_id)))
+
+	_check_if_file_exists(vtree_path)
+
+	prgfile = os.path.abspath(os.path.join(psdd_out_dir, './progress.txt'))
+	_check_if_file_exists(prgfile)
+	best_it_idx = -1
+	best_it_ll = -100000000
+	best_it_weights = []
+	with open(prgfile, 'r') as f:
+		for line_idx, line in enumerate(f):
+			splitted = line.split(';')
+			if len(splitted) < 5 or line_idx == 0:
+				continue
+			num_learners = len(splitted) - 5
+			current_it = int(splitted[0].strip())
+			current_ll = float(splitted[-1].strip())
+			# print(current_ll, current_ll > best_it_ll)
+			if current_ll > best_it_ll:
+				best_it_idx = current_it 
+				best_it_ll = current_ll
+				best_it_weights = []
+				for idx, i in enumerate(range(4,num_learners + 4)):
+					best_it_weights.append(float(splitted[i].strip()))
+
+	if best_it_idx == -1 or num_learners == -1:
+		print('no iteration results found')
+		return
+
+	write('reading old experiment files, best it found at: {} with {} and num_learners: {}'.format(best_it_idx, best_it_ll,num_learners))
+
+	psdds = []
+	for i in range(num_learners):
+		psdd_file = os.path.abspath(os.path.join(psdd_out_dir, './models/it_{}_l_{}.psdd'.format(best_it_idx, i)))
+		_check_if_file_exists(psdd_file)
+		psdds.append(psdd_file)
+
+	return vtree_path, psdds, best_it_weights
+
+def list_to_cs_string(list_to_convert):
+	outstr = ''
+	for i in list_to_convert:
+		outstr += '{},'.format(i)
+	outstr = outstr[:-1]
+	return outstr
 
 #============================================================================================================================
 #============================================================================================================================
@@ -536,29 +601,63 @@ def learn_ensembly_psdd2_from_data(dataDir, vtree_path, output_dir, num_componen
 	print('excuting: {}'.format(cmd_str))
 	os.system(cmd_str)
 
-def measure_classifcation_accuracy_on_file(query_data_path, vtree_path, psdds, weights, out_file, test = False):
+def measure_classifcation_accuracy_on_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, psdd_init_data_per = 1):
 
 	_check_if_file_exists(query_data_path)
-	_check_if_file_exists(vtree_path)
-	for i in psdds:
-		_check_if_file_exists(i)
+	_check_if_dir_exists(psdd_out_dir)
 
-	evaluationDir = '/'.join(out_file.split('/')[:-1])
+	if 'psdd_model' in psdd_out_dir:
+		vtree_path, psdds, weights = get_old_file_names_and_check(psdd_out_dir)
+	else:
+		vtree_path, psdds, weights = get_file_names_and_check(psdd_out_dir)
+
+	write('fist: {}'.format(psdds))
+	write('second: {}'.format(*psdds))
+
+	evaluationDir = os.path.abspath(os.path.join(psdd_out_dir, './evaluation/'))
 	if not _check_if_dir_exists(evaluationDir, raiseException = False):
 		os.mkdir(evaluationDir)
 
-	sample_data_path = query_data_path + '.sample'
-	with open(sample_data_path, 'w') as f:
-		with open(query_data_path, 'r') as f2:
-			for line_idx, line in enumerate(f2):
-				f.write(line)
-				if line_idx > 100:
-					break
-
-	fl_info = read_info_file(query_data_path)
+	if out_file == None:
+		out_file = os.path.join(evaluationDir, './classification_{}.txt'.format(psdd_init_data_per))
 
 	if test:
+		sample_data_path = query_data_path + '.sample'
+		with open(sample_data_path, 'w') as f:
+			with open(query_data_path, 'r') as f2:
+				for line_idx, line in enumerate(f2):
+					f.write(line)
+					if line_idx > 100:
+						break
 		query_data_path = sample_data_path
+
+	if psdd_init_data_per != 1:
+		sample_data_path = train_data_path + '.sample'
+		stop_line_idx = psdd_init_data_per * sum(1 for line in open(train_data_path,'r'))
+		with open(sample_data_path, 'w') as f:
+			with open(train_data_path, 'r') as f2:
+				for line_idx, line in enumerate(f2):
+					f.write(line)
+					if line_idx > stop_line_idx:
+						break
+		train_data_path = sample_data_path
+
+		if valid_data_path != None:
+			sample_data_path = valid_data_path + '.sample'
+			stop_line_idx = psdd_init_data_per * sum(1 for line in open(valid_data_path,'r'))
+			with open(sample_data_path, 'w') as f:
+				with open(valid_data_path, 'r') as f2:
+					for line_idx, line in enumerate(f2):
+						f.write(line)
+						if line_idx > stop_line_idx:
+							break
+			valid_data_path = sample_data_path
+
+	if 'psdd_model' in psdd_out_dir:
+		fl_info = recreate_fl_info_for_old_experiments(psdd_out_dir)
+	else:
+		fl_info = read_info_file(query_data_path)
+
 	# -v vtree
 	# -p list of psdds
 	# -a list of psdd weighs
@@ -569,13 +668,15 @@ def measure_classifcation_accuracy_on_file(query_data_path, vtree_path, psdds, w
 	cmd_str = 'java -jar ' + LEARNPSDD_CMD + ' query --mode classify ' + \
 			' --vtree {}'.format(vtree_path) + \
 			' --query {}'.format(query_data_path) + \
-			' --psdds {}'.format(*psdds) + \
+			' --psdds {}'.format(list_to_cs_string(psdds)) + \
 			' --out {}'.format(out_file) + \
-			' --componentweights {}'.format(*weights) + \
-			' -d {}'.format(sample_data_path) + \
+			' --componentweights {}'.format(list_to_cs_string(weights)) + \
+			' -d {}'.format(train_data_path) + \
 			' --fly_info {}'.format(fl_info['fly'].get_values_as_str_list()) + \
 			' --flx_info {}'.format(fl_info['flx'].get_values_as_str_list()) + \
 			' --data_bug {}'.format('data_bug' in query_data_path)
+	if valid_data_path != None:
+		cmd_str += ' -b {}'.format(valid_data_path)
 	
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)

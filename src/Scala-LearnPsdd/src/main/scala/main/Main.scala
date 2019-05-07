@@ -702,6 +702,11 @@ object Main {
       valueName ("<file>").
       action { (x, c) => c.copy(train = x) }
 
+    opt[File]('b', "validData").
+      required().
+      valueName ("<file>").
+      action { (x, c) => c.copy(valid = x) }
+
     opt[File]('q', "query").
       optional().
       valueName ("<file>").
@@ -1091,16 +1096,18 @@ object Main {
             sddMgr.useAutoGcMin(false)
 
 
-
+            val pw = new PrintWriter(new File(config.out))
 
             print("Prepare psdd manager...")
             val vtree = VtreeNode.read(config.vtree)
+            pw.write("reading vtree from: " + config.vtree + "\n")
+            println("reading vtree from: " + config.vtree)
             val psddMgr = new PsddManager(sddMgr, true)
             println(" done!")
 
             print("Read data...")
             val trainData = Data.readFromFile(config.train)
-            val validData = trainData.empty
+            val validData = if (config.valid == null) trainData.empty else Data.readFromFile(config.valid)
             val testData = trainData.empty
             val data = new DataSets(trainData, validData, testData)
             println(" done!")
@@ -1111,7 +1118,8 @@ object Main {
             val componentweights = config.componentweights
             println("Psdd components given")
             for (i <- 0 to numComponents - 1){
-              println("PSDD: " + i + " cw: " + componentweights(i) + " psdd: " + psdds(i))
+              println("PSDD: " + i + " cw: " + componentweights(i) + " psdd: " + psdds(i) + "\n\tfile: " + config.psdds(i))
+              pw.write("PSDD: " + i + " cw: " + componentweights(i) + " psdd: " + psdds(i) + "\n\tfile: " + config.psdds(i) + "\n")
             }
             println(" done!")
 
@@ -1146,7 +1154,6 @@ object Main {
             println(fl_info_str)
 
             if(config.mode == "classify"){
-              val pw = new PrintWriter(new File(config.out))
               pw.write(fl_info_str + "\n")
 
               var ymaps:Seq[Map[Int,Boolean]] = null
@@ -1174,7 +1181,7 @@ object Main {
                 var actual_label_num:Int = -1
                 assignment.backend(i).keys.foreach{j =>
                   if (j == 0){
-                    println("INDEXING MISTAKE AT POS: adsfadsfasfd (assuming 1 - )")
+                    println("INDEXING MISTAKE AT POS: adsfadsfasfd (assuming 1 - ..)")
                   }
                   if(flx_start_idx < j && j <= flx_end_idx){
                     xmap += (j -> assignment.backend(i)(j))
@@ -1204,7 +1211,7 @@ object Main {
                     actual_label_num = j
                   }
                 }
-                var outputString = "For test point " + i + " the predicted label is: " + highestProbIdx + " actual_label: " + actual_label_num
+                var outputString = "For test point " + i + " the predicted label is: " + highestProbIdx + " actual_label: " + actual_label_num + " actual_label: " + actual_label
                 var wronglyclassified = ""
                 if(highestProbIdx != actual_label_num){
                   wronglyclassified = " -- Wrong - pcc: %.5f vs  ccc: %.5f".format(highestProb/class_probabilities.sum, correct_class_prob/class_probabilities.sum)

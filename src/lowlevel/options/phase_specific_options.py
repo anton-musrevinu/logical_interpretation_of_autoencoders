@@ -27,7 +27,7 @@ def phase_train_options(parser):
     parser.add_argument('--num_epochs', nargs="?", type=int, default=100, help='The experiment\'s epoch budget')
     return parser
 
-def phase_info_options(parser):
+def phase_graph_options(parser):
 
     return parser
 
