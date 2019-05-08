@@ -1175,7 +1175,9 @@ object Main {
               val assignment = Assignment.readFromFile(config.query)
               println(" done!")
               var accuracy:Seq[Int] = Seq()
-              for ( i <- 0 to (assignment.backend.length - 1) ) {
+              val nb_queries_total = (assignment.backend.length - 1)
+              val one_hundreth_of_total_queries = nb_queries_total/100
+              for ( i <- 0 to nb_queries_total ) {
                 var xmap:Map[Int,Boolean] = Map()
                 var actual_label:Map[Int,Boolean] = Map()
                 var actual_label_num:Int = -1
@@ -1211,19 +1213,24 @@ object Main {
                     actual_label_num = j
                   }
                 }
-                var outputString = "For test point " + i + " the predicted label is: " + highestProbIdx + " actual_label: " + actual_label_num + " actual_label: " + actual_label
-                var wronglyclassified = ""
-                if(highestProbIdx != actual_label_num){
-                  wronglyclassified = " -- Wrong - pcc: %.5f vs  ccc: %.5f".format(highestProb/class_probabilities.sum, correct_class_prob/class_probabilities.sum)
-                  pw.write(outputString + wronglyclassified + "\n")
-                }
-                println(outputString + wronglyclassified)
+                // var outputString = "For test point " + i + " the predicted label is: " + highestProbIdx + " actual_label: " + actual_label_num + " actual_label: " + actual_label
+                // var wronglyclassified = ""
+                // if(highestProbIdx != actual_label_num){
+                //   // wronglyclassified = " -- Wrong - pcc: %.5f vs  ccc: %.5f".format(highestProb/class_probabilities.sum, correct_class_prob/class_probabilities.sum)
+                //   // pw.write(outputString + wronglyclassified + "\n")
+                // }
+                // println(outputString + wronglyclassified)
                 accuracy = accuracy :+ (if (highestProbIdx == actual_label_num) 1 else 0)
+                if (i % one_hundreth_of_total_queries == 0){
+                  var outputString = "computed :" + (nb_queries_total/i) + "0% (" + i + ") of all queries current acc: " + accuracy.sum.toDouble/accuracy.size.toDouble
+                  println(outputString)
+                  pw.write(outputString + "\n")
+                }
 
               }
 
               val testacc = accuracy.sum.toDouble/accuracy.size.toDouble
-              val outputString2 = "The test accuracy for the whole sytem is " + testacc
+              val outputString2 = "\n\nThe accuracy over all queries is " + testacc + "\n"
               println(outputString2)
               pw.write(outputString2)
               pw.close

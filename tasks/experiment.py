@@ -201,40 +201,26 @@ def decode_class_samples(experiment_dir, cluster_id):
 
 def classify_all_missing():
 
-	experiment_name = 'ex_5_mnist_32_4_data_bug'
-	cluster_id = 'student_compute'
-	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
-	do_evaluation(experiment_dir_path, cluster_id)
-
-	experiment_name = 'ex_5_mnist_64_4'
+	experiment_name = 'ex_6_emnist_32_4'
 	cluster_id = 'staff_compute'
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 	do_evaluation(experiment_dir_path, cluster_id)
 
-	experiment_name = 'ex_6_emnist_64_4'
-	cluster_id = 'james04'
+	experiment_name = 'ex_6_emnist_32_4'
+	cluster_id = 'james05'
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 	do_evaluation(experiment_dir_path, cluster_id)
+	
+	experiment_name = 'ex_5_mnist_32_4_data_bug'
+	cluster_id = 'james03'
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	do_evaluation(experiment_dir_path, cluster_id)	
 
-	experiment_name = 'ex_6_emnist_64_4'
-	cluster_id = 'student_compute'
+	experiment_name = 'ex_5_mnist_64_4_data_bug'
+	cluster_id = 'james02'
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 	do_evaluation(experiment_dir_path, cluster_id)
-
-	experiment_name = 'ex_6_emnist_128_2'
-	cluster_id = 'james07'
-	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
-	do_evaluation(experiment_dir_path, cluster_id)
-
-	experiment_name = 'ex_6_emnist_32_8'
-	cluster_id = 'james08'
-	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
-	do_evaluation(experiment_dir_path, cluster_id)
-
-	experiment_name = 'ex_6_emnist_64_2'
-	cluster_id = 'james06'
-	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
-	do_evaluation(experiment_dir_path, cluster_id)
+	
 
 
 if __name__ == '__main__':
