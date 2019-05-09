@@ -6,8 +6,6 @@ on cdtcluster runExp_7.sh ---> training encoder/decoder with updated parameters 
 ==========================================================================================================================
 ==========================================================================================================================
 ==========================================================================================================================
-==========================================================================================================================
-==========================================================================================================================
 
 
 Classification done  ======================================================================================================
@@ -92,6 +90,63 @@ Classification done  ===========================================================
 
 
 
+==========================================================================================================================
+==========================================================================================================================
+experiment_name = 'ex_1_mnist_fl16_c4_hard_traininig'
+cluster_id = 'student_compute'
+experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+do_psdd_training(experiment_dir_path, cluster_id, test = True)
+
+====> Crashed with following error (after ~1.5 days)
+====> last it: last_0-381.dot  last_0-381.dot2  last_0-381.psdd  last_0-381.sdd
+
+
+Exception in thread "main" java.lang.NoClassDefFoundError: operations/PsddManager$$anonfun$operations$PsddManager$$updateDecisionPsddAfterDataChange$1$$anonfun$apply$22
+        at operations.PsddManager$$anonfun$operations$PsddManager$$updateDecisionPsddAfterDataChange$1.apply(PsddManager.scala:145)
+        at operations.PsddManager$$anonfun$operations$PsddManager$$updateDecisionPsddAfterDataChange$1.apply(PsddManager.scala:144)
+        at scala.collection.immutable.Set$Set1.foreach(Set.scala:94)
+        at operations.PsddManager.operations$PsddManager$$updateDecisionPsddAfterDataChange(PsddManager.scala:144)
+        at operations.PsddManager$$anonfun$executeClones$2.apply(PsddManager.scala:692)
+        at operations.PsddManager$$anonfun$executeClones$2.apply(PsddManager.scala:692)
+        at scala.collection.IndexedSeqOptimized$class.foreach(IndexedSeqOptimized.scala:33)
+        at scala.collection.mutable.ArrayOps$ofRef.foreach(ArrayOps.scala:186)
+        at operations.PsddManager.executeClones(PsddManager.scala:692)
+        at operations.PsddManager.executeCloneMaxDepth(PsddManager.scala:720)
+        at operations.PsddManager.executeConstrainedClone(PsddManager.scala:759)
+        at operations.PsddManager.executeSplit(PsddManager.scala:854)
+        at operations.Split.execute(PsddOperation.scala:68)
+        at algo.SearchLearner.learn(Learner.scala:242)
+        at main.Main$.main(Main.scala:895)
+        at main.Main.main(Main.scala)
+Caused by: java.lang.ClassNotFoundException: operations.PsddManager$$anonfun$operations$PsddManager$$updateDecisionPsddAfterDataChange$1$$anonfun$apply$22
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:371)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:363)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at java.net.URLClassLoader.findClass(URLClassLoader.java:362)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:349)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+        ... 16 more
+Caused by: java.util.zip.ZipException: error reading zip file
+        at java.util.zip.ZipFile.read(Native Method)
+        at java.util.zip.ZipFile.access$1400(ZipFile.java:60)
+        at java.util.zip.ZipFile$ZipFileInputStream.read(ZipFile.java:734)
+        at java.util.zip.ZipFile$ZipFileInflaterInputStream.fill(ZipFile.java:434)
+        at java.util.zip.InflaterInputStream.read(InflaterInputStream.java:158)
+        at java.util.jar.Manifest$FastInputStream.fill(Manifest.java:476)
+        at java.util.jar.Manifest$FastInputStream.readLine(Manifest.java:410)
+        at java.util.jar.Manifest$FastInputStream.readLine(Manifest.java:444)
+        at java.util.jar.Attributes.read(Attributes.java:376)
+        at java.util.jar.Manifest.read(Manifest.java:234)
+        at java.util.jar.Manifest.<init>(Manifest.java:81)
+        at java.util.jar.Manifest.<init>(Manifest.java:73)
+        at java.util.jar.JarFile.getManifestFromReference(JarFile.java:199)
+        at java.util.jar.JarFile.getManifest(JarFile.java:180)
+        at sun.misc.URLClassPath$JarLoader$2.getManifest(URLClassPath.java:992)
+        at java.net.URLClassLoader.defineClass(URLClassLoader.java:451)
+        at java.net.URLClassLoader.access$100(URLClassLoader.java:74)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:369)
+        ... 22 more
 
 
 
