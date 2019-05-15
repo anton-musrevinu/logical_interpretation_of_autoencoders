@@ -8,6 +8,7 @@ import sdd.{SddManager, Vtree}
 import structure._
 
 import scala.util.Random
+import scala.math._
 
 
 object Main {
@@ -177,8 +178,13 @@ object Main {
                      frequency: SaveFrequency = defaultFrequency,
                      parameterCalculators: Seq[ParameterCalculator] = null,
                      entropyOrder: Boolean=false,
-                     fly_info: Seq[Int] = null,
-                     flx_info: Seq[Int]  = null,
+                     fl_names: Seq[String] = null,
+                     fl_nb_vars: Seq[Int]  = null,
+                     fl_var_cat_dim: Seq[Int] = null,
+                     fl_binary_encoded: Seq[Int] = null,
+                     fl_encoded_start_idx: Seq[Int] = null,
+                     fl_encoded_end_idx: Seq[Int] = null,
+                     fl_to_query: Seq[String] = null,
                      data_bug: Boolean = false
                      ){
     val configString: String = Array(
@@ -732,18 +738,67 @@ object Main {
       valueName ("<file>,<file>,...").
       action( (x,c) => c.copy(psdds = x))
 
-    opt[Seq[Int]]('y',"fly_info").
+
+                     // fl_names: Seq[String] = null,
+                     // fl_nb_vars: Seq[Int]  = null,
+                     // fl_var_cat_dim: Seq[Int] = null,
+                     // fl_binary_encoded: Seq[Int] = null,
+                     // fl_encoded_start_idx: Seq[Int] = null,
+                     // fl_encoded_end_idx: Seq[Int] = null,
+                     // fl_to_query: Seq[String] = null,
+
+    opt[Seq[String]]('y',"fl_names").
       required().
-      valueName("<int>,<int>,...").
-      action((x,c) => c.copy(fly_info = x)).
+      valueName("<String>,<String>,...").
+      action((x,c) => c.copy(fl_names = x)).
       text(
         "the fly info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
       )
 
-    opt[Seq[Int]]('x',"flx_info").
+    opt[Seq[Int]]('x',"fl_nb_vars").
       required().
       valueName("<int>,<int>,...").
-      action((x,c)=>c.copy(flx_info = x)).
+      action((x,c)=>c.copy(fl_nb_vars = x)).
+      text(
+        "the flx info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
+      )
+
+    opt[Seq[Int]]('w',"fl_var_cat_dim").
+      required().
+      valueName("<int>,<int>,...").
+      action((x,c)=>c.copy(fl_var_cat_dim = x)).
+      text(
+        "the flx info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
+      )
+
+    opt[Seq[Int]]('z',"fl_binary_encoded").
+      required().
+      valueName("<int>,<int>,...").
+      action((x,c)=>c.copy(fl_binary_encoded = x)).
+      text(
+        "the flx info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
+      )
+
+    opt[Seq[Int]]('r',"fl_encoded_start_idx").
+      required().
+      valueName("<int>,<int>,...").
+      action((x,c)=>c.copy(fl_encoded_start_idx = x)).
+      text(
+        "the flx info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
+      )
+
+    opt[Seq[Int]]('s',"fl_encoded_end_idx").
+      required().
+      valueName("<int>,<int>,...").
+      action((x,c)=>c.copy(fl_encoded_end_idx = x)).
+      text(
+        "the flx info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
+      )
+
+    opt[Seq[String]]('u',"fl_to_query").
+      required().
+      valueName("<String>,<String>,...").
+      action((x,c)=>c.copy(fl_to_query = x)).
       text(
         "the flx info list of int: nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx.\n"
       )
@@ -1096,7 +1151,7 @@ object Main {
             sddMgr.useAutoGcMin(false)
 
 
-            val pw = new PrintWriter(new File(config.out))
+            val pw = new PrintWriter(new File(config.out + ".info"))
 
             print("Prepare psdd manager...")
             val vtree = VtreeNode.read(config.vtree)
@@ -1118,8 +1173,8 @@ object Main {
             val componentweights = config.componentweights
             println("Psdd components given")
             for (i <- 0 to numComponents - 1){
-              println("PSDD: " + i + " cw: " + componentweights(i) + " psdd: " + psdds(i) + "\n\tfile: " + config.psdds(i))
-              pw.write("PSDD: " + i + " cw: " + componentweights(i) + " psdd: " + psdds(i) + "\n\tfile: " + config.psdds(i) + "\n")
+              println("PSDD: " + i + " cw: " + componentweights(i) + "\n\tfile: " + config.psdds(i))
+              pw.write("PSDD: " + i + " cw: " + componentweights(i) + "\n\tfile: " + config.psdds(i) + "\n")
             }
             println(" done!")
 
@@ -1128,56 +1183,65 @@ object Main {
             println("getting fl information")
             val total_size = trainData.backend(0).size
             // nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx
-            val flx_nb_vars =         config.flx_info(0)
-            val flx_var_cat_dim =     config.flx_info(1)
-            val flx_binary_encoded =  config.flx_info(2)
-            val flx_start_idx =       config.flx_info(3)
-            val flx_end_idx =         config.flx_info(4)
+            val fls_names:Seq[String] = config.fl_names
+            val fls_to_query = config.fl_to_query
+            var fls_maps:Map[String,Seq[Int]] = Map()
+            val nb_fls = fls_names.size
+            val idx_nb_vars = 0
+            val idx_var_cat_dim = 1
+            val idx_binary_encoded = 2
+            val idx_start_idx = 3
+            val idx_end_idx = 4
 
-            val fly_nb_vars =         config.fly_info(0)
-            val fly_var_cat_dim =     config.fly_info(1)
-            val fly_binary_encoded =  config.fly_info(2)
-            val fly_start_idx =       config.fly_info(3)
-            val fly_end_idx =         config.fly_info(4)
+            for (i <- 0 to nb_fls -1){
+              var tmp_seq:Seq[Int] = Seq()
+              tmp_seq = tmp_seq :+ config.fl_nb_vars(i)
+              tmp_seq = tmp_seq :+ config.fl_var_cat_dim(i)
+              tmp_seq = tmp_seq :+ config.fl_binary_encoded(i)
+              tmp_seq = tmp_seq :+ config.fl_encoded_start_idx(i)
+              tmp_seq = tmp_seq :+ config.fl_encoded_end_idx(i)
+              fls_maps += (fls_names(i) -> tmp_seq)
+            }
 
-            val fl_info_str:String =("total_size          :  " + total_size 
-                                 + "\nflx_nb_vars         : " + flx_nb_vars
-                                 + "\nflx_var_cat_dim     : " + flx_var_cat_dim
-                                 + "\nflx_binary_encoded  : " + flx_binary_encoded
-                                 + "\nflx_start_idx       : " + flx_start_idx
-                                 + "\nflx_end_idx         : " + flx_end_idx
-                                 + "\n\nfly_nb_vars         : " + fly_nb_vars
-                                 + "\nfly_var_cat_dim     : " + fly_var_cat_dim
-                                 + "\nfly_binary_encoded  : " + fly_binary_encoded
-                                 + "\nfly_start_idx       : " + fly_start_idx
-                                 + "\nfly_end_idx         : " + fly_end_idx)
+            var fl_info_str:String =("total_size          :  " + total_size)
+            for (flx_name <- fls_names){
+              fl_info_str += "\n" + flx_name + " -> nb_vars\t:" + fls_maps(flx_name)(idx_nb_vars)
+              fl_info_str += "\n" + flx_name + " -> var_cat_dim\t:" + fls_maps(flx_name)(idx_var_cat_dim)
+              fl_info_str += "\n" + flx_name + " -> binary_encoded\t:" + fls_maps(flx_name)(idx_binary_encoded)
+              fl_info_str += "\n" + flx_name + " -> start_idx\t:" + fls_maps(flx_name)(idx_start_idx)
+              fl_info_str += "\n" + flx_name + " -> end_idx\t:" + fls_maps(flx_name)(idx_end_idx)
+            }
             println(fl_info_str)
+            pw.write(fl_info_str + "\n")
 
             if(config.mode == "classify"){
-              pw.write(fl_info_str + "\n")
+
+              //fls_maps must contain fly
 
               var ymaps:Seq[Map[Int,Boolean]] = null
-              if (fly_binary_encoded == 1){
-                ymaps = Seq.tabulate(fly_var_cat_dim)(x => int2map(x, fly_end_idx - fly_start_idx, fly_start_idx))
+              if (fls_maps("fly")(idx_binary_encoded) == 1){
+                ymaps = Seq.tabulate(fls_maps("fly")(idx_var_cat_dim))(x => int2map(x, fls_maps("fly")(idx_end_idx) - fls_maps("fly")(idx_start_idx), fls_maps("fly")(idx_start_idx)))
               }else {
-                ymaps = Seq.tabulate(fly_var_cat_dim)(x => int2onehot(x, fly_end_idx - fly_start_idx, fly_start_idx))
+                ymaps = Seq.tabulate(fls_maps("fly")(idx_var_cat_dim))(x => int2onehot(x, fls_maps("fly")(idx_end_idx) - fls_maps("fly")(idx_start_idx), fls_maps("fly")(idx_start_idx)))
               }
               println( "Calculated ymaps: " + ymaps)
               pw.write("Calculated ymaps: " + ymaps + '\n')
 
-              var priors:Seq[BigDecimal] = Seq.tabulate(fly_var_cat_dim)(x =>
+              var priors:Seq[BigDecimal] = Seq.tabulate(fls_maps("fly")(idx_var_cat_dim))(x =>
                 Seq.tabulate(numComponents)(xx => PsddQueries.bigDecimalProb(psdds(xx), ymaps(x)) * componentweights(xx)).sum
                 )
               println("Calculated Priors: " + priors)
               pw.write("Calculated Priors: " + priors + '\n')
 
               print("Read Assignment...")
-              val assignment = Assignment.readFromFile(config.query)
+              val assignment = Data.readFromFile(config.query)
               println(" done!")
               var accuracy:Seq[Int] = Seq()
-              val nb_queries_total = (assignment.backend.length - 1)
-              val one_hundreth_of_total_queries = nb_queries_total/100
-              for ( i <- 0 to nb_queries_total ) {
+              val nb_queries_total = (assignment.backend.length)
+              val one_hundreth_of_total_queries = (nb_queries_total/100).toInt
+              println("nb_queries_total: " + nb_queries_total)
+              println("one_hundreth_of_total_queries: " + one_hundreth_of_total_queries)
+              for ( i <- 0 to nb_queries_total -1) {
                 var xmap:Map[Int,Boolean] = Map()
                 var actual_label:Map[Int,Boolean] = Map()
                 var actual_label_num:Int = -1
@@ -1185,11 +1249,10 @@ object Main {
                   if (j == 0){
                     println("INDEXING MISTAKE AT POS: adsfadsfasfd (assuming 1 - ..)")
                   }
-                  if(flx_start_idx < j && j <= flx_end_idx){
-                    xmap += (j -> assignment.backend(i)(j))
-                  }
-                  if(fly_start_idx < j && j <= fly_end_idx){
+                  if(fls_maps("fly")(idx_start_idx) < j && j <= fls_maps("fly")(idx_end_idx)){
                     actual_label += (j -> assignment.backend(i)(j))
+                  } else {
+                    xmap += (j -> assignment.backend(i)(j))
                   }
                 }
 
@@ -1198,7 +1261,7 @@ object Main {
                 var highestProbIdx = 0
                 var correct_class_prob:BigDecimal = 0.0
 
-                for (j <- 0 to fly_var_cat_dim - 1){
+                for (j <- 0 to fls_maps("fly")(idx_var_cat_dim) - 1){
                   var assignment_tmp = xmap ++ ymaps(j)
                   var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), assignment_tmp) * componentweights(x)).sum
                   result = result/priors(j)
@@ -1221,8 +1284,11 @@ object Main {
                 // }
                 // println(outputString + wronglyclassified)
                 accuracy = accuracy :+ (if (highestProbIdx == actual_label_num) 1 else 0)
-                if (i % one_hundreth_of_total_queries == 0){
-                  var outputString = "computed :" + (nb_queries_total/i) + "0% (" + i + ") of all queries current acc: " + accuracy.sum.toDouble/accuracy.size.toDouble
+                if ((i) % one_hundreth_of_total_queries == 0 && i != 0){
+                  var current_percent = BigDecimal((i/nb_queries_total.toDouble) * 100).setScale(0, BigDecimal.RoundingMode.CEILING)
+                  var current_acc = accuracy.sum.toDouble/accuracy.size.toDouble
+
+                  var outputString = "computed :" + current_percent + "% (" + i + ") \tof all queries current acc: " + current_acc
                   println(outputString)
                   pw.write(outputString + "\n")
                 }
@@ -1236,6 +1302,188 @@ object Main {
               pw.close
             }
 
+            if(config.mode == "generateive_query_bin"){
+
+              print("Read Assignment...")
+              val assignment = Assignment.readFromFile(config.query)
+              var unassigned_vars:Set[Int] = Set()
+              for(i <- fls_to_query){
+                unassigned_vars = unassigned_vars ++ (fls_maps(i)(idx_start_idx) + 1 to fls_maps(i)(idx_end_idx)).toSet
+              }
+              val assigned_vars = (1 to total_size).toSet.diff(unassigned_vars)
+              println(" done!\n\t -> unassigned_vars: " + unassigned_vars)
+
+              val nb_queries_total = (assignment.backend.length)
+              val one_hundreth_of_total_queries = if (nb_queries_total > 100) (nb_queries_total/100).toInt else 1
+              println("nb_queries_total: " + nb_queries_total)
+              println("one_hundreth_of_total_queries: " + one_hundreth_of_total_queries)
+
+              val pw_samples = new PrintWriter(new File(config.out + "_bin.data"))
+
+              val random = new Random
+
+              for ( i <- 0 to nb_queries_total -1) {
+                var fl_sampled:Map[Int,Boolean] = Map()
+                assigned_vars.foreach{j =>
+                  fl_sampled += (j -> assignment.backend(i)(j)) 
+                }
+
+                var unsassinged_stack = unassigned_vars.toList
+                // var fl_sampled:Map[Int,Boolean] = Map()
+                var fl_tmp_num:Map[Int,Boolean] = Map()
+                var fl_tmp_div:Map[Int,Boolean] = Map()
+                var new_var_idx = 0
+                var new_var = 0
+
+                for (j <- unassigned_vars){
+                  // println(unsassinged_stack.length)
+                  new_var_idx = random.nextInt(unsassinged_stack.length)
+                  new_var = unsassinged_stack(new_var_idx)
+                  unsassinged_stack = unsassinged_stack.dropRight(unsassinged_stack.length - new_var_idx) ++ unsassinged_stack.drop(new_var_idx + 1)
+
+                  fl_tmp_num = (fl_sampled) + (new_var -> true)
+                  fl_tmp_div = (fl_sampled)
+                  // pr(FLx_j = true| fly + flx)
+                  var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp_num) * componentweights(x)).sum
+                  var prob_div:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp_div) * componentweights(x)).sum
+
+                  var prob_j = prob_num/prob_div
+                  var value_j = random.nextDouble() <= prob_j
+                  fl_sampled += (new_var -> value_j)
+                  // var tmpStr = "new_var_idx: %d, new_var: %d, prob_j: %.2f, value_j: %s, unsassinged_stack.length: %d\n".format(new_var_idx,new_var, prob_j, value_j.toString, unsassinged_stack.length)
+                  // print(tmpStr)
+                  // pw.write(tmpStr)
+                }
+                for(j <- 1 to total_size - 1){
+                  pw_samples.write("%d,".format(if (fl_sampled(j)) 1 else 0))
+                }
+                pw_samples.write("%d\n".format(if (fl_sampled(total_size)) 1 else 0))
+
+                if ((i) % one_hundreth_of_total_queries == 0 && i != 0){
+                  var current_percent = BigDecimal((i/nb_queries_total.toDouble) * 100).setScale(0, BigDecimal.RoundingMode.CEILING)
+
+                  var outputString = "computed :" + current_percent + "% (" + i + ") \tof all queries \n"
+                  print(outputString)
+                  pw.write(outputString)
+                }
+
+              }
+
+              pw.close
+              pw_samples.close
+            }
+
+            if(config.mode == "generateive_query_dis"){
+
+              print("Read Assignment...")
+              val assignment = Assignment.readFromFile(config.query)
+              // val unassigned_vars = (1 to total_size).toSet.diff(assigned_vars)
+              var unassigned_bin_vars:Set[Int] = Set()
+              var nb_vars_to_query = 0
+              for(i <- fls_to_query){
+                unassigned_bin_vars = unassigned_bin_vars ++ (fls_maps(i)(idx_start_idx) + 1 to fls_maps(i)(idx_end_idx)).toSet
+                nb_vars_to_query += fls_maps(i)(idx_nb_vars)
+              }
+              val assigned_bin_vars = (1 to total_size).toSet.diff(unassigned_bin_vars)
+              println(" done!\n\t -> unassigned_bin_vars: " + unassigned_bin_vars)
+
+              val nb_queries_total = (assignment.backend.length)
+              val one_hundreth_of_total_queries = if (nb_queries_total > 100) (nb_queries_total/100).toInt else 1
+              println("nb_queries_total: " + nb_queries_total)
+              println("one_hundreth_of_total_queries: " + one_hundreth_of_total_queries)
+
+              val pw_samples = new PrintWriter(new File(config.out + "_dis.data"))
+
+              val random = new Random
+
+              for ( i <- 0 to nb_queries_total -1) {
+                var fl_sampled:Map[Int,Boolean] = Map()
+                assigned_bin_vars.foreach{j =>
+                  fl_sampled += (j -> assignment.backend(i)(j)) 
+                }
+
+                var unsassinged_stack = unassigned_bin_vars
+                // var fl_sampled:Map[Int,Boolean] = Map()
+                var fl_tmp_num:Map[Int,Boolean] = Map()
+                var fl_tmp_div:Map[Int,Boolean] = Map()
+                var new_var:Int = 0
+                var unknownMaps:Seq[Map[Int,Boolean]] = null
+
+                for (j <- 0 to nb_vars_to_query - 1){
+                  //fruits.toVector(rnd.nextInt(fruits.size))
+                  // new_var_idx = random.nextInt(unsassinged_stack.size)
+                  new_var = unsassinged_stack.toVector(random.nextInt(unsassinged_stack.size))
+                  var base_var = -1
+                  
+                  for(fl_part <- fls_to_query){
+                    if (new_var > fls_maps(fl_part)(idx_start_idx) && new_var <= fls_maps(fl_part)(idx_end_idx)){
+                      if (fls_maps(fl_part)(idx_binary_encoded) == 1){
+                        var new_var_relative = new_var - fls_maps(fl_part)(idx_start_idx) - 1
+                        var var_bin_length = (fls_maps(fl_part)(idx_end_idx) - fls_maps(fl_part)(idx_start_idx)) / fls_maps(fl_part)(idx_nb_vars)
+                        base_var = (new_var_relative / var_bin_length) * var_bin_length
+                        base_var = base_var + fls_maps(fl_part)(idx_start_idx) + 1
+                        unsassinged_stack --= (base_var to (base_var + var_bin_length - 1 ))
+
+                        unknownMaps = Seq.tabulate(fls_maps(fl_part)(idx_var_cat_dim))(x => 
+                                  int2map(x, var_bin_length, base_var - 1))
+                      } else { // onehot encoded variables
+                        var new_var_relative = new_var - fls_maps(fl_part)(idx_start_idx) - 1
+                        var var_bin_length = fls_maps(fl_part)(idx_var_cat_dim)
+                        base_var = (new_var_relative / var_bin_length) * var_bin_length
+                        base_var = base_var + fls_maps(fl_part)(idx_start_idx) + 1
+                        unsassinged_stack --= (base_var to (base_var + var_bin_length - 1 ))
+
+                        unknownMaps = Seq.tabulate(fls_maps(fl_part)(idx_var_cat_dim))(x => 
+                          int2onehot(x, var_bin_length, base_var))
+                      }
+                    }
+                  }
+                  // if (j == nb_vars_to_query -1){
+                  //   println("\n\n\n this should be empty now: " + unsassinged_stack + "\n\n\n")
+                  // }
+
+                  // println("unknownMaps: " + unknownMaps)
+                  
+                  var contender_probs:Seq[BigDecimal] = Seq()
+                  for (contender <- unknownMaps){
+                    fl_tmp_num = fl_sampled ++ contender
+                    fl_tmp_div = fl_sampled
+
+                    var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp_num) * componentweights(x)).sum
+                    var prob_div:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp_div) * componentweights(x)).sum
+
+                    contender_probs = contender_probs :+ (prob_num/prob_div)
+                  }
+
+                  var contender_probs_norm:Seq[BigDecimal] = Seq()
+                  for (contender_prob <- contender_probs){
+                    contender_probs_norm = contender_probs_norm :+ contender_prob/(contender_probs.sum)
+                  }
+                  var value_j = draw_from_continuous(contender_probs)
+                  // println("Drew: " + value_j + "  from dist: " + contender_probs_norm + "assigning: " + unknownMaps(value_j))
+                  fl_sampled = fl_sampled ++ unknownMaps(value_j)
+                  // var tmpStr = "new_var_idx: %d, new_var: %d, contender_probs_norm: %.2f, value_j: %s, unsassinged_stack.length: %d\n".format(new_var_idx,new_var, contender_probs_norm, value_j.toString, unsassinged_stack.length)
+                  // print(tmpStr)
+                  // pw.write(tmpStr)
+                }
+                for(j <- 1 to total_size - 1){
+                  pw_samples.write("%d,".format(if (fl_sampled(j)) 1 else 0))
+                }
+                pw_samples.write("%d\n".format(if (fl_sampled(total_size)) 1 else 0))
+
+                if ((i) % one_hundreth_of_total_queries == 0 && i != 0){
+                  var current_percent = BigDecimal((i/nb_queries_total.toDouble) * 100).setScale(0, BigDecimal.RoundingMode.CEILING)
+
+                  var outputString = "computed :" + current_percent + "% (" + i + ") \tof all queries \n"
+                  print(outputString)
+                  pw.write(outputString)
+                }
+
+              }
+
+              pw.close
+              pw_samples.close
+            }
             // if(config.mode == "analyse"){
 
             //   //top k infulencers
@@ -1505,5 +1753,19 @@ object Main {
       }
     }
     return resmap
+  }
+
+  def draw_from_continuous(distribution: Seq[BigDecimal]): Int = {
+    val random = new Random
+    val u = random.nextDouble()
+    var res:Int = -1
+    var sum:BigDecimal = 0.0
+    for (i <- 0 to distribution.size - 1){
+      if (sum < u && u < distribution(i) + sum){
+        res = i
+      }
+      sum += distribution(i)
+    }
+    return res
   }
 }

@@ -1,6 +1,8 @@
 import os,sys
 sys.path.append('..')
 from src import learn_psdd_wrapper as learn_psdd_wrapper
+from src.lowlevel.util.psdd_interface import write_fl_batch_to_file,read_info_file
+import numpy as np
 
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
@@ -24,7 +26,8 @@ def decode_data(experiment_name, file_to_decode):
 	os.system(cmd)
 
 
-def do_psdd_training(experiment_dir_path,cluster_name, compress_fly = True, small_data_set = False, do_encode_data = True):
+def do_psdd_training(experiment_dir_path,cluster_name, compress_fly = True, small_data_set = False, \
+					do_encode_data = True, num_compent_learners = 1, vtree_method = 'miBlossom'):
 	os.system('pwd')
 
 	encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
@@ -43,9 +46,9 @@ def do_psdd_training(experiment_dir_path,cluster_name, compress_fly = True, smal
 
 	psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
 	vtree_path, psdds, weights = learn_psdd_wrapper.learn_psdd(psdd_out_dir, train_data_path, valid_data_path = valid_data_path,\
-				replace_existing = True, vtree_method = 'miBlossom')
+				replace_existing = True, vtree_method = vtree_method, num_compent_learners = num_compent_learners)
 
-def do_evaluation(experiment_dir_path, cluster_id, test = False):
+def do_classification_evaluation(experiment_dir_path, cluster_id, test = False):
 	print('experiment_dir_path',experiment_dir_path)
 	encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
 	for root, dir_names, file_names in os.walk(encoded_data_dir):
@@ -62,102 +65,62 @@ def do_evaluation(experiment_dir_path, cluster_id, test = False):
 	else:
 		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
 
-	learn_psdd_wrapper.measure_classifcation_accuracy_on_file(psdd_out_dir, test_data_file, train_data_path, valid_data_path = valid_data_path, test = test, psdd_init_data_per = 0.1)
+	learn_psdd_wrapper.measure_classifcation_accuracy_on_file(psdd_out_dir, test_data_file, train_data_path, valid_data_path = valid_data_path, test = test, psdd_init_data_per = 0.1 if not test else 0.01)
 
-# ============================================================================================================================
-# ============================================================================================================================
-# ============================================================================================================================
-
-
-def get_experiment_info(experiment_dir, cluster_id, test = False):
-	if cluster_id == '':
-		psdd_dir = os.path.join(experiment_dir, 'ensembly_psdd_model/')
-		vtree_file = os.path.join(experiment_dir, 'symbolic_stuff/model_learned.vtree')
-	else:
-		psdd_dir = os.path.join(experiment_dir, 'psdd_model_{}/'.format(cluster_id))
-		vtree_file = os.path.join(experiment_dir, 'symbolic_stuff_{}/model_learned.vtree'.format(cluster_id))
-
-	for root, dir_names, file_names in os.walk(os.path.join(experiment_dir,'encoded_data')):
+def do_generative_query_on_test(experiment_dir_path, cluster_id, test = False):
+	print('experiment_dir_path',experiment_dir_path)
+	encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
+	for root, dir_names, file_names in os.walk(encoded_data_dir):
 		for i in file_names:
-			if 'train.data' in i and not 'sample' in i:
-				train_data_file = os.path.join(root, i)
+			if i.endswith('train.data'):
+				train_data_path = os.path.join(root, i)
+			elif i.endswith('valid.data'):
+				valid_data_path = os.path.join(root, i)
+			elif i.endswith('test.data'):
+				test_data_file = os.path.join(root, i)
 
-	fly_catDim = 10 if int(experiment_dir.split('/')[-1].split('_')[1]) <= 5 else 47
-	flx_catDim = int(experiment_dir.split('/')[-1].split('_')[4])
-
-	num_learners = -1
-	latestIt = -1 
-	weights = {}
-	with open(os.path.join(psdd_dir, 'progress.txt'),'r') as prg:
-		for line_idx, line in enumerate(prg):
-			splitted = line.split(';')
-			if len(splitted) < 5 or line_idx == 0:
-				continue
-			num_learners = len(splitted) - 5
-			latestIt = int(splitted[0].strip())
-			for idx, i in enumerate(range(4,num_learners + 4)):
-				weights[idx] = float(splitted[i].strip())
-	if latestIt == -1 or num_learners == -1:
-		print('no iteration results found')
-		return
-
-	print('latest iteraion found: {}'.format(latestIt))
-	print('corresponding weights: {}'.format(weights))
-
-	list_of_psdds = ''
-	list_of_weights = ''
-	models = os.path.join(psdd_dir, 'models/')
-	for i in range(num_learners):
-		list_of_psdds = list_of_psdds + os.path.join(models, 'it_{}_l_{}.psdd'.format(latestIt,i)) + ','
-		list_of_weights = list_of_weights + str(weights[i]) + ','
-	list_of_psdds = list_of_psdds[:-1]
-	list_of_weights = list_of_weights[:-1]
-
-	data_set_sample = train_data_file + '.sample'
-	if os.path.exists(data_set_sample):
-		os.remove(data_set_sample)
-
-	with open(data_set_sample, 'w') as f_to:
-		with open(train_data_file, 'r') as f_from:
-			for idx, line in enumerate(f_from):
-				if idx < 100:
-					f_to.write(line)
-				if fly_catDim == 10:
-					a = line.split(',')[-5]
-					b = line.split(',')[-6]
-					if a == '1' or b == '1':
-						raise Exception('looks like we messed up') 
-
-	return vtree_file, list_of_psdds, list_of_weights,fly_catDim, flx_catDim, data_set_sample
-
-def measure_classifcation_acc(experiment_dir, cluster_id, test = False):
-
-	# 18;1690.008417296;41879.36322377;2763;0.09;0.15;0.12;0.05;0.12;0.12;0.08;0.09;0.08;0.12;-44.754126036778328156475785
-
-	vtree_file, list_of_psdds, list_of_weights, fly_catDim, flx_catDim, data_set_sample =\
-			get_experiment_info(experiment_dir, cluster_id)
-
-	evaluationDir = os.path.join(experiment_dir, 'evaluation_{}/'.format(cluster_id))
-	if not os.path.exists(evaluationDir):
-		os.mkdir(evaluationDir)
-	outputFile = os.path.join(evaluationDir, 'classification.txt')
-
-	if test:
-		query = data_set_sample
+	if 'ex_5' in experiment_dir_path or 'ex_6' in experiment_dir_path:
+		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_model_{}/'.format(cluster_id))
 	else:
-		query = data_set_sample.replace('train.data.sample', 'test.data')
-	# -v vtree
-	# -p list of psdds
-	# -a list of psdd weighs
-	# -d data for initializing the psdd
-	# -fly categorical dimention of the FLy --- the number of labels
-	# -flx categorical dimention of the FLx
-	# -o output file
-	cmd = 'java -jar ' + LEARNPSDD_CMD + ' query -m classify -v {} -p {} -a {} -d {} -x {} -y {} -q {} -o {} -g {}'.format(\
-		vtree_file,list_of_psdds, list_of_weights, data_set_sample, flx_catDim, fly_catDim, query,  outputFile,\
-		'data_bug' in experiment_dir)
-	print('excuting: {}'.format(cmd))
-	os.system(cmd)
+		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
+
+	learn_psdd_wrapper.generative_query_for_file(psdd_out_dir, test_data_file, train_data_path, valid_data_path = valid_data_path, test = test, psdd_init_data_per = 0.1 if not test else 0.01)
+
+def do_generative_query_for_labels(experiment_dir_path, cluster_id, test = False, type_of_query = 'dis'):
+	print('experiment_dir_path',experiment_dir_path)
+	encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
+	for root, dir_names, file_names in os.walk(encoded_data_dir):
+		for i in file_names:
+			if i.endswith('train.data'):
+				train_data_path = os.path.join(root, i)
+			elif i.endswith('valid.data'):
+				valid_data_path = os.path.join(root, i)
+			elif i.endswith('test.data'):
+				test_data_file = os.path.join(root, i)
+
+	if 'ex_5' in experiment_dir_path or 'ex_6' in experiment_dir_path:
+		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_model_{}/'.format(cluster_id))
+	else:
+		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
+
+	evaluationDir = os.path.abspath(os.path.join(psdd_out_dir, './evaluation/'))
+	if not learn_psdd_wrapper._check_if_dir_exists(evaluationDir, raiseException = False):
+		os.mkdir(evaluationDir)
+
+	fl_info = read_info_file(test_data_file)
+
+	for i in range(10):
+		file_name = os.path.abspath(os.path.join(evaluationDir, 'query_label_{}.data'.format(i)))
+		y_vec = np.zeros((100,10))
+		y_vec[:,i] += 1
+		write_fl_batch_to_file(file_name, np.zeros((100, fl_info['flx'].nb_vars, fl_info['flx'].var_cat_dim)), y_vec, 0)
+
+		learn_psdd_wrapper.generative_query_for_file(psdd_out_dir, file_name, train_data_path, valid_data_path = valid_data_path, \
+						test = False, psdd_init_data_per = 0.1 if not test else 0.01,type_of_query = type_of_query)
+
+# ============================================================================================================================
+# ============================================================================================================================
+# ============================================================================================================================
 
 def draw_class_samples(experiment_dir, cluster_id):
 
@@ -224,13 +187,14 @@ def classify_all_missing():
 
 
 if __name__ == '__main__':
-	# experiment_name = 'ex_5_mnist_64_4'
-	# cluster_id = 'staff_compute'
-	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
-	# # do_psdd_training(experiment_dir_path, cluster_id, small_data_set = True, do_encode_data = False, compress_fly = True)
-	# do_evaluation(experiment_dir_path, cluster_id)
-
-	classify_all_missing()
+	experiment_name = 'ex_7_mnist_16_4'
+	cluster_id = 'james01'
+	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
+	do_psdd_training(experiment_dir_path, cluster_id, small_data_set = False, do_encode_data = False, \
+		compress_fly = True, num_compent_learners = 10 , vtree_method = 'pairwiseWeights')
+	
+	# do_generative_query_for_labels(experiment_dir_path, cluster_id, test = True)
+	# do_classification_evaluation(experiment_dir_path, cluster_id, test = True)
 
 	# experiment_name = 'ex_5_mnist_32_4_data_bug'
 	# cluster_id = 'student_compute'

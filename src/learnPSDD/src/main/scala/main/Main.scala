@@ -13,7 +13,7 @@ object Main {
         //args(3) - out dir path
         //args(4) - number of learniners
         //args(5) - psdd file
-        case "SoftEM" => new SoftEM(args(1),args(2), args(3), args(4).toInt)
+        case "SoftEM" => new SoftEM(args(1), args(2), args(3), args(4).toInt)
       }
       learner.learn()
     }

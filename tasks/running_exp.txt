@@ -1,6 +1,10 @@
 
 RUNNING ==================================================================================================================
-on cdtcluster runExp_7.sh ---> training encoder/decoder with updated parameters on mnist
+james01 - ex_7_mnist_16_4 vtree: pairwiseWeights
+james02 - ex_7_mnist_16_4 vtree: miMetis
+james03 - ex_7_mnist_16_4 vtree: miGreedyBU
+sudent_compute - ex_7_mnist_16_4 vtree: miBlossom
+staff_compute - ex_7_mnist_32_2 vtree: miBlossom
 
 
 ==========================================================================================================================

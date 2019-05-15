@@ -29,10 +29,10 @@ abstract class EnsembleLearner(datasetPath: String, vtreeFile: String) {
   //   vtreeName+"_rand3.vtree")
   val vtreeFiles = Array(vtreeFile)
   // val vtreeFile = vtreeFile
-  val validData = Data.readFromFile(new File(datasetPath+"valid.data"))
+  val validData = Data.readFromFile(new File(datasetPath+"valid.psdd.data"))
   val validSize = BigDecimal.decimal(validData.weights.sum)
   val validDataWeightsBigDecimal = validData.weights.map(BigDecimal.decimal(_))
-  val testData = Data.readFromFile(new File(datasetPath+"test.data"))
+  val testData = Data.readFromFile(new File(datasetPath+"test.psdd.data"))
   val testSize = BigDecimal.decimal(testData.weights.sum)
   val testDataWeightsBigDecimal = testData.weights.map(BigDecimal.decimal(_))
   val parameterCalculator = Parser.parseParameterCalculator(configRead.getString("general.parameterCalculator"))
