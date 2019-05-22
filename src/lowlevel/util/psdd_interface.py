@@ -46,6 +46,35 @@ def write_fl_batch_to_file(file_encoded_path, flx_categorical, fly_onehot, batch
 
 	return fl.shape[1]
 
+def write_fl_batch_to_file_new(file_encoded_path, fls_data, fl_info, batch_idx):
+	fls_encoded = []
+	for idx, fl_domain in enumerate(fls_data):
+		if fl_info[idx].bin_encoded and fl_info[idx].name == 'fly':
+			fls_encoded.append(encode_onehot_to_binary_batch(fl_domain))
+		elif fl_info[idx].bin_encoded:
+			fls_encoded.append(encode_flx_to_binary_batch(fl_domain))
+		else:
+			fls_encoded.append(fl_domain)
+
+	fl_all = np.concatenate(fls_encoded, axis = 1)
+
+	if batch_idx == 0:
+		edit_str = 'w'
+		create_info_file(file_encoded_path, fl_info)
+	else:
+		edit_str = 'a'
+
+	with open(file_encoded_path,edit_str) as f:
+		for row in fl_all:
+			# print(row)
+			row_str = ''.join(['%.0f,' % num for num in row])
+			row_str = row_str[:-1] + '\n'
+			# row_str = row_str + '\n'
+			f.write(row_str)
+
+	return fl_all.shape[1]
+
+
 def create_info_file(file_encoded_path, fl_info):
 	with open(file_encoded_path + '.info', 'w') as f:
 		f.write('domain name; nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx\n')
@@ -129,5 +158,5 @@ def decode_binary_to_onehot(binary_list, cat_dim):
 def decode_binary_to_int( binary_list):
 	value_as_bin = ''.join(binary_list).replace('\n','')
 	value_as_int = int(value_as_bin,2)
-	print(binary_list, value_as_bin, value_as_int)
+	# print(binary_list, value_as_bin, value_as_int)
 	return value_as_int

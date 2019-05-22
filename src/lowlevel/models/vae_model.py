@@ -127,7 +127,7 @@ class VAEModel(BaseModel):
         self.input = input['inputs'].to(self.device)
         # self.image_paths = input['A_paths' if AtoB else 'B_paths']
     def set_fl(self,fl):
-        self.feature_layer = fl['flx'].to(self.device)
+        self.feature_layer = fl.to(self.device)
 
     def get_fl_as_img(self):
 

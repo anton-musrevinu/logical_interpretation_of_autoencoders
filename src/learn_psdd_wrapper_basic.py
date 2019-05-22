@@ -15,7 +15,6 @@
 #				
 #=============================================================================================================================================
 import os, platform, shutil
-from src.lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_for_old_experiments
 
 #DEPENDENCIES and USER variables:
 
@@ -35,12 +34,6 @@ GRAPHVIZ_INSTALLED = True
 # - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
 #
 SDD_LIB_DIR_USER = './code/msc/src/wmisdd/bin/'
-#
-# - Updated Source version of LearnPSDD (STAR-UCLA Software) - Link:
-#
-LEARNPSDD_PAPER_ROOT_DIR_USER = './code/msc/src/learnPSDD/'
-USE_LEARN_PSDD_PAPER = True
-RECOMPILE_PSDD_PAPER_SOURCE = False
 #
 #============================================================================================================================
 #============================ SCRIPT METHODS (need to be at the top of the file =============================================
@@ -130,15 +123,6 @@ else:
 write('SDDLIB_CMD \t{}'.format(SDDLIB_CMD),'init')
 _check_if_file_exists(SDDLIB_CMD)
 
-if USE_LEARN_PSDD_PAPER:
-	LEARNPSDD_PAPER_ROOT_DIR = os.path.abspath(os.path.join(os.environ['HOME'],LEARNPSDD_PAPER_ROOT_DIR_USER))
-	write('LEARNPSDD_PAPER_ROOT_DIR \t{}'.format(LEARNPSDD_PAPER_ROOT_DIR),'init')
-	_check_if_dir_exists(LEARNPSDD_PAPER_ROOT_DIR)
-	if RECOMPILE_PSDD_PAPER_SOURCE:
-		_recompile_source(LEARNPSDD_PAPER_ROOT_DIR)
-	LEARNPSDD_PAPER_CMD = os.path.abspath(os.path.join(LEARNPSDD_PAPER_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
-	write('LEARN_PSDD_PAPER_CMD \t{}'.format(LEARNPSDD_PAPER_CMD),'init')
-	_check_if_file_exists(LEARNPSDD_PAPER_CMD)
 #============================================================================================================================
 #============================================ AUXILIARY FUNCTIONS ====================================================
 #============================================================================================================================
@@ -150,91 +134,6 @@ def convert_dot_to_pdf(file_path, do_this = True):
 	cmd_str = 'dot -Tpdf {}.dot -o {}.pdf'.format(file_path,file_path)
 	os.system(cmd_str)
 	write('Converted file to pdf (graphical depictoin). Location: {}'.format(file_path + '.pdf'))
-
-def get_file_names_and_check(psdd_out_dir, at_iteration = 'best-0'):
-
-	vtree_path = os.path.join(psdd_out_dir, './model.vtree')
-	write('output vtree file: {}'.format(vtree_path), 'files')
-
-
-	psdd_file = os.path.join(psdd_out_dir, './model.psdd')
-	if _check_if_file_exists(psdd_file, raiseException = False):
-		write('output psdd file: {}'.format(psdd_file), 'files')
-		_check_if_file_exists(vtree_path)
-
-		psdds = list([psdd_file])
-		for psdd_path in psdds:
-			_check_if_file_exists(psdd_path)
-
-		weights = list([1])
-
-		return vtree_path, psdds, weights, 'last'
-	else:
-		psdd_out_dir = os.path.abspath(os.path.join(psdd_out_dir, './learnpsdd_tmp_dir/'))
-		return get_ensembly_file_names_and_check(psdd_out_dir, vtree_path, at_iteration)
-
-
-def get_old_file_names_and_check(psdd_out_dir,at_iteration):
-	cluster_id = psdd_out_dir.split('psdd_model')[1]
-	vtree_path = os.path.abspath(os.path.join(psdd_out_dir, '../symbolic_stuff{}/model_learned.vtree'.format(cluster_id)))
-
-	return get_ensembly_file_names_and_check(psdd_out_dir, vtree_method, at_iteration)
-
-def get_ensembly_file_names_and_check(psdd_out_dir, vtree_path, at_iteration):
-	_check_if_file_exists(vtree_path)
-
-	prgfile = os.path.abspath(os.path.join(psdd_out_dir, './progress.txt'))
-	_check_if_file_exists(prgfile)
-
-	it_weights = {}
-	it_ll = {}
-	last_it_idx = -2
-	with open(prgfile, 'r') as f:
-		for line_idx, line in enumerate(f):
-			splitted = line.split(';')
-			if len(splitted) < 5 or line_idx == 0:
-				continue
-			num_learners = len(splitted) - 5
-			current_it = int(splitted[0].strip())
-			current_ll = float(splitted[-1].strip())
-			# print(current_ll, current_ll > best_it_ll)
-			last_it_idx = current_it
-			it_ll[current_it] = current_ll
-			it_weights[current_it] = []
-			for idx, i in enumerate(range(4,num_learners + 4)):
-				it_weights[current_it].append(float(splitted[i].strip()))
-
-	best_k_it = {}
-	for i in range(5):
-		best_k = max(it_ll, key=it_ll.get)
-		best_k_it[i] = best_k
-		# print('best- {} = {}'.format(i, it_ll[best_k]))
-		del it_ll[best_k]
-
-	if type(at_iteration) == type('string') and 'best-' in at_iteration:
-		at_best_k = int(at_iteration.split('best-')[1])
-		it_idx = best_k_it[at_best_k]
-	elif at_iteration > 0 and at_iteration <= last_it_idx:
-		it_idx = at_iteration
-	elif at_iteration == -2:
-		it_idx = last_it_idx
-
-	write('reading experiment files, from iteration: {} (based on: {}) and num_learners: {}'.format(it_idx, at_iteration, num_learners))
-
-	psdds = []
-	for i in range(num_learners):
-		psdd_file = os.path.abspath(os.path.join(psdd_out_dir, './models/it_{}_l_{}.psdd'.format(it_idx, i)))
-		_check_if_file_exists(psdd_file)
-		psdds.append(psdd_file)
-
-	return vtree_path, psdds, it_weights[it_idx], it_idx
-
-def list_to_cs_string(list_to_convert):
-	outstr = ''
-	for i in list_to_convert:
-		outstr += '{},'.format(i)
-	outstr = outstr[:-1]
-	return outstr
 
 #============================================================================================================================
 #============================================================================================================================
@@ -260,7 +159,6 @@ def learn_vtree(train_data_path, vtree_out_path,
 	-o, --out <path>         
 	-e, --entropyOrder       choose prime variables to have lower entropy
 	'''
-
 	_check_if_file_exists(train_data_path)
 
 	out_learnvtree_tmp_dir = os.path.abspath(out_learnvtree_tmp_dir)
@@ -601,256 +499,9 @@ def learn_ensembly_psdd_from_data(train_data_path, vtree_path, out_psdd_file, \
 	# if not keep_generated_files:
 	# 	shutil.rmtree(out_learnpsdd_tmp_dir)
 
-#============================================================================================================================
-#============================================  methods that work with updated source ========================================
-#============================================================================================================================
-
-def learn_ensembly_psdd2_from_data(train_data_path, vtree_path, out_psdd_file, \
-		 out_learnpsdd_tmp_dir = './.out_ensemblylearnpsdd_tmp_dir/',psdd_input_path = None, num_compent_learners = 5,valid_data_path = None, \
-		 test_data_path = None, smoothing = 'l-1', structureChangeIt = 3, parameterLearningIt = 1, scorer = 'dll/ds', maxIt = 'max', \
-		 save_freq = 'best-3'):
-
-	# Method for running the psdd code from the paper with (updated source)
-
-	_check_if_file_exists(train_data_path)
-	_check_if_file_exists(valid_data_path)
-	_check_if_file_exists(vtree_path)
-
-	psdd_valid_data = valid_data_path.replace('valid.data', 'valid.psdd.data')
-	psdd_test_data = valid_data_path.replace('valid.data', 'test.psdd.data')
-
-	num_valid_examples = sum(1 for line in open(valid_data_path,'r'))
-	with open(valid_data_path, 'r') as orgf:
-		with open(psdd_valid_data, 'w') as validf:
-			with open(psdd_test_data, 'w') as testf:
-				for line_idx, line in enumerate(orgf):
-					if line_idx < num_valid_examples * 0.6:
-						validf.write(line)
-					else:
-						testf.write(line) 
-
-	_check_if_file_exists(psdd_valid_data)
-	_check_if_file_exists(psdd_test_data)
-
-	out_learnpsdd_tmp_dir = os.path.abspath(out_learnpsdd_tmp_dir)
-	if _check_if_dir_exists(out_learnpsdd_tmp_dir, raiseException = False):
-		shutil.rmtree(out_learnpsdd_tmp_dir)
-	os.mkdir(out_learnpsdd_tmp_dir)
-
-	cmd_str = 'java -jar {} SoftEM {} {} {} {}'.format(\
-		LEARNPSDD_PAPER_CMD, train_data_path.replace('train.data',''), vtree_path, out_learnpsdd_tmp_dir + '/', num_compent_learners)
-
-	print('excuting: {}'.format(cmd_str))
-	os.system(cmd_str)
-
-def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, psdd_init_data_per = .1, at_iteration = 'best-0'):
-
-	_check_if_file_exists(query_data_path)
-	_check_if_dir_exists(psdd_out_dir)
-
-	if 'psdd_model' in psdd_out_dir:
-		vtree_path, psdds, weights, at_iteration = get_old_file_names_and_check(psdd_out_dir, at_iteration)
-		fl_info = recreate_fl_info_for_old_experiments(psdd_out_dir)
-	else:
-		vtree_path, psdds, weights, at_iteration = get_file_names_and_check(psdd_out_dir, at_iteration)
-		fl_info = read_info_file(query_data_path)
-
-	evaluationDir = os.path.abspath(os.path.join(psdd_out_dir, './evaluation/'))
-	if not _check_if_dir_exists(evaluationDir, raiseException = False):
-		os.mkdir(evaluationDir)
-
-	if out_file == None:
-		out_file = os.path.join(evaluationDir, './classification_{}_it_{}'.format(psdd_init_data_per, at_iteration))
-
-	if test:
-		sample_data_path = query_data_path + '.sample'
-		with open(sample_data_path, 'w') as f:
-			with open(query_data_path, 'r') as f2:
-				for line_idx, line in enumerate(f2):
-					f.write(line)
-					if line_idx > 1000:
-						break
-		query_data_path = sample_data_path
-
-	if psdd_init_data_per != 1:
-		sample_data_path = train_data_path + '.sample'
-		stop_line_idx = psdd_init_data_per * sum(1 for line in open(train_data_path,'r'))
-		with open(sample_data_path, 'w') as f:
-			with open(train_data_path, 'r') as f2:
-				for line_idx, line in enumerate(f2):
-					f.write(line)
-					if line_idx > stop_line_idx:
-						break
-		train_data_path = sample_data_path
-
-		if valid_data_path != None:
-			sample_data_path = valid_data_path + '.sample'
-			stop_line_idx = psdd_init_data_per * sum(1 for line in open(valid_data_path,'r'))
-			with open(sample_data_path, 'w') as f:
-				with open(valid_data_path, 'r') as f2:
-					for line_idx, line in enumerate(f2):
-						f.write(line)
-						if line_idx > stop_line_idx:
-							break
-			valid_data_path = sample_data_path
-
-	# -v vtree
-	# -p list of psdds
-	# -a list of psdd weighs
-	# -d data for initializing the psdd
-	# -fly categorical dimention of the FLy --- the number of labels
-	# -flx categorical dimention of the FLx
-	# -o output file
-                     # // fl_names: Seq[String] = null,
-                     # // fl_nb_vars: Seq[Int]  = null,
-                     # // fl_var_cat_dim: Seq[Int] = null,
-                     # // fl_binary_encoded: Seq[Int] = null,
-                     # // fl_encoded_start_idx: Seq[Int] = null,
-                     # // fl_encoded_end_idx: Seq[Int] = null,
-                     # // fl_to_query: Seq[String] = null,
-	cmd_str = 'java -jar ' + LEARNPSDD_CMD + ' query --mode classify ' + \
-			' --vtree {}'.format(vtree_path) + \
-			' --query {}'.format(query_data_path) + \
-			' --psdds {}'.format(list_to_cs_string(psdds)) + \
-			' --out {}'.format(out_file) + \
-			' --componentweights {}'.format(list_to_cs_string(weights)) + \
-			' -d {}'.format(train_data_path) + \
-			' --fl_names {}'.format(str(list(fl_info.keys())).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_nb_vars {}'.format(str([i.nb_vars for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_var_cat_dim {}'.format(str([i.var_cat_dim for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_binary_encoded {}'.format(str([i.bin_encoded for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_encoded_start_idx {}'.format(str([i.encoded_start_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_encoded_end_idx {}'.format(str([i.encoded_end_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_to_query fly' + \
-			' --data_bug {}'.format('data_bug' in query_data_path)
-	if valid_data_path != None:
-		cmd_str += ' -b {}'.format(valid_data_path)
-	
-	write(cmd_str,'cmd-start')
-	os.system(cmd_str)
-
-	out_file = out_file + '.info'
-	_check_if_file_exists(out_file)
-
-	write('Finished measureing classfication acc. File location: {}'.format(out_file), 'cmd-end')
-
-def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, \
-							psdd_init_data_per = .1, at_iteration = 'best-0', type_of_query = 'dis', fl_to_query = ['flx'], y_condition = None):
-	_check_if_file_exists(query_data_path)
-	_check_if_dir_exists(psdd_out_dir)
-
-	org_query_data_path = query_data_path
-
-	if 'psdd_model' in psdd_out_dir:
-		vtree_path, psdds, weights, at_iteration = get_old_file_names_and_check(psdd_out_dir, at_iteration)
-		fl_info = recreate_fl_info_for_old_experiments(psdd_out_dir)
-	else:
-		vtree_path, psdds, weights, at_iteration = get_file_names_and_check(psdd_out_dir, at_iteration)
-		fl_info = read_info_file(query_data_path)
-
-	write('fist: {}'.format(psdds))
-	write('second: {}'.format(*psdds))
-
-	evaluationDir = os.path.abspath(os.path.join(psdd_out_dir, './evaluation/'))
-	if not _check_if_dir_exists(evaluationDir, raiseException = False):
-		os.mkdir(evaluationDir)
-
-	if out_file == None:
-		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', '-generated_{}-it_{}'.format(list_to_cs_string(fl_to_query).replace(',','_'),at_iteration))))
-		out_file = os.path.abspath(out_file)
-	if y_condition != None:
-		out_file = out_file.replace('generated', 'y_{}-generated'.format(list_to_cs_string(y_condition).replace(',','_')))
-
-	if test or y_condition != None:
-		if test and y_condition == None:
-			sample_data_path = query_data_path + '.sample'
-		elif y_condition != None:
-			sample_data_path = query_data_path.replace('.data', '-y_{}.data'.format(list_to_cs_string(y_condition).replace(',','_')))
-		written_samples = 0
-		with open(sample_data_path, 'w') as f:
-			with open(query_data_path, 'r') as f2:
-				for line_idx, line in enumerate(f2):
-					if y_condition != None:
-						line_split = line.split(',')
-						fly = list(map(int, line_split[fl_info['fly'].encoded_start_idx: fl_info['fly'].encoded_end_idx]))
-						if fly != y_condition:
-							# print('fly: {} != {}: y_condition --> skipping'.format(fly, y_condition))
-							continue
-					f.write(line)
-					written_samples += 1
-					if written_samples >= 100:
-						break
-		query_data_path = sample_data_path
-
-	if psdd_init_data_per != 1:
-		sample_data_path = train_data_path + '.sample'
-		stop_line_idx = psdd_init_data_per * sum(1 for line in open(train_data_path,'r'))
-		with open(sample_data_path, 'w') as f:
-			with open(train_data_path, 'r') as f2:
-				for line_idx, line in enumerate(f2):
-					f.write(line)
-					if line_idx > stop_line_idx:
-						break
-		train_data_path = sample_data_path
-
-		if valid_data_path != None:
-			sample_data_path = valid_data_path + '.sample'
-			stop_line_idx = psdd_init_data_per * sum(1 for line in open(valid_data_path,'r'))
-			with open(sample_data_path, 'w') as f:
-				with open(valid_data_path, 'r') as f2:
-					for line_idx, line in enumerate(f2):
-						f.write(line)
-						if line_idx > stop_line_idx:
-							break
-			valid_data_path = sample_data_path
-
-	# -v vtree
-	# -p list of psdds
-	# -a list of psdd weighs
-	# -d data for initializing the psdd
-	# -fly categorical dimention of the FLy --- the number of labels
-	# -flx categorical dimention of the FLx
-	# -o output file
-                     # // fl_names: Seq[String] = null,
-                     # // fl_nb_vars: Seq[Int]  = null,
-                     # // fl_var_cat_dim: Seq[Int] = null,
-                     # // fl_binary_encoded: Seq[Int] = null,
-                     # // fl_encoded_start_idx: Seq[Int] = null,
-                     # // fl_encoded_end_idx: Seq[Int] = null,
-                     # // fl_to_query: Seq[String] = null,
-	cmd_str = 'java -jar ' + LEARNPSDD_CMD + ' query --mode generateive_query_{} '.format(type_of_query) + \
-			' --vtree {}'.format(vtree_path) + \
-			' --query {}'.format(query_data_path) + \
-			' --psdds {}'.format(list_to_cs_string(psdds)) + \
-			' --out {}'.format(out_file) + \
-			' --componentweights {}'.format(list_to_cs_string(weights)) + \
-			' -d {}'.format(train_data_path) + \
-			' --fl_names {}'.format(str(list(fl_info.keys())).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_nb_vars {}'.format(str([i.nb_vars for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_var_cat_dim {}'.format(str([i.var_cat_dim for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_binary_encoded {}'.format(str([i.bin_encoded for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_encoded_start_idx {}'.format(str([i.encoded_start_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_encoded_end_idx {}'.format(str([i.encoded_end_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_to_query {}'.format(list_to_cs_string(fl_to_query)) + \
-			' --data_bug {}'.format('data_bug' in query_data_path)
-	if valid_data_path != None:
-		cmd_str += ' -b {}'.format(valid_data_path)
-	
-	write(cmd_str,'cmd-start')
-	os.system(cmd_str)
-
-	out_file_info = out_file + '.info'
-	out_file = out_file + '_{}.data'.format(type_of_query)
-	_check_if_file_exists(out_file_info)
-	_check_if_file_exists(out_file)
-	out_data_info_file = out_file + '.info'
-	shutil.copyfile(org_query_data_path + '.info', out_data_info_file)
-
-	write('Finished measureing classfication acc. File location: {}'.format(out_file), 'cmd-end')
-	return out_file
-#============================================================================================================================
-# ==========================================   Higher level methods    ======================================================
-#============================================================================================================================
+# ====================================================================================================================
+# ========================================   Higher level methods    =================================================
+# ====================================================================================================================
 
 def learn_psdd(psdd_out_dir, train_data_path, 
 		valid_data_path = None, test_data_path = None, replace_existing = False, vtree_method = 'miBlossom', \
@@ -879,13 +530,6 @@ def learn_psdd(psdd_out_dir, train_data_path,
 		else:
 			shutil.rmtree(experiment_path)
 	os.mkdir(experiment_path)
-
-	info_data_file = train_data_path + '.info'
-	info_system_file = os.path.join(experiment_path, './fl_data.info')
-	shutil.copyfile(info_data_file, info_system_file)
-	encoded_data_dir = train_data_path.split('/')[-2]
-	with open(info_system_file, 'a') as f:
-		f.write('\nencoded_data_dir: ./../{}\n'.format(encoded_data_dir))
 
 	#Set up learner directories
 	out_learnpsdd_tmp_dir = os.path.join(experiment_path, './learnpsdd_tmp_dir/')
@@ -930,8 +574,8 @@ def learn_psdd(psdd_out_dir, train_data_path,
 		learn_psdd_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir = out_learnpsdd_tmp_dir, valid_data_path = valid_data_path, \
 			test_data_path = test_data_path, psdd_input_path = constraints_psdd_file, keep_generated_files = keep_generated_files, convert_to_pdf = convert_to_pdf)
 	else:
-		# raise Exception('Ensemply learning is not working')
-		learn_ensembly_psdd2_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir,psdd_input_path = constraints_psdd_file,\
+		raise Exception('Ensemply learning is not working')
+		learn_ensembly_psdd_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir,psdd_input_path = constraints_psdd_file,\
 			 num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, test_data_path = test_data_path)
 
 	#Remove tmp files
@@ -940,9 +584,6 @@ def learn_psdd(psdd_out_dir, train_data_path,
 			shutil.rmtree(contraints_tmp_dir)
 
 	write('learn_psdd method finished.','final')
-
-	if num_compent_learners == 1:
-		return out_vtree_file, list([out_psdd_file]), list([1.0])
 
 # ============================================================================================================================
 # ============================================================================================================================

@@ -22,10 +22,13 @@ class FLSAMPLEDataset(BaseDataset):
 		self.type_of_data = type_of_data
 
 		domains = read_info_file(self.data_file)
+		if len(domains) > 2:
+			raise Exception('domains > 2 not yet implemented')
 
 		self.num_classes = opt.num_classes
 
-		fl_data = {}
+		flx_data = []
+		fly_data = []
 
 		# print('original fl_flat size {} and binary fl size {}'.format(self.model.netAE.fl_flat_shape[1],new_fl_size))
 
@@ -33,38 +36,30 @@ class FLSAMPLEDataset(BaseDataset):
 			for line in f:
 				line = line.split(',')
 				# print(line)
+				if domains['flx'].bin_encoded:
+					flx_var_binary_size = int(np.ceil(np.log2(domains['flx'].var_cat_dim)))
+					flx_elem = np.zeros((domains['flx'].nb_vars, domains['flx'].var_cat_dim))
+					for new_idx, idx in enumerate(range(domains['flx'].encoded_start_idx, domains['flx'].encoded_end_idx, flx_var_binary_size)):
+						cat_var_as_bin_list = line[idx:flx_var_binary_size + idx]
+						flx_elem[new_idx] = decode_binary_to_onehot(cat_var_as_bin_list, domains['flx'].var_cat_dim)
+				else:
+					flx_elem = line[:domains['flx'].encoded_end_idx]
 
-				for fl_name, fl_part in domains.items():
+				if domains['fly'].bin_encoded:
+					fly_elem = decode_binary_to_int(line[domains['fly'].encoded_start_idx:domains['fly'].encoded_end_idx])
+				else:
+					fly_elem = line[domains['fly'].encoded_start_idx:domains['fly'].encoded_end_idx]
 
-					if fl_part.bin_encoded:
-						flx_var_binary_size = int(np.ceil(np.log2(fl_part.var_cat_dim)))
-						flx_elem = np.zeros((fl_part.nb_vars, fl_part.var_cat_dim))
-						for new_idx, idx in enumerate(range(fl_part.encoded_start_idx, fl_part.encoded_end_idx, flx_var_binary_size)):
-							cat_var_as_bin_list = line[idx:flx_var_binary_size + idx]
-							flx_elem[new_idx] = decode_binary_to_onehot(cat_var_as_bin_list, fl_part.var_cat_dim)
-					else:
-						flx_elem = line[fl_part.encoded_start_idx:fl_part.encoded_end_idx]
+				flx_data.append(flx_elem)
+				fly_data.append(fly_elem)
 
-					if not fl_name in fl_data:
-						fl_data[fl_name] = []
-					fl_data[fl_name].append(flx_elem)
-
-
-		self.fl_images_names = []
-		self.fl_numeric_names = []
-		self.fl_data = {}
-		for fl_name in fl_data.keys():
-			self.fl_data[fl_name] = np.asarray(fl_data[fl_name]).astype(np.float32)
-			if 'y' in fl_name:
-				self.fl_numeric_names.append(fl_name)
-			else:
-				self.fl_images_names.append(fl_name)
+		self.flx = np.asarray(flx_data).astype(np.float32)
+		self.fly = np.asarray(fly_data).astype(np.float32)
 
 		print(self)
 		# print(np.min(self.inputs), np.max(self.inputs))
 
-
-		self.num_data_points = int(self.fl_data[self.fl_images_names[0]].shape[0] / self.batch_size) * self.batch_size
+		self.num_data_points = int(self.flx.shape[0] / self.batch_size) * self.batch_size
 		if opt.num_batches != -1:# and trim_data:
 			self.num_data_points = min(opt.num_batches * self.batch_size, self.num_data_points)
 
@@ -86,23 +81,21 @@ class FLSAMPLEDataset(BaseDataset):
 			A_paths (str) - - image paths
 			B_paths (str) - - image paths (same as A_paths)
 		"""
-		return_dict = {}
-		for i in self.fl_images_names:
-			inputs_batch = self.fl_data[i][index].reshape(*self.get_input_shape())
-			return_dict[i] = torch.Tensor(inputs_batch).float()
-		for i in self.fl_numeric_names:
-			targets_batch = self.fl_data[i][index]
-			return_dict[i] = torch.Tensor(targets_batch).float()
+		inputs_batch = self.flx[index].reshape(*self.get_input_shape())
+		# print(index, self.targets[index], type(index), type(self.targets[index]))
+		targets_batch = self.to_one_of_k(int(self.fly[index]))
 
+		inputs_batch = torch.Tensor(inputs_batch).float()
+		targets_batch = torch.Tensor(targets_batch).float()
 
-		return return_dict
+		return {'flx': inputs_batch, 'fly': targets_batch, 'indexs': index}
 
 	def __len__(self):
 		"""Return the total number of images in the dataset."""
 		return self.num_data_points
 
 	def __str__(self):
-		return ' '.join(['{}.shape: {}'.format(i, self.fl_data[i].shape) for i in self.fl_data.keys()])
+		return 'flx.shape: {}, fly.shape: {}'.format(self.flx.shape, self.fly.shape)
 
 	def to_one_of_k(self, int_targets):
 		"""Converts integer coded class target to 1 of K coded targets.

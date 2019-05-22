@@ -1,11 +1,32 @@
 
 RUNNING ==================================================================================================================
-james01 - ex_7_mnist_16_4 vtree: pairwiseWeights
-james02 - ex_7_mnist_16_4 vtree: miMetis
-james03 - ex_7_mnist_16_4 vtree: miGreedyBU
-sudent_compute - ex_7_mnist_16_4 vtree: miBlossom
-staff_compute - ex_7_mnist_32_2 vtree: miBlossom
 
+student_compute_succ ex_7_mnist_16_4
+staff_compute        ex_7_mnist_28_2
+james01_g4land       ex_7_mnist_32_2
+james02_g7land       ex_7_mnist_32_2
+
+
+==========================================================================================================================
+
+
+james02_blor     ex_7_mnist_32_2
+james01_bland    ex_7_mnist_32_2
+
+==========================================================================================================================
+classifciation running
+james01       - ex_7_mnist_32_2 vtree: miBlossom  -- 0.8932
+james02       - ex_7_mnist_32_4 vtree: miBlossom  -- 0.8251
+james03       - ex_7_mnist_20_4 vtree: miBlossom  -- 0.8604
+james08       - ex_7_mnist_20_2 vtree: miBlossom  -- 0.8225
+james10       - ex_7_mnist_16_4 onehot encoded y  -- 0.82174
+
+==========================================================================================================================
+classification and generation done
+
+james02        - ex_7_mnist_16_4 vtree: miMetis     -- 0.8449
+james03        - ex_7_mnist_16_4 vtree: miGreedyBU  -- 0.8514
+sudent_compute - ex_7_mnist_16_4 vtree: miBlossom   -- 0.8407
 
 ==========================================================================================================================
 ==========================================================================================================================

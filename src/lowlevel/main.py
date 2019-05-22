@@ -23,6 +23,6 @@ if __name__ == '__main__':
 	elif opt.phase == 'graph':
 		manager.make_graphs()
 	elif opt.phase == 'encode':
-		manager.convert_all_data()
+		manager.convert_all_data(opt.task_type)
 	elif opt.phase == 'decode':
 		manager.decode_specific_file(opt.file_to_decode)

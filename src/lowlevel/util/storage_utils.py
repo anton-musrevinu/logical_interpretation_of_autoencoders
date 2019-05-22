@@ -98,7 +98,9 @@ def _to_img(x):
 
 def save_example_image(images_to_save, save_path_out, nrow = None):
         if type(images_to_save) == list and len(images_to_save) > 1:
-            images = np.concatenate(images_to_save, axis = 0)
+            print(images_to_save[0].shape)
+            images = torch.from_numpy(np.concatenate(images_to_save, axis = -1))
+            print(images.shape)
         elif type(images_to_save) == list and len(images_to_save) == 1:
             images = images_to_save[0]
         else:
@@ -108,9 +110,9 @@ def save_example_image(images_to_save, save_path_out, nrow = None):
         # pic_source = _to_img(source_image)
         # print(pic_target.shape, nrow)
         if nrow != None:
-            save_image(pic_target, save_path_out, nrow = nrow)
+            save_image(pic_target, save_path_out, nrow = nrow, padding = 4)
         else:
-            save_image(pic_target, save_path_out)
+            save_image(pic_target, save_path_out, padding = 4)
 
 
 

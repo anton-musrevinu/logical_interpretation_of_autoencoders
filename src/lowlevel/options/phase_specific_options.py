@@ -36,6 +36,8 @@ def phase_encode_options(parser):
     parser.add_argument('--for_error', type=str, default='mse', help='picking the best model for the given error on the validation set')
     parser.add_argument('--limit_conversion', type=int, default=-1, help='the maximum size of the datset the is bening created')
     parser.add_argument('--compress_fly', type=str2bool, default=True, help='Compressing fly to a binary represenations enforcing onehot')
+    parser.add_argument('--encoded_data_dir', type=str, help='Where the converted data should be stored')
+    parser.add_argument('--task_type', type=str,default='', help='Where the converted data should be stored')
     return parser
 
 def phase_decode_options(parser):

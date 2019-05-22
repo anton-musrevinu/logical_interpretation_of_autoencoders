@@ -78,6 +78,8 @@ class MNISTDataset(BaseDataset):
 
 		return {'inputs': inputs_batch, 'targets': targets_batch, 'indexs': index}
 
+
+
 	def __len__(self):
 		"""Return the total number of images in the dataset."""
 		return self.num_data_points
@@ -85,7 +87,7 @@ class MNISTDataset(BaseDataset):
 	def __str__(self):
 		return 'inputs_shape: {}, target.shape: {}'.format(self.inputs.shape, self.targets.shape)
 
-	def to_one_of_k(self, int_targets):
+	def to_one_of_k(self, int_targets, num_classes = None):
 		"""Converts integer coded class target to 1 of K coded targets.
 
 		Args:
@@ -100,6 +102,8 @@ class MNISTDataset(BaseDataset):
 			to zero except for the column corresponding to the correct class
 			which is equal to one.
 		"""
-		one_of_k_targets = np.zeros((self.num_classes))
+		if num_classes == None:
+			num_classes = self.num_classes
+		one_of_k_targets = np.zeros((num_classes))
 		one_of_k_targets[int_targets] = 1
 		return one_of_k_targets
