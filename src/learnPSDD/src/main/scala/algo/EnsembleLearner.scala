@@ -190,9 +190,10 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
 }
 
 
-class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearners:Int) extends EM(datasetPath, vtreeFile, numLearners){
+class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearners:Int, initpsdd: String) extends EM(datasetPath, vtreeFile, numLearners){
   val dataSetOutputDir =  outputdir
   val lambdaWeight = configRead.getDouble("EM.SoftEM.lambdaWeight")
+  val initpsddString = new File(initpsdd)
 
   override def learn(): Unit = {
     //initialize output files
@@ -215,7 +216,13 @@ class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearn
     val vtree = VtreeNode.read(new File(vtreeFiles(0)))
     val psddMgr = new PsddManager(sddMgr)
     var trainingSampleClusters = clusterTrainingSamplesAccordingToPos(trainingSamples,weights,pos)
-    val psdds = for (i<- 0 until numLearners) yield psddMgr.newPsdd(vtree,new DataSets(trainingSampleClusters(i),validData,testData),parameterCalculator)
+
+    val psdds = for (i<- 0 until numLearners) yield {
+      if (initpsddString != "") psddMgr.readPsdd(initpsddString, vtree, new DataSets(trainingSampleClusters(i),validData,testData), parameterCalculator).asInstanceOf[PsddDecision]
+      else psddMgr.newPsdd(vtree, new DataSets(trainingSampleClusters(i),validData,testData), parameterCalculator)
+    }
+
+    // val psdds = for (i<- 0 until numLearners) yield psddMgr.newPsdd(vtree,new DataSets(trainingSampleClusters(i),validData,testData),parameterCalculator)
 
     //initialize operation finders
     val minSplitOperationFinder = new SplitOperationFinder(psddMgr,minOperationCompletionType,scorer,parameterCalculator)

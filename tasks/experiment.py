@@ -8,11 +8,11 @@ import shutil
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
 
-def learn_encoder(testing = False):
+def learn_encoder(experiment_name, dataset = 'mnist',testing = False, ):
 	if testing:
-		os.system('python {} --phase train --experiment_name {} --dataset {} --num_batches 50 --num_epochs 2 --batch_size 50 --feature_layer_size 28'.format(LOWLEVEL_CMD, experiment_name,dataset))
+		os.system('python {} --phase train --experiment_name {} --dataset {} --num_batches 50 --num_epochs 2 --batch_size 100 --feature_layer_size 28'.format(LOWLEVEL_CMD, experiment_name,dataset))
 	else:
-		os.system('python {} --phase train --experiment_name {} --gpu_ids 0,1 --feature_layer_size 1 --categorical_dim 10 --num_epochs 200'.format(LOWLEVEL_CMD, experiment_name))
+		os.system('python {} --phase train --experiment_name {} --dataset {} --gpu_ids 0,1 --feature_layer_size 32 --categorical_dim 2 --num_epochs 400 --batch_size 100'.format(LOWLEVEL_CMD, experiment_name,dataset))
 
 def encode_data(experiment_name, encoded_data_dir, testing = False, compress_fly = True, task_type = 'classification'):
 	if testing:
@@ -230,12 +230,12 @@ if __name__ == '__main__':
 
 	# evaluate_all_missing()
 
-	experiment_name = 'ex_7_mnist_32_2'
-	cluster_id = 'james03_plus'
-	task_type = 'plus'
+	experiment_name = 'ex_8_mnist_16_2'
+	cluster_id = 'bloodborn'
+	task_type = 'classification'
 	# compress_fly = True
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
-
+	learn_encoder(experiment_name, testing = True)
 	# encoded_name = 'encoded_data' if compress_fly else 'encoded_data_uncompressed_y' 
 	# if task_type != 'classification':
 	# 	encoded_name += '_{}'.format(task_type)
@@ -244,8 +244,9 @@ if __name__ == '__main__':
 
 	# encode_data(experiment_dir_path.split('/')[-1], encoded_data_dir, testing = True, compress_fly = True, task_type = task_type)
 
-	do_everything(experiment_dir_path, cluster_id, task_type = task_type, vtree_method = 'miGreedyBU', do_encode_data = True)
-	
+	# do_everything(experiment_dir_path, cluster_id, task_type = task_type, vtree_method = 'miGreedyBU', do_encode_data = True)
+	# do_psdd_training(experiment_dir_path, cluster_id, small_data_set = True, do_encode_data = False, \
+	# 	compress_fly = False, num_compent_learners = 10 , vtree_method = 'miGreedyBU')
 
 
 	# experiment_name = 'ex_7_mnist_24_4'

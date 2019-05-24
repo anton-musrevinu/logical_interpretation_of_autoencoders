@@ -1,6 +1,8 @@
 from .autoencoder import VarAutoencoder
 import torch
 import torch.nn as nn
+import functools
+from ..networks import *
 
 class VarLinAutoEncoder(VarAutoencoder):
 
@@ -309,3 +311,242 @@ class VarConvAutoEncoder(VarAutoencoder):
         # print('------------------------------')
 
         self.num_layers_decoder = layer_idx + 1
+
+
+
+
+class VarResNetAutoEncoder(VarAutoencoder):
+
+    def __init__(self, opt):
+
+        super(VarResNetAutoEncoder, self).__init__(opt, buildModule = False)
+
+        self.input_nc = opt.input_nc 
+        self.output_nc = self.fl_flat_shape[1]
+        self.ngf= opt.ngf
+        self.normType = opt.norm
+        self.use_dropout = opt.no_dropout
+        self.n_blocks = 4
+        self.padding_type='reflect'
+
+        self.n_downsampling = 4
+        
+        self.build_module()
+
+
+    def build_module(self):
+
+        self.num_fc = 2
+
+        print('building build_model_basic')
+
+        feature_layer = self.build_encoder(self.input_nc, self.output_nc)
+
+        # ======================== FEATURE LAYER =================================
+
+        print('------------------------------')
+        print('----- feature layer : {}'.format(feature_layer.shape))
+        print('------------------------------')
+
+        self.build_decoder(feature_layer, self.output_nc, self.input_nc)
+
+    def build_encoder(self,input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, padding_type='reflect'):
+
+        out = torch.zeros((self.input_shape))
+
+
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm2d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm2d
+
+        model = [nn.ReflectionPad2d(3),
+                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0, bias=use_bias),
+                 norm_layer(ngf),
+                 nn.ReLU(True)]
+
+
+        tmp_model = nn.Sequential(*model)
+        tmp_out = tmp_model(out)
+        print("tmp_out_shape (beofore downsampling): {}".format(tmp_out.shape))
+
+        n_downsampling = self.n_downsampling
+        for i in range(n_downsampling):  # add downsampling layers
+            mult = 2 ** i
+            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1, bias=use_bias),
+                      norm_layer(ngf * mult * 2),
+                      nn.ReLU(True)]
+
+
+        tmp_model = nn.Sequential(*model)
+        tmp_out = tmp_model(out)
+        print("tmp_out_shape (after downsampling): {}".format(tmp_out.shape))
+
+        mult = 2 ** n_downsampling
+        for i in range(self.n_blocks):       # add ResNet blocks
+
+            model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
+
+        # for i in range(n_downsampling):  # add upsampling layers
+        #     mult = 2 ** (n_downsampling - i)
+        #     model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+        #                                  kernel_size=3, stride=2,
+        #                                  padding=1, output_padding=1,
+        #                                  bias=use_bias),
+        #               norm_layer(int(ngf * mult / 2)),
+        #               nn.ReLU(True)]
+
+        # model += [nn.ReflectionPad2d(3)]
+
+
+
+        mult = 2 ** (n_downsampling)
+        model += [nn.Conv2d(ngf * mult, output_nc * 2, kernel_size=2, padding=0)]
+        model += [nn.ReLU()]
+
+        self.enocder_model = nn.Sequential(*model)
+
+        print("input shape: {}".format(out.shape))
+        out = self.enocder_model(out)
+        self.conversion_layer_shape_before = out.shape
+        print("encoder pre out shape: {}".format(out.shape))
+        out = out.view(out.shape[0], -1)
+        self.conversion_layer_shape_after = out.shape
+
+        model = [nn.Linear(in_features=out.shape[1],  # add a linear layer
+                    out_features=output_nc,
+                    bias=self.use_bias)]
+        model += [nn.ReLU()]
+
+        self.encoder_fcc = nn.Sequential(*model)
+        out = self.encoder_fcc(out)
+        print("encoder out shape: {}".format(out.shape))
+        return out
+
+    def build_decoder(self,feature_layer, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, padding_type='reflect'):
+
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm2d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm2d
+
+        model = [nn.Linear(in_features=feature_layer.shape[1],  # add a linear layer
+                    out_features=2 * feature_layer.shape[1],
+                    bias=self.use_bias)]
+        model += [nn.ReLU()]
+
+        self.decoder_fcc = nn.Sequential(*model)
+
+        out = torch.zeros((feature_layer.shape))
+        out = self.decoder_fcc(out)
+        print("decoder pre out shape: {}".format(out.shape))
+        out = out.view(self.conversion_layer_shape_before)
+        print("decoder pre 2 out shape: {}".format(out.shape))
+
+        # model = [nn.ReflectionPad2d(3),
+        #          nn.Conv2d(out.shape[1], ngf, kernel_size=7, padding=0, bias=use_bias),
+        #          norm_layer(ngf),
+        #          nn.ReLU(True)]
+        model = []
+        n_downsampling = self.n_downsampling
+     
+      # mult = 2 ** (n_downsampling)
+      #   model += [nn.Conv2d(ngf * mult, output_nc * 2, kernel_size=2, padding=0)]
+      #   model += [nn.ReLU()]
+
+        mult = 2 ** (n_downsampling )
+        model += [nn.ConvTranspose2d(out.shape[1], ngf * mult,
+                                     kernel_size=2,
+                                     padding=0, 
+                                     bias=use_bias),
+                  norm_layer(ngf * mult),
+                  nn.ReLU(True)]
+
+        mult = 2 ** n_downsampling
+        for i in range(self.n_blocks):       # add ResNet blocks
+
+            model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
+
+
+        tmp_model = nn.Sequential(*model)
+        tmp_out = tmp_model(out)
+        print("tmp_out_shape (before upsampling): {}".format(tmp_out.shape))
+
+        for i in range(n_downsampling):  # add upsampling layers
+            mult = 2 ** (n_downsampling - i)
+            model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+                                         kernel_size=3, stride=2,
+                                         padding=1, output_padding=1,
+                                         bias=use_bias),
+                      norm_layer(int(ngf * mult / 2)),
+                      nn.ReLU(True)]
+
+
+        tmp_model = nn.Sequential(*model)
+        tmp_out = tmp_model(out)
+        print("tmp_out_shape (after apsampling): {}".format(tmp_out.shape))
+
+        # model += [nn.ReflectionPad2d(3)]
+        model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=1)]
+        model += [nn.Sigmoid()]
+
+
+        # for i in range(n_downsampling):  # add upsampling layers
+        #     mult = 2 ** (n_downsampling - i)
+        #     model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+        #                                  kernel_size=3, stride=2,
+        #                                  padding=1, output_padding=1,
+        #                                  bias=use_bias),
+        #               norm_layer(int(ngf * mult / 2)),
+        #               nn.ReLU(True)]
+        # model += [nn.ReflectionPad2d(3)]
+        # model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
+        # model += [nn.ReLU()]
+
+        self.decoder_model = nn.Sequential(*model)
+
+        out = self.decoder_model(out)
+        print("encoder out shape: {}".format(out.shape))
+
+        assert(out.shape == self.input_shape)
+
+        # model = [nn.Linear(in_features=out.shape[1],  # add a linear layer
+        #             out_features=output_nc,
+        #             bias=self.use_bias)]
+        # model += [nn.ReLU()]
+
+        return out
+
+
+    def encode(self,x):
+        out = x
+
+        out = self.enocder_model(out)
+        out = out.view(out.shape[0], -1)
+        out = self.encoder_fcc(out)
+
+        feature_layer_prob = out.view(self.fl_hidden_shape)
+
+        return feature_layer_prob
+
+    def decode(self,x):
+        out = x.view(self.fl_flat_shape)
+
+        out = self.decoder_fcc(out)
+        out = out.view(self.conversion_layer_shape_before)
+        out = self.decoder_model(out)
+
+        res = out.view(self.input_shape)
+        return res
+
+    def reset_parameters(self):
+        """
+        Re-initialize the network parameters.
+        """
+        models = [self.enocder_model, self.encoder_fcc, self.decoder_model, self.decoder_fcc]
+        for model in models:
+            for item in model.children():
+                try:
+                    item.reset_parameters()
+                except:
+                    pass

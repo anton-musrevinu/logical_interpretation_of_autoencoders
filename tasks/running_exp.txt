@@ -5,6 +5,7 @@ student_compute_succ ex_7_mnist_16_4
 staff_compute        ex_7_mnist_28_2
 james01_g4land       ex_7_mnist_32_2
 james02_g7land       ex_7_mnist_32_2
+james03_plus         ex_7_mnist_32_2
 
 
 ==========================================================================================================================

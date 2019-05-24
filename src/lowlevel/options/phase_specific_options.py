@@ -22,6 +22,8 @@ def phase_train_options(parser):
     parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
     parser.add_argument('--no_dropout', type=str2bool, default=True, help='no dropout for the generator')
 
+    parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
+
 
     parser.add_argument('--epoch', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
     parser.add_argument('--num_epochs', nargs="?", type=int, default=100, help='The experiment\'s epoch budget')

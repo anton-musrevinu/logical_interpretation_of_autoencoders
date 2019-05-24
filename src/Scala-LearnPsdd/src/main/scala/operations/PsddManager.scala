@@ -993,6 +993,12 @@ class PsddManager(sddManager: SddManager, var cache: Boolean) {
     node.elements.foreach{el =>
       el.theta = parameterCalculator.calculate(el.data.train, nodeTrainData, Log.multiply(el.prime.mc,el.sub.mc), node.mc, nbElements)
     }
+    println("parts: "    + node.elements.toArray.map(el=>math.pow(math.E,el.theta)).mkString("; "))
+    println("Sum: "      + node.elements.toArray.map(_.theta).reduceLeft(Log.add) + ", log.one:" +  Log.one.toString)
+    println("log parts: "+ node.elements.toArray.map(_.theta).mkString("; "))
+    println("node.index: " + node.index)
+    findNode(root,node.index)
+    require(true == false, "break point reached \n")
     if(!Util.isEqual(node.elements.toArray.map(_.theta).reduceLeft(Log.add), Log.one)){
       println(node.elements.toArray.map(el=>math.pow(math.E,el.theta)).mkString(";")+"Sum"+node.elements.map(_.theta).reduce(Log.add).toString+"log"+node.elements.map(_.theta).mkString(";"))
       println(node.index)
@@ -1006,9 +1012,10 @@ class PsddManager(sddManager: SddManager, var cache: Boolean) {
   //findNode is used to debug in parameter calculations
   def findNode(current:PsddNode,target:Int):Boolean = {
     if (current.index == target){
-      println(current.elements.size)
+      println("current.elements.size: "+current.elements.size)
+      println("current: "+current)
       current.elements.foreach{el=>
-        println(el.formula.toString)
+        println("el.formula.toString: "+el.formula.toString)
       }
       true
     }else{
@@ -1159,10 +1166,13 @@ class PsddManager(sddManager: SddManager, var cache: Boolean) {
     }
 
     val root = nodes(rootId.toInt)
+    println("finished reading psdd")
+    println("root: " + root)
+    println("cacheBefore : " + cacheBefore)
     distributeData(root, data)
 
     cache = cacheBefore
-    val res = if (cache) rebuildPsdd(root) else root
+    val res = if (false) rebuildPsdd(root) else root
     if (parameterCalculator!= null) calculateParameters(res, parameterCalculator, res)
     roots += res
     res

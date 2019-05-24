@@ -509,7 +509,7 @@ def learn_psdd_from_data(train_data_path, vtree_path, out_psdd_file, \
 		shutil.rmtree(out_learnpsdd_tmp_dir)
 
 def learn_ensembly_psdd_from_data(train_data_path, vtree_path, out_psdd_file, \
-		 out_learnpsdd_tmp_dir = './.out_ensemblylearnpsdd_tmp_dir/',psdd_input_path = None, num_compent_learners = 5,valid_data_path = None, \
+		 out_learnpsdd_tmp_dir = './.out_ensemblylearnpsdd_tmp_dir/', psdd_input_path = None, num_compent_learners = 5, valid_data_path = None, \
 		 test_data_path = None, smoothing = 'l-1', structureChangeIt = 3, parameterLearningIt = 1, scorer = 'dll/ds', maxIt = 'max', \
 		 save_freq = 'best-3'):
 	
@@ -561,7 +561,7 @@ def learn_ensembly_psdd_from_data(train_data_path, vtree_path, out_psdd_file, \
 	cmd_str = 'java -jar {} learnEnsemblePsdd softEM '.format(LEARNPSDD_CMD) + \
 		  ' --trainData {}'.format(train_data_path) + \
 		  ' --vtree {}'.format(vtree_path) + \
-		  ' --out {}'.format(out_learnpsdd_tmp_dir) + \
+		  ' --out {}/'.format(out_learnpsdd_tmp_dir) + \
 		  ' --numComponentLearners {}'.format(num_compent_learners)
 
 	if valid_data_path != None and _check_if_file_exists(valid_data_path, raiseException = False):
@@ -606,7 +606,7 @@ def learn_ensembly_psdd_from_data(train_data_path, vtree_path, out_psdd_file, \
 #============================================================================================================================
 
 def learn_ensembly_psdd2_from_data(train_data_path, vtree_path, out_psdd_file, \
-		 out_learnpsdd_tmp_dir = './.out_ensemblylearnpsdd_tmp_dir/',psdd_input_path = None, num_compent_learners = 5,valid_data_path = None, \
+		 out_learnpsdd_tmp_dir = './.out_ensemblylearnpsdd_tmp_dir/', psdd_input_path = None, num_compent_learners = 5,valid_data_path = None, \
 		 test_data_path = None, smoothing = 'l-1', structureChangeIt = 3, parameterLearningIt = 1, scorer = 'dll/ds', maxIt = 'max', \
 		 save_freq = 'best-3'):
 
@@ -639,6 +639,8 @@ def learn_ensembly_psdd2_from_data(train_data_path, vtree_path, out_psdd_file, \
 
 	cmd_str = 'java -jar {} SoftEM {} {} {} {}'.format(\
 		LEARNPSDD_PAPER_CMD, train_data_path.replace('train.data',''), vtree_path, out_learnpsdd_tmp_dir + '/', num_compent_learners)
+	if psdd_input_path != None:
+		cmd_str += ' {}'.format(psdd_input_path)
 
 	print('excuting: {}'.format(cmd_str))
 	os.system(cmd_str)
@@ -917,6 +919,7 @@ def learn_psdd(psdd_out_dir, train_data_path,
 		compile_cnf_to_sdd(constraints_cnf_file, constraints_sdd_file, out_vtree_file, \
 							vtree_in_path = out_vtree_file, post_compilation_vtree_search = False, convert_to_pdf = convert_to_pdf)
 		
+		# constraints_psdd_file = constraints_sdd_file
 		constraints_psdd_file = os.path.join(contraints_tmp_dir, './constraints_as.psdd')
 		compile_sdd_to_psdd(train_data_path, out_vtree_file, constraints_sdd_file, constraints_psdd_file, \
 							valid_data_path = valid_data_path, test_data_path = test_data_path)
@@ -928,11 +931,13 @@ def learn_psdd(psdd_out_dir, train_data_path,
 		write('The number of psdd_compents (for ensembly learning) has to be > 0', 'error')
 	elif num_compent_learners == 1:
 		learn_psdd_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir = out_learnpsdd_tmp_dir, valid_data_path = valid_data_path, \
-			test_data_path = test_data_path, psdd_input_path = constraints_psdd_file, keep_generated_files = keep_generated_files, convert_to_pdf = convert_to_pdf)
+			test_data_path = test_data_path, psdd_input_path = constraints_psdd_file, keep_generated_files = keep_generated_files, convert_to_pdf = convert_to_pdf,\
+			num_compent_learners = num_compent_learners)
 	else:
 		# raise Exception('Ensemply learning is not working')
-		learn_ensembly_psdd2_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir,psdd_input_path = constraints_psdd_file,\
-			 num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, test_data_path = test_data_path)
+		learn_ensembly_psdd_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir = out_learnpsdd_tmp_dir ,\
+				psdd_input_path = constraints_psdd_file, num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, \
+				test_data_path = test_data_path)
 
 	#Remove tmp files
 	if not keep_generated_files and constraints_cnf_file != None:

@@ -45,6 +45,10 @@ class Data(backend: Array[Map[Int,Boolean]], weights: Array[Double], val vars: A
     val diffElements = this.elements diff that.elements
     new Data(backend, weights, vars, diffElements)
   }
+  
+  def checkOperation(that: BitSubSet[Map[Int,Boolean]]): Boolean = (this.backend eq that.backend)
+
+  def copy() = new Data(backend.map(Map[Int,Boolean]()++_),weights.map(x=>x),vars.map(x=>x),BitSet()++elements)
 
   override def toString = "Data("+size+","+total+")"
 
@@ -191,6 +195,8 @@ class DataSets(val dataSets: Array[Data]) {
       this.dataSets.zip(other.dataSets).forall{case (data1,data2) => data1==data2}
     case _ => false
   }
+
+  def copy() = new DataSets(this.dataSets.map(_.copy()))
 
   override def toString: String = dataSets.mkString("[",",","]")
 }
