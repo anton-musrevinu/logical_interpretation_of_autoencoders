@@ -23,9 +23,9 @@ object Output {
 
   def savePsdds(psdd: PsddNode, name: String, asPsdd: Boolean=true, asDot: Boolean=false, asDot2:Boolean=false, asSdd:Boolean=false, withVtree:Boolean=false): Unit ={
     if (asPsdd) PsddQueries.save(psdd, new File(modelFolder, name+".psdd"))
-    if (asPsdd) PsddQueries.saveAsDot(psdd, new File(modelFolder, name+".dot"))
-    if (asPsdd) PsddQueries.saveAsDot2(psdd, new File(modelFolder, name+".dot2"))
-    if (asPsdd) PsddQueries.saveAsSdd(psdd, new File(modelFolder, name+".sdd"))
+    if (asDot) PsddQueries.saveAsDot(psdd, new File(modelFolder, name+".dot"))
+    if (asDot2) PsddQueries.saveAsDot2(psdd, new File(modelFolder, name+".dot2"))
+    if (asSdd) PsddQueries.saveAsSdd(psdd, new File(modelFolder, name+".sdd"))
     if (withVtree) psdd.vtree match{
       case vtree: VtreeInternal => vtree.save(new File(modelFolder, name+".vtree"))
       case _ =>

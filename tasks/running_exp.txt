@@ -1,33 +1,61 @@
+TO RUNNING ==================================================================================================================
+
+ex_7_mnist_32_2 noisy4
 
 RUNNING ==================================================================================================================
 
-student_compute_succ ex_7_mnist_16_4
-staff_compute        ex_7_mnist_28_2
-james01_g4land       ex_7_mnist_32_2
-james02_g7land       ex_7_mnist_32_2
-james03_plus         ex_7_mnist_32_2
-
-
-==========================================================================================================================
-
-
-james02_blor     ex_7_mnist_32_2
-james01_bland    ex_7_mnist_32_2
+student_compute      uncompressed_y     ex_7_mnist_32_2    (28/05/2019)
+staff_compute_plus                      ex_7_mnist_32_2    (28/05/2019)
+james08_g4land                          ex_7_mnist_32_2    (28/05/2019)
+james03_g7land                          ex_7_mnist_32_2    (27/05/2019)
+james10                                 ex_7_mnist_28_2    (27/05/2019)
+james17             noisy-1             ex_7_mnist_32_2    (29/05/2019)
+james02             noisy-2             ex_7_mnist_32_2    (29/05/2019)
+james09             noisy-3             ex_7_mnist_32_2    (29/05/2019)
 
 ==========================================================================================================================
-classifciation running
-james01       - ex_7_mnist_32_2 vtree: miBlossom  -- 0.8932
-james02       - ex_7_mnist_32_4 vtree: miBlossom  -- 0.8251
-james03       - ex_7_mnist_20_4 vtree: miBlossom  -- 0.8604
-james08       - ex_7_mnist_20_2 vtree: miBlossom  -- 0.8225
-james10       - ex_7_mnist_16_4 onehot encoded y  -- 0.82174
+==========================================================================================================================
+stopped
+
+james17 (name is james10)               ex_7_mnist_48_2    ---- iteration 93
+
+relational experiments:
+(all run with miGreedyBU vtree search)
+
+student_compute_succ    ex_7_mnist_16_4 -- ----    --- 356 iterations
+
+james02_blor            ex_7_mnist_32_2 -- 0.966   --- 412 iterations
+james01_bland           ex_7_mnist_32_2 -- 0.978   --- 224 iterations
+
+james01_g4land          ex_7_mnist_32_2 -- 0.478   ---  94 iterations
+james02_g7land          ex_7_mnist_32_2 -- 0.828   ---  92 iterations
+james03_plus            ex_7_mnist_32_2 -- 0.067   ---  87 iterations
+    ===> currently repeating, as it broke to early
+
+classifciation experiments:
+
+james01         - ex_7_mnist_32_2 vtree: miBlossom   -- 0.8932    --- 341 iterations
+    ===> best acc recorded
+
+james02         - ex_7_mnist_32_4 vtree: miBlossom   -- 0.8251    --- 169 iterations
+james03         - ex_7_mnist_20_4 vtree: miBlossom   -- 0.8604    --- 207 iterations
+james08         - ex_7_mnist_20_2 vtree: miBlossom   -- 0.8225    --- 560 iterations
+
+james02         - ex_7_mnist_16_4 vtree: miMetis     -- 0.8449    --- 320 iterations
+james03         - ex_7_mnist_16_4 vtree: miGreedyBU  -- 0.8514    --- 136 iterations
+    ====> miGreedyBU works best
+
+james10         - ex_7_mnist_16_4 vtree: miBlossom   -- 0.82174   --- 205 iterations    !!!!! uncompressed y
+student_compute - ex_7_mnist_16_4 vtree: miBlossom   -- 0.8407    --- 197 iterations
+    ====> compressed y is slightly better
+
+staff_compute   - ex_7_mnist_24_4 vtree: miBlossom   -- 0.8552    --- 291 iterations
+student_compute - ex_7_mnist_24_4 vtree: miBlossom   -- 0.6169    --- 222 iterations    !!!!! signle psdd
+    ====> ensembly psdd is way better
 
 ==========================================================================================================================
 classification and generation done
 
-james02        - ex_7_mnist_16_4 vtree: miMetis     -- 0.8449
-james03        - ex_7_mnist_16_4 vtree: miGreedyBU  -- 0.8514
-sudent_compute - ex_7_mnist_16_4 vtree: miBlossom   -- 0.8407
 
 ==========================================================================================================================
 ==========================================================================================================================

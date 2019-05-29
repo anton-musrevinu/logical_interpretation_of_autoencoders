@@ -74,7 +74,7 @@ class VAEModel(BaseModel):
         # define networks (both Generators and discriminators)
         # The naming is different from those used in the paper.
         # Code (vs. paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
-        self.netAE = networks.define_resNetAE(opt)
+        self.netAE = networks.define_AE(opt)
 
         if self.isTrain:
             # define loss functions

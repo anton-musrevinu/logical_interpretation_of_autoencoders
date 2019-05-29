@@ -44,8 +44,8 @@ def get_option_setter(dataset_name):
 	dataset_class = find_dataset_using_name(dataset_name)
 	return dataset_class.modify_commandline_options
 
-def create_dataset_new(opt, domain, type_of_data, mydir = None):
-	data_loader = CustomDatasetDataLoader(opt, domain, type_of_data, mydir)
+def create_dataset_new(opt, domain, type_of_data, mydir = None, args_for_dataset = None):
+	data_loader = CustomDatasetDataLoader(opt, domain, type_of_data, mydir, args_for_dataset)
 	dataset = data_loader.load_data()
 	return dataset
 
@@ -73,7 +73,7 @@ def create_dataset_new(opt, domain, type_of_data, mydir = None):
 class CustomDatasetDataLoader():
 	"""Wrapper class of Dataset class that performs multi-threaded data loading"""
 
-	def __init__(self, opt, domain, type_of_data, mydir):
+	def __init__(self, opt, domain, type_of_data, mydir, args_for_dataset = None):
 		"""Initialize this class
 
 		Step 1: create a dataset instance given the name [dataset_mode]
@@ -81,7 +81,10 @@ class CustomDatasetDataLoader():
 		"""
 		self.opt = opt
 		dataset_class = find_dataset_using_name(domain)
-		dataset = dataset_class(opt, type_of_data, mydir)
+		if args_for_dataset != None:
+			dataset = dataset_class(opt, type_of_data, mydir, **args_for_dataset)
+		else:
+			dataset = dataset_class(opt, type_of_data, mydir)
 		self.dataloader = torch.utils.data.DataLoader(
 			dataset,
 			batch_size=opt.batch_size,

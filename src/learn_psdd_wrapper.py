@@ -637,10 +637,11 @@ def learn_ensembly_psdd2_from_data(train_data_path, vtree_path, out_psdd_file, \
 		shutil.rmtree(out_learnpsdd_tmp_dir)
 	os.mkdir(out_learnpsdd_tmp_dir)
 
-	cmd_str = 'java -jar {} SoftEM {} {} {} {}'.format(\
+	cmd_str = 'java -jar {} SoftEM {} {} {} {} '.format(\
 		LEARNPSDD_PAPER_CMD, train_data_path.replace('train.data',''), vtree_path, out_learnpsdd_tmp_dir + '/', num_compent_learners)
+	
 	if psdd_input_path != None:
-		cmd_str += ' {}'.format(psdd_input_path)
+		cmd_str += '{}'.format(psdd_input_path)
 
 	print('excuting: {}'.format(cmd_str))
 	os.system(cmd_str)
@@ -732,9 +733,14 @@ def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train
 	os.system(cmd_str)
 
 	out_file = out_file + '.info'
-	_check_if_file_exists(out_file)
+	
+	if not _check_if_file_exists(out_file, raiseException = False) or os.path.getsize(out_file) == 0:
+		raise PsddQueryException('Exeption in query')
 
 	write('Finished measureing classfication acc. File location: {}'.format(out_file), 'cmd-end')
+
+class PsddQueryException(Exception):
+	pass
 
 def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, \
 							psdd_init_data_per = .1, at_iteration = 'best-0', type_of_query = 'dis', fl_to_query = ['flx'], y_condition = None):
@@ -845,6 +851,10 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 	out_file = out_file + '_{}.data'.format(type_of_query)
 	_check_if_file_exists(out_file_info)
 	_check_if_file_exists(out_file)
+
+	if os.path.getsize(out_file) == 0:
+		raise PsddQueryException('Exeption in query')
+	
 	out_data_info_file = out_file + '.info'
 	shutil.copyfile(org_query_data_path + '.info', out_data_info_file)
 
@@ -935,7 +945,7 @@ def learn_psdd(psdd_out_dir, train_data_path,
 			num_compent_learners = num_compent_learners)
 	else:
 		# raise Exception('Ensemply learning is not working')
-		learn_ensembly_psdd_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir = out_learnpsdd_tmp_dir ,\
+		learn_ensembly_psdd2_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir = out_learnpsdd_tmp_dir ,\
 				psdd_input_path = constraints_psdd_file, num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, \
 				test_data_path = test_data_path)
 

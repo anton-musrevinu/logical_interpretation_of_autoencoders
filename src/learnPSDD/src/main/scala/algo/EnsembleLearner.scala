@@ -16,6 +16,7 @@ import structure.{Data, DataSets, PsddDecision, VtreeNode}
 import util.{Parser, Util}
 import main._
 import algo._
+import scala.collection.mutable
 
 import sdd.{SddManager, Vtree}
 
@@ -39,8 +40,12 @@ abstract class EnsembleLearner(datasetPath: String, vtreeFile: String) {
   val scorer = Parser.parseScorer(configRead.getString("general.scorer"))
   val minOperationCompletionType = Parser.parseOperationCompletionType("minimal")
   val completeOperationCompletionType = Parser.parseOperationCompletionType("maxDepth-3")
-  val savingFrequency = Parser.parseSavingFrequency(configRead.getString("general.savingFrequency"))
+  val saveFrequency = Parser.parseSavingFrequency(configRead.getString("general.savingFrequency"))
   val maxNumberOfCloneParents = configRead.getInt("general.maxNumberOfCloneParents")
+
+
+  var bestSavedValidLl = Double.NegativeInfinity
+  var bestKiterations = mutable.Map[Int, Double]()
 
   protected def initializeOutput(dataSetOutputDir:String): PrintWriter = {
     Output.init(new File(dataSetOutputDir))
@@ -94,6 +99,53 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
     }
   }
 
+  def savePsdd(psdds:IndexedSeq[PsddDecision],componentsWeights:IndexedSeq[BigDecimal], it:Int, validLl: Double): Unit = {
+
+    // val validLlImprovement = validLl > bestSavedValidLl
+
+    val saveCurrentPsdd = saveFrequency match {
+      case main.All(k) =>  it % k == 0
+      case main.Best(k) => bestKiterations.values.map( savedLl => validLl > savedLl).foldLeft(true)(_ && _) || bestKiterations.size < k
+    }
+
+    if (saveCurrentPsdd) {
+      // delete files if needed
+      saveFrequency match {
+        case main.All(_) =>
+        case main.Best(k) =>
+          if (bestKiterations.size >= k){
+            //Find element to delete if bestKiterations map already equals k in size
+            var iteration_to_del = -1
+            var worstLl = Double.PositiveInfinity
+            bestKiterations.keys.foreach{i =>
+              if (bestKiterations(i) < worstLl) iteration_to_del = i
+            }
+            
+            //Delete found element from map
+            bestKiterations -= iteration_to_del
+
+            //Delete files corresponding to works iteration
+            val files_to_del = Output.modelFolder.listFiles().filter(_.getName.contains("it_" + iteration_to_del))
+            files_to_del.foreach(_.delete())
+
+          }
+          //Add new (better iterations to map
+          bestKiterations += (it -> validLl)
+      }
+
+      // save files if needed
+      0 until psdds.length foreach { 
+        i => Output.savePsdds(psdds(i), "it_" + it + "_l_" + i, asPsdd = true, asDot = true, asDot2 = false, asSdd = false, withVtree = false)}
+  
+    }
+
+    // always keep last model too (for debug purpose)
+    val previousLast = Output.modelFolder.listFiles().filter(_.getName.contains("last")) // delete the previous last model
+    0 until psdds.length foreach { 
+      i => Output.savePsdds(psdds(i), "last_" + it + "_l_" + i, asPsdd = true, asDot = true, asDot2 = false, asSdd = false, withVtree = false)}
+    previousLast.foreach(_.delete())
+  }
+
   protected def buildMixture(psdds:IndexedSeq[PsddDecision],componentsWeights:IndexedSeq[BigDecimal],output:PrintWriter, it:Int): Unit ={
     //combine to form an ensembler learner
     val mixtureTestLlonEachExample = testData.backend.map(example=> (psdds.map(PsddQueries.bigDecimalProb(_,example)),componentsWeights).zipped.map(_*_).sum)
@@ -107,7 +159,9 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
     output.println(Array(getIt(),time,mixtureTimer,totalSize,componentsWeights.map("%1.2f".format(_)).mkString(";"),testLl).mkString(";"))
     output.flush()
 
-    0 until numLearners foreach { i => Output.savePsdds(psdds(i), "it_"+it+ "_l_"+i, asPsdd = true, asDot = true, asDot2 = false, asSdd = false, withVtree = true)}
+    savePsdd(psdds, componentsWeights, it, testLl.toDouble)
+
+    // 0 until numLearners foreach { i => Output.savePsdds(psdds(i), "it_"+it+ "_l_"+i, asPsdd = true, asDot = true, asDot2 = false, asSdd = false, withVtree = true)}
   }
 
   protected def updateDataInPsdd(psddMgr:PsddManager, psdd:PsddDecision, trainData: Data): Unit = {
@@ -193,10 +247,12 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
 class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearners:Int, initpsdd: String) extends EM(datasetPath, vtreeFile, numLearners){
   val dataSetOutputDir =  outputdir
   val lambdaWeight = configRead.getDouble("EM.SoftEM.lambdaWeight")
-  val initpsddString = new File(initpsdd)
+  val psdd_constraints = (initpsdd != "")
+  val initpsddString = if (psdd_constraints) new File(initpsdd) else null
 
   override def learn(): Unit = {
     //initialize output files
+    bestSavedValidLl = Double.NegativeInfinity
     val outputForMixture = super.initializeOutput(dataSetOutputDir)
     val outputForLearners = for (i<-0 until numLearners) yield new PrintWriter(new File(dataSetOutputDir+i.toString+"/progress.txt"))
     outputForLearners.foreach{x=>
@@ -218,7 +274,7 @@ class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearn
     var trainingSampleClusters = clusterTrainingSamplesAccordingToPos(trainingSamples,weights,pos)
 
     val psdds = for (i<- 0 until numLearners) yield {
-      if (initpsddString != "") psddMgr.readPsdd(initpsddString, vtree, new DataSets(trainingSampleClusters(i),validData,testData), parameterCalculator).asInstanceOf[PsddDecision]
+      if (psdd_constraints) psddMgr.readPsdd(initpsddString, vtree, new DataSets(trainingSampleClusters(i),validData,testData), parameterCalculator).asInstanceOf[PsddDecision]
       else psddMgr.newPsdd(vtree, new DataSets(trainingSampleClusters(i),validData,testData), parameterCalculator)
     }
 
