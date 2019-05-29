@@ -8,11 +8,11 @@ import shutil
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
 
-def learn_encoder(testing = False):
+def learn_encoder(experiment_name, dataset = 'mnist',testing = False, ):
 	if testing:
-		os.system('python {} --phase train --experiment_name {} --dataset {} --num_batches 50 --num_epochs 2 --batch_size 50 --feature_layer_size 28'.format(LOWLEVEL_CMD, experiment_name,dataset))
+		os.system('python {} --phase train --experiment_name {} --dataset {} --num_batches 50 --num_epochs 2 --batch_size 100 --feature_layer_size 28'.format(LOWLEVEL_CMD, experiment_name,dataset))
 	else:
-		os.system('python {} --phase train --experiment_name {} --gpu_ids 0,1 --feature_layer_size 1 --categorical_dim 10 --num_epochs 200'.format(LOWLEVEL_CMD, experiment_name))
+		os.system('python {} --phase train --experiment_name {} --dataset {} --gpu_ids 0,1 --feature_layer_size 32 --categorical_dim 2 --num_epochs 400 --batch_size 100'.format(LOWLEVEL_CMD, experiment_name,dataset))
 
 def encode_data(experiment_name, encoded_data_dir, testing = False, compress_fly = True, task_type = 'classification'):
 	if testing:
@@ -27,18 +27,21 @@ def decode_data(experiment_name, file_to_decode):
 	os.system(cmd)
 
 
-def do_psdd_training(experiment_dir_path,cluster_name, compress_fly = True, small_data_set = False, \
+def do_psdd_training(experiment_dir_path,cluster_name, compress_fly = True, testing = False, \
 					do_encode_data = True, num_compent_learners = 1, vtree_method = 'miBlossom', task_type = 'classification'):
 	os.system('pwd')
 
-	encoded_name = 'encoded_data' if compress_fly else 'encoded_data_uncompressed_y' 
+	experiment_identifier = ''
+	if not compress_fly:
+		experiment_identifier += '_uncompressed_y'
 	if task_type != 'classification':
-		encoded_name += '_{}'.format(task_type)
+		experiment_identifier += '_' + task_type
 
-	encoded_data_dir = os.path.join(experiment_dir_path,encoded_name)
+	#Name of the folder for the encoded data (cluster independent)
+	encoded_data_dir = os.path.join(experiment_dir_path, 'encoded_data' + experiment_identifier)
 
 	if do_encode_data:
-		encode_data(experiment_dir_path.split('/')[-1], encoded_data_dir, testing = small_data_set, compress_fly = compress_fly, task_type = task_type)
+		encode_data(experiment_dir_path.split('/')[-1], encoded_data_dir, testing = testing, compress_fly = compress_fly, task_type = task_type)
 
 	for root, dir_names, file_names in os.walk(encoded_data_dir):
 		for i in file_names:
@@ -50,18 +53,30 @@ def do_psdd_training(experiment_dir_path,cluster_name, compress_fly = True, smal
 				test_data_file = os.path.join(root, i)
 
 	y_constraints = None
-	if not compress_fly:
-		y_constraints = os.path.join(experiment_dir_path, './y_constraints.cnf')
+	#CONSTRAINTS ARE NOT WORKING FOR ENSEMBLY PSDD!!!!!!!!!!!!!!!!!!!!
+	# if not compress_fly:
+	# 	y_constraints = os.path.join(experiment_dir_path, './y_constraints.cnf')
 
-	psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))	
+
+	psdd_out_dir = _get_psdd_out_dir(experiment_dir_path, cluster_id, task_type)
 
 	vtree_path, psdds, weights = learn_psdd_wrapper.learn_psdd(psdd_out_dir, train_data_path, valid_data_path = valid_data_path,\
 				replace_existing = True, vtree_method = vtree_method, num_compent_learners = num_compent_learners, constraints_cnf_file = y_constraints)
 
-def do_classification_evaluation(experiment_dir_path, cluster_id, test = False, task_type = 'classification'):
-	print('experiment_dir_path',experiment_dir_path)
+def _get_psdd_out_dir(experiment_dir_path, cluster_id, task_type):
+	identifier = cluster_id + '_' + task_type if task_type != 'classification' else cluster_id
 
-	if 'ex_7_mnist_16_4' in experiment_dir_path and 'james10' == cluster_id:
+	if 'ex_5' in experiment_dir_path or 'ex_6' in experiment_dir_path:
+		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_model_{}'.format(identifier))
+	else:
+		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}'.format(identifier))
+
+	return os.path.abspath(psdd_out_dir)
+
+def _get_data_files(experiment_dir_path, cluster_id, task_type):
+
+	if 'ex_7_mnist_16_4' in experiment_dir_path and 'james10' == cluster_id or\
+		'ex_7_mnist_32_2' in experiment_dir_path and 'student_compute' == cluster_id:
 		encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data_uncompressed_y')
 	elif task_type != 'classification':
 		encoded_data_dir = os.path.join(experiment_dir_path, 'encoded_data_' + task_type)
@@ -75,18 +90,27 @@ def do_classification_evaluation(experiment_dir_path, cluster_id, test = False, 
 			elif i.endswith('valid.data'):
 				valid_data_path = os.path.join(root, i)
 			elif i.endswith('test.data'):
-				test_data_file = os.path.join(root, i)
+				test_data_path = os.path.join(root, i)
 
-	if 'ex_5' in experiment_dir_path or 'ex_6' in experiment_dir_path:
-		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_model_{}/'.format(cluster_id))
-	else:
-		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id))
+	return train_data_path, valid_data_path, test_data_path
+
+
+def do_classification_evaluation(experiment_dir_path, cluster_id, test = False, task_type = 'classification'):
+	print('[CLASSIFICATION] - START ON: \t{} \t-- {} \t -- {}'.format(experiment_dir_path.split('/')[-1], cluster_id, task_type))
+
+	try:
+		train_data_path, valid_data_path, query_data_path = _get_data_files(experiment_dir_path, cluster_id, task_type)
+	except Exception as e:
+		print('[CLASSIFICATION] - END DUE: \tNeccesary data files could not be found')
+		return
+
+	psdd_out_dir = _get_psdd_out_dir(experiment_dir_path, cluster_id, task_type)
 
 	for i in range(5):
 		try:
 			at_iteration = 'best-{}'.format(i)
 			print('trying at: {}'.format(at_iteration))
-			learn_psdd_wrapper.measure_classification_accuracy_on_file(psdd_out_dir, test_data_file, train_data_path, valid_data_path = valid_data_path, \
+			learn_psdd_wrapper.measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = valid_data_path, \
 									test = test, psdd_init_data_per = 0.1 if not test else 0.01, at_iteration = at_iteration)
 			break
 		except Exception as e:
@@ -95,34 +119,27 @@ def do_classification_evaluation(experiment_dir_path, cluster_id, test = False, 
 
 def do_generative_query_on_test(experiment_dir_path, cluster_id, test = False, task_type = 'classification', \
 	fl_to_query = ['flx'], type_of_query = 'dis', y_condition = None):
-	print('experiment_dir_path',experiment_dir_path)
 
+	print('[SAMPLING] - START ON: \t{} \t-- {} \t -- {}'.format(experiment_dir_path.split('/')[-1], cluster_id, task_type))
 
-	if 'ex_7_mnist_16_4' in experiment_dir_path and 'james10' == cluster_id:
-		encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data_uncompressed_y')
-	elif task_type != 'classification':
-		encoded_data_dir = os.path.join(experiment_dir_path, 'encoded_data_' + task_type)
-	else:
-		encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
+	try:
+		train_data_path, valid_data_path, query_data_path = _get_data_files(experiment_dir_path, cluster_id, task_type)
+	except Exception as e:
+		print('[SAMPLING] - END DUE: \tNeccesary data files could not be found')
+		return
 
-	for root, dir_names, file_names in os.walk(encoded_data_dir):
-		for i in file_names:
-			if i.endswith('train.data'):
-				train_data_path = os.path.join(root, i)
-			elif i.endswith('valid.data'):
-				valid_data_path = os.path.join(root, i)
-			elif i.endswith('test.data'):
-				query_data_file = os.path.join(root, i)
+	psdd_out_dir = _get_psdd_out_dir(experiment_dir_path, cluster_id, task_type)
 
-	if 'ex_5' in experiment_dir_path or 'ex_6' in experiment_dir_path:
-		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_model_{}/'.format(cluster_id))
-	else:
-		psdd_out_dir = os.path.abspath(os.path.join(experiment_dir_path,'./psdd_search_{}/'.format(cluster_id)))
-
-	# generated_data_file = learn_psdd_wrapper.generative_query_for_file(psdd_out_dir, query_data_file, train_data_path, valid_data_path = valid_data_path, \
-	# 	test = test, psdd_init_data_per = 0.1, type_of_query = type_of_query, fl_to_query = fl_to_query, y_condition = y_condition)
-
-	# decode_data(experiment_dir_path.split('/')[-1], generated_data_file)
+	for i in range(5):
+		try:
+			at_iteration = 'best-{}'.format(i)
+			print('trying at: {}'.format(at_iteration))
+			learn_psdd_wrapper.generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = valid_data_path, \
+				test = test, psdd_init_data_per = 0.1, type_of_query = type_of_query, fl_to_query = fl_to_query, y_condition = y_condition, at_iteration = at_iteration)
+			break
+		except Exception as e:
+			print('caught exception: {}'.format(e))
+			continue
 
 	_decode_class_samples(psdd_out_dir, cluster_id)
 
@@ -194,36 +211,52 @@ def evaluate_all_missing():
 			for experiment_dir_path, dir_names_2, file_names_2 in os.walk(os.path.join(root, exp)):
 				for psdd_search_dir in dir_names_2:
 					if 'psdd_search' in psdd_search_dir:
-						cluster_id = str(psdd_search_dir).split('psdd_search_')[1].replace('/','')
+						identifier = str(psdd_search_dir).split('psdd_search_')[1].replace('/','')
+						if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
+							cluster_id = '_'.join(identifier.split('_')[:-1])
+							task_type = identifier.split('_')[-1]
+						else:
+							cluster_id = identifier
+							task_type = 'classification'
 						exp_cluster_dir = os.path.abspath(os.path.join(experiment_dir_path, psdd_search_dir))
+						progressfile = os.path.join(exp_cluster_dir, './learnpsdd_tmp_dir/progress.txt')
+
+						if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
+							continue
+
 						evaluationDir = os.path.abspath(os.path.join(exp_cluster_dir, './evaluation'))
 						if not os.path.exists(evaluationDir):
-							toclassify.append((experiment_dir_path, cluster_id))
+							toclassify.append((experiment_dir_path, cluster_id, task_type))
 							# print('added because evaldir does not exist', evaluationDir)
 						else:
 							for root_3, dir_names_3, file_names_3 in os.walk(evaluationDir):
 								if not any(['classification' in file_name for file_name in file_names_3]):
-									toclassify.append((experiment_dir_path, cluster_id))
+									toclassify.append((experiment_dir_path, cluster_id, task_type))
+								else:
+									allempty = True
+									for file_4 in file_names_3:
+										if 'classification' in file_4:
+											allempty = allempty and os.path.getsize(os.path.join(root_3, file_4)) == 0
+									if allempty:
+										toclassify.append((experiment_dir_path, cluster_id, task_type))
 									# print('added because file does not exist', (experiment_dir_path, cluster_id))
 
 	for i in toclassify:
-		print('evaluating ', i)
-		do_classification_evaluation(i[0],i[1])
+		do_classification_evaluation(i[0],i[1], task_type = i[2])
 
-def do_everything(experiment_dir_path,cluster_id, \
-		vtree_method = 'miBlossom', num_compent_learners = 10, compress_fly = True, type_of_query = 'bin', task_type = 'classification',\
-		do_encode_data = True):
+def do_everything(experiment_dir_path, cluster_id, task_type = 'classification',\
+		vtree_method = 'miBlossom', num_compent_learners = 10, compress_fly = True, type_of_query = 'bin', do_encode_data = True, testing = False):
 	
 	#encode the data for and learn the (ensemby psdd)
 	do_psdd_training(experiment_dir_path, cluster_id, do_encode_data = do_encode_data, \
-	 	compress_fly = compress_fly, num_compent_learners = num_compent_learners , vtree_method = vtree_method, task_type = task_type)
+	 	compress_fly = compress_fly, num_compent_learners = num_compent_learners , vtree_method = vtree_method, task_type = task_type, testing = testing)
 
 	#record classification acc on held out test set
 	do_classification_evaluation(experiment_dir_path, cluster_id, task_type = task_type)
 
 	#Generate class samples and decode them to png
-	do_generative_query_on_test(experiment_dir_path, cluster_id, task_type = task_type, type_of_query = type_of_query,test = True, fl_to_query = ['fla'],y_condition = [0])
-	do_generative_query_on_test(experiment_dir_path, cluster_id, task_type = task_type, type_of_query = type_of_query,test = True, fl_to_query = ['fla'],y_condition = [1])
+	do_generative_query_on_test(experiment_dir_path, cluster_id, task_type = task_type, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [0])
+	do_generative_query_on_test(experiment_dir_path, cluster_id, task_type = task_type, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [1])
 
 
 if __name__ == '__main__':
@@ -231,37 +264,19 @@ if __name__ == '__main__':
 	# evaluate_all_missing()
 
 	experiment_name = 'ex_7_mnist_32_2'
-	cluster_id = 'james03_plus'
-	task_type = 'plus'
-	# compress_fly = True
+	cluster_id = 'james09'
+	task_type = 'noisy-3'
+	compress_fly = False
 	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 
-	# encoded_name = 'encoded_data' if compress_fly else 'encoded_data_uncompressed_y' 
-	# if task_type != 'classification':
-	# 	encoded_name += '_{}'.format(task_type)
+	do_everything(experiment_dir_path, cluster_id, task_type = task_type, vtree_method = 'miGreedyBU', do_encode_data = True, testing = False,  \
+					compress_fly = compress_fly)
 
-	# encoded_data_dir = os.path.join(experiment_dir_path,encoded_name)
-
-	# encode_data(experiment_dir_path.split('/')[-1], encoded_data_dir, testing = True, compress_fly = True, task_type = task_type)
-
-	do_everything(experiment_dir_path, cluster_id, task_type = task_type, vtree_method = 'miGreedyBU', do_encode_data = True)
-	
+	# do_generative_query_on_test(experiment_dir_path, cluster_id, task_type = task_type, type_of_query = 'bin', test = True, fl_to_query = ['fla'], y_condition = [0])
+	# do_generative_query_on_test(experiment_dir_path, cluster_id, task_type = task_type, type_of_query = 'bin', test = True, fl_to_query = ['fla'], y_condition = [1])
 
 
-	# experiment_name = 'ex_7_mnist_24_4'
-	# cluster_id = 'staff_compute'
-	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
-	# # do_psdd_training(experiment_dir_path, cluster_id, small_data_set = False, do_encode_data = False, \
-	# # 	compress_fly = True, num_compent_learners = 10 , vtree_method = 'miBlossom')
-	
-	# #test classification acc on held out test set
-	# do_classification_evaluation(experiment_dir_path, cluster_id, test = True, task_type = task_type)
 
-	# #Generate class samples and decode them to png
-	# do_generative_query_for_labels(experiment_dir_path, cluster_id, type_of_query = 'bin', task_type = task_type)
-	# do_generative_query_on_test(experiment_dir_path, cluster_id, type_of_query = 'bin', task_type = task_type, test = True, fl_to_query = ['fla'], y_condition = [0])
-	# do_generative_query_on_test(experiment_dir_path, cluster_id, type_of_query = 'bin', task_type = task_type, test = True, fl_to_query = ['fla'], y_condition = [1])
-	# do_generative_query_on_test(experiment_dir_path, cluster_id, type_of_query = 'bin', task_type = task_type, test = True, fl_to_query = ['flb'])
-	# _decode_class_samples(experiment_dir_path, )
+
 
 

@@ -883,6 +883,8 @@ object Main {
                   else psddMgr.newPsdd(vtree, data, config.parameterCalculator)
                 }
 
+                println("Reading PSDD DONE")
+
                 Debug.writeln("start learning...")
 
                 val learner = new SoftEM(data, config.numComponentLearners, config.out, config.parameterCalculator, config.scorer, config.maxIt, config.structureChangeIt, config.parameterLearningInt)

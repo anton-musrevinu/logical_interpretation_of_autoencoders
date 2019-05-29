@@ -513,15 +513,17 @@ class PsddManager(sddManager: SddManager) {
   // PARAMETERS //
   ////////////////
 
-  def calculateParameters(psdd: PsddNode, parameterCalculator: ParameterCalculator,root:PsddDecision): Unit = PsddQueries.decisionNodes(psdd).foreach{ node =>
+  def calculateParameters(psdd: PsddNode, parameterCalculator: ParameterCalculator,root:PsddNode): Unit = PsddQueries.decisionNodes(psdd).foreach{ node =>
     val nodeTrainData = node.trainData
     val nbElements = node.elements.size
     node.elements.foreach{el =>
       el.theta = parameterCalculator.calculate(el.data.train, nodeTrainData, nbElements)
     }
     if(!Util.isEqual(node.elements.toArray.map(_.theta).reduceLeft(Log.add), Log.one)){
-      println(node.elements.toArray.map(el=>math.pow(math.E,el.theta)).mkString(";")+"Sum"+node.elements.map(_.theta).reduce(Log.add).toString+"log"+node.elements.map(_.theta).mkString(";"))
-      println(node.index)
+      println("parts: "    + node.elements.toArray.map(el=>math.pow(math.E,el.theta)).mkString("; "))
+      println("Sum: "      + node.elements.toArray.map(_.theta).reduceLeft(Log.add) + ", log.one:" +  Log.one.toString)
+      println("log parts: "+ node.elements.toArray.map(_.theta).mkString("; "))
+      println("node.index: " + node.index)
 
       findNode(root,node.index)
 
@@ -532,9 +534,10 @@ class PsddManager(sddManager: SddManager) {
   //findNode is used to debug occured in parameter calculations
   def findNode(current:PsddNode,target:Int):Boolean = {
     if (current.index == target){
-      println(current.elements.size)
+      println("current.elements.size: "+current.elements.size)
+      println("current: "+current)
       current.elements.foreach{el=>
-        println(el.constraints.toString)
+        println("el.constraints.toString: "+el.constraints.toString)
       }
       true
     }else{
@@ -572,6 +575,41 @@ class PsddManager(sddManager: SddManager) {
   /////////////////////////////
   // Distribute Data to PSDD //
   /////////////////////////////
+
+  def distributeData_old(psdd: PsddNode, data: DataSets): Unit = {
+
+    val parentsBeforeChildren = PsddQueries.parentsBeforeChildren(psdd)
+
+    val nodeTempData = mutable.Map[Int,DataSets]()
+
+    parentsBeforeChildren.reverseIterator.foreach {
+
+      case node: PsddDecision =>
+        node.elements.foreach { el =>
+          el match {
+            case PsddElement(_, prime: PsddLiteral, sub: PsddTrue, _, _, _, _) =>
+              el.data = data.filter(_(prime.v) == prime.pos)
+
+            case PsddElement(_, prime: PsddDecision, sub: PsddDecision, _, _, _, _) =>
+              el.data = nodeTempData(prime.index).intersect(nodeTempData(sub.index))
+          }
+        }
+        nodeTempData(node.index) = node.elements.map(_.data).reduce(_.union(_))
+      case _ =>
+    }
+
+    val nodeData = mutable.Map[Int,DataSets]()
+    nodeData(psdd.index) = nodeTempData(psdd.index)
+
+    parentsBeforeChildren.foreach { node =>
+      val nData = nodeData(node.index)
+      node.elements.foreach{ el =>
+        el.data = nData.intersect(el.data)
+        nodeData(el.prime.index) = el.data.union(nodeData.getOrElse(el.prime.index, data.empty))
+        nodeData(el.sub.index) = el.data.union(nodeData.getOrElse(el.sub.index, data.empty))
+      }
+    }
+  }
 
   /**
     * Distribute data over a sub-PSDD
@@ -613,6 +651,88 @@ class PsddManager(sddManager: SddManager) {
   // Build Initial PSDD //
   ////////////////////////
 
+    // make a true node for a certain variable
+  private def truePsdd(vtree: VtreeInternalVar, data:DataSets, theta: Double) : PsddDecision = {
+    val posLit = litPsdd(vtree.left, true)
+    val negLit = litPsdd(vtree.left, false)
+    val posData = data.filter(_(vtree.v))
+    val negData = data.diff(posData)
+    decisionPsdd(vtree, mutable.ArrayBuffer[PsddElement](PsddElement(nextElementIndex, posLit, trueNode, posData,posLit.formula, theta), PsddElement(nextElementIndex, negLit, trueNode, negData,negLit.formula, Log.oneMinus(theta))), trueSdd)
+  }
+
+  private def decisionPsdd(vtree: VtreeInternal, elements: mutable.ArrayBuffer[PsddElement], formula: Sdd): PsddDecision = {
+    val res = PsddDecision(nextNodeIndex, vtree, elements, formula)
+    res
+  }
+
+   def readPsdd(file: File, vtree: VtreeInternal, data: DataSets, parameterCalculator: ParameterCalculator = null): PsddNode = {
+    val float = "[-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?"
+    val comment = "[cC].*".r
+    val psdd = "[pP]sdd (\\d+)".r
+    val posLiteral = "[lL] (\\d+) (\\d+) (\\d+)".r
+    val negLiteral = "[lL] (\\d+) (\\d+) -(\\d+)".r
+    val truePsddNode = ("[tT] (\\d+) (\\d+) (\\d+) (" + float + ")").r
+    val decision = "[dD] (\\d+) (\\d+) (\\d+) (.*)".r
+
+    var cache = false
+    val cacheBefore = cache
+    cache=false
+
+    val nodes = mutable.Map.empty[Int,PsddDecision]
+    var rootId = ""
+
+    for (line <- Source.fromFile(file).getLines()){
+      line match {
+        case comment() => //println("comment")
+        case psdd(nbNodes) => //tln("psdd", nbNodes)
+
+        case posLiteral(id, vtreeId, v) => //println("pos literal", id, vtreeId, v)
+          val vtreeNode = vtree.get(vtreeId.toInt)
+          require(vtreeNode.asInstanceOf[VtreeInternalVar].v == v.toInt)
+          val pos = litPsdd(vtreeNode.left, true)
+          nodes(id.toInt) = decisionPsdd(vtreeNode, mutable.ArrayBuffer[PsddElement]( PsddElement(nextElementIndex,pos,trueNode, data,pos.formula, Log.one)),pos.formula)
+          rootId = id
+        case negLiteral(id, vtreeId, v) => //println("neg literal", id, vtreeId, v)
+          val vtreeNode = vtree.get(vtreeId.toInt)
+          require(vtreeNode.asInstanceOf[VtreeInternalVar].v == v.toInt)
+          val neg = litPsdd(vtreeNode.left, false)
+          nodes(id.toInt) = decisionPsdd(vtreeNode, mutable.ArrayBuffer[PsddElement]( PsddElement(nextElementIndex,neg,trueNode, data,neg.formula, Log.one)),neg.formula)
+          rootId = id
+        case truePsddNode(id, vtreeId, v, litProb) => //println("trueNode", id, vtreeId, v, litProb)
+          val vtreeNode = vtree.get(vtreeId.toInt).asInstanceOf[VtreeInternalVar]
+          require(vtreeNode.v == v.toInt)
+          nodes(id.toInt) = truePsdd(vtreeNode, data, litProb.toDouble)
+          rootId = id
+        case decision(id, vtreeId, nbElements, elements) => //println("decision", id, vtreeId, nbElements, elements)
+          val vtreeNode = vtree.get(vtreeId.toInt)
+          val nodeElements = elements.split(" ").grouped(3).map{ar =>
+            val prime = nodes(ar(0).toInt)
+            val sub = nodes(ar(1).toInt)
+            new PsddElement(nextElementIndex, prime, sub,data,prime.formula.conjoin(sub.formula), ar(2).toDouble)}.toSet
+          assert(nodeElements.size == nbElements.toInt)
+          require(nodeElements.forall(el => el.prime.vtree == vtreeNode.left && el.sub.vtree == vtreeNode.right))
+          val formula = nodeElements.map(_.formula).reduce(_.disjoin(_))
+          val nodeElements_real:mutable.ArrayBuffer[PsddElement] = mutable.ArrayBuffer[PsddElement]()
+          for (i <- nodeElements){
+            nodeElements_real += i
+          }
+          nodes(id.toInt) = decisionPsdd(vtreeNode, nodeElements_real, formula)
+          rootId = id
+      }
+    }
+
+    val root = nodes(rootId.toInt)
+    roots += root
+    distributeData_old(root, data)
+
+    // cache = cacheBefore
+    // val res = if (cache) rebuildPsdd(root) else root
+    val res = root
+    if (parameterCalculator!= null) calculateParameters(res, parameterCalculator, res)
+    roots += res
+    res
+  }
+
 //   def readPsddFromSdd(file: File, vtree: VtreeInternal, data: DataSets, parameterCalculator: ParameterCalculator): PsddNode = {
 //     val comment = "[cC].*".r
 //     val sdd = "[sS]dd (\\d+)".r
@@ -626,7 +746,7 @@ class PsddManager(sddManager: SddManager) {
 //     def getTrueNode(vtree: VtreeNode): PsddNode = {
 //       trueNodes.getOrElseUpdate(vtree, vtree match {
 //         case vtree: VtreeInternalVar => truePsdd(vtree, data, math.log(0.5))
-//         case vtree: VtreeInternal => decisionPsdd(vtree,Set(PsddElement(getTrueNode(vtree.left),getTrueNode(vtree.right),data,trueSdd,Log.one)),trueSdd)
+//         case vtree: VtreeInternal => decisionPsdd(vtree,mutable.ArrayBuffer[PsddElement](PsddElement(nextElementIndex,getTrueNode(vtree.left),getTrueNode(vtree.right),data,trueSdd,Log.one)),trueSdd)
 //       })
 //     }
 
@@ -639,7 +759,7 @@ class PsddManager(sddManager: SddManager) {
 //         val parent = curNode.vtree.asInstanceOf[VtreeInternal].parent
 //         assert (parent.level == curLevel-1)
 //         val (prime,sub) = if (curNode.vtree.index<parent.index) (curNode, getTrueNode(parent.right)) else (getTrueNode(parent.left),curNode)
-//         curNode = decisionPsdd(parent,Set(PsddElement(prime,sub,data,curNode.formula,Log.one)),curNode.formula)
+//         curNode = decisionPsdd(parent,mutable.ArrayBuffer[PsddElement](PsddElement(nextElementIndex,prime,sub,data,curNode.formula,Log.one)),curNode.formula)
 //         curLevel-=1
 //         nodes(curLevel) = curNode
 //       }
@@ -665,13 +785,13 @@ class PsddManager(sddManager: SddManager) {
 //           val vtreeNode = vtree.get(vtreeId.toInt).asInstanceOf[VtreeInternalVar]
 //           require(vtreeNode.v == v.toInt)
 //           val pos = litPsdd(vtreeNode.left, true)
-//           nodes(id.toInt) = mutable.Map(vtreeNode.level ->decisionPsdd(vtreeNode, Set( PsddElement(pos,trueNode, data,pos.formula, Log.one)),pos.formula))
+//           nodes(id.toInt) = mutable.Map(vtreeNode.level ->decisionPsdd(vtreeNode, mutable.ArrayBuffer[PsddElement]( PsddElement(nextElementIndex,pos,trueNode, data,pos.formula, Log.one)),pos.formula))
 //           rootId = id
 //         case negLiteral(id, vtreeId, v) => //println("neg literal", id, vtreeId, v)
 //           val vtreeNode = vtree.get(vtreeId.toInt).asInstanceOf[VtreeInternalVar]
 //           require(vtreeNode.v == v.toInt)
 //           val neg = litPsdd(vtreeNode.left, false)
-//           nodes(id.toInt) = mutable.Map(vtreeNode.level ->decisionPsdd(vtreeNode, Set( PsddElement(neg,trueNode, data,neg.formula, Log.one)),neg.formula))
+//           nodes(id.toInt) = mutable.Map(vtreeNode.level ->decisionPsdd(vtreeNode, mutable.ArrayBuffer[PsddElement]( PsddElement(nextElementIndex,neg,trueNode, data,neg.formula, Log.one)),neg.formula))
 //           rootId = id
 //         case trueSddNode(id) => //println("trueNode", id, vtreeId, v, litProb)
 //           trueId = id.toInt
@@ -690,22 +810,28 @@ class PsddManager(sddManager: SddManager) {
 //             assert(vtreeNode.left.asInstanceOf[VtreeInternal].level==vtreeNode.level+1)
 //             require(prime.vtree==vtreeNode.left)
 //             require(sub.vtree==vtreeNode.right)
-//             new PsddElement(prime, sub,data,prime.formula.conjoin(sub.formula), math.log(1.0/realNbElements.toDouble))}.toSet
+//             new PsddElement(nextElementIndex,prime, sub,data,prime.formula.conjoin(sub.formula), math.log(1.0/realNbElements.toDouble))}.toSet
 
 //           assert(nodeElements.nonEmpty)
 //           val formula = nodeElements.map(_.formula).reduce(_.disjoin(_))
-//           nodes(id.toInt) = mutable.Map(vtreeNode.level -> decisionPsdd(vtreeNode, nodeElements, formula))
+//           val nodeElements_real:mutable.ArrayBuffer[PsddElement] = mutable.ArrayBuffer[PsddElement]()
+//           for (i <- nodeElements){
+//             nodeElements_real += i
+//           }
+//           nodes(id.toInt) = mutable.Map(vtreeNode.level -> decisionPsdd(vtreeNode, nodeElements_real, formula))
 //           if (vtreeNode.level>totalVtreeLevels) totalVtreeLevels=vtree.level
 //           rootId = id
 //       }
 //     }
 
 //     val root = if (rootId.toInt==trueId) getTrueNode(vtree) else nodes(rootId.toInt).getOrElse(vtree.level, fillTillLevel(nodes.last, vtree.level))
+//     roots += root
 //     distributeData(root, data)
 
-//     cache = cacheBefore
-//     val res = if (cache) rebuildPsdd(root) else root
-//     calculateParameters(res,parameterCalculator, res)
+//     // cache = cacheBefore
+//     // val res = if (cache) rebuildPsdd(root) else root
+//     val res = root
+//     calculateParameters(res, parameterCalculator, res)
 
 //     roots += res
 //     res

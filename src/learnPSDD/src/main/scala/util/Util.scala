@@ -11,7 +11,13 @@ object Util {
 
   def isEqual(e1: Double, e2: Double): Boolean = {
     if (math.abs(e1-e2)<0.0000001) true
-    else math.abs(if (e1>e2) (e1-e2)/e2 else (e2-e1)/e1) < 0.000000000001
+    else {
+      var t = math.abs(if (e1>e2) (e1-e2)/e2 else (e2-e1)/e1)
+      // if (e1 > e2) println("e1: " + e1 + ", e2: " + e2 + ", t=(e1-e2)/e2, (e1-e2): " + (e1 - e2))
+      // else println("e1: " + e1 + ", e2: " + e2 + ", t=(e2-e1)/e1, (e2-e1): " + (e2 - e1))
+      // println("t: " + t)
+      t < 0.000000000001
+    }
   }
 
   def readLines(filePath: String): (Array[Array[Int]],Array[Double]) ={
