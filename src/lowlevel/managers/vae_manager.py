@@ -121,7 +121,7 @@ class VAEManager(BaseManager):
 		elif task_type == 'g7land':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_g7and-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
+				self.encode_logic_dataset(file_encoded_path, task_type, type_of_data, self.opt.limit_conversion)
 		elif task_type == 'plus':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_plus-encoded-{}.data'.format(self.opt.dataset, type_of_data))
@@ -320,17 +320,20 @@ class VAEManager(BaseManager):
 		return True
 
 
-	def encode_3_part_dataset(self, file_encoded_path, dataset_to_encode,limit_conversion, y_classes):
+	def encode_3_part_dataset(self, file_encoded_path, dataset_to_encode, limit_conversion, y_classes):
 		self.load_net_at_best_epoch()
 
 		flx_compressed_var_length = int(np.ceil(np.log2(self.opt.categorical_dim)))
 		flx_compressed_size = flx_compressed_var_length * self.opt.feature_layer_size
 
-		fly_compressed_var_length = int(np.ceil(np.log2(y_classes)))
+		if self.opt.compress_fly:
+			fly_compressed_var_length = int(np.ceil(np.log2(y_classes)))
+		else:
+			fly_compressed_var_length = y_classes
 
 		fla_info = FlDomainInfo('fla', self.opt.feature_layer_size, self.opt.categorical_dim, True, 0, flx_compressed_size)
 		flb_info = FlDomainInfo('flb', self.opt.feature_layer_size, self.opt.categorical_dim, True, flx_compressed_size, flx_compressed_size * 2)
-		fly_info = FlDomainInfo('fly', 1, y_classes, True, flx_compressed_size * 2, flx_compressed_size * 2 + fly_compressed_var_length)
+		fly_info = FlDomainInfo('fly', 1, y_classes, self.opt.compress_fly, flx_compressed_size * 2, flx_compressed_size * 2 + fly_compressed_var_length)
 		fl_info = [fla_info, flb_info, fly_info]
 
 		stored_elements = 0

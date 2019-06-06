@@ -1,28 +1,39 @@
 TO RUNNING ==================================================================================================================
 
-ex_7_mnist_32_2 noisy4
+Could do:
+
+single PSDD with (constraints) vs (without constraints) vs (without constraints and uncompressed)
 
 RUNNING ==================================================================================================================
 
-student_compute      uncompressed_y     ex_7_mnist_32_2    (28/05/2019)
-staff_compute_plus                      ex_7_mnist_32_2    (28/05/2019)
-james08_g4land                          ex_7_mnist_32_2    (28/05/2019)
-james03_g7land                          ex_7_mnist_32_2    (27/05/2019)
-james10                                 ex_7_mnist_28_2    (27/05/2019)
-james17             noisy-1             ex_7_mnist_32_2    (29/05/2019)
-james02             noisy-2             ex_7_mnist_32_2    (29/05/2019)
-james09             noisy-3             ex_7_mnist_32_2    (29/05/2019)
+ex_7_mnist_32_2 james01_plus    uncompressed_y        (03.06.2019)
+ex_7_mnist_40_2 james02         uncompressed_y        (04.06.2019) --- vtree miGreedyBU
+ex_7_mnist_40_2 james03         uncompressed_y        (04.06.2019) --- vtree miBlossom
+ex_7_mnist_32_2 james10_g7land  uncompressed_y        (04.06.2019) --- vtree miBlossom
+ex_7_mnist_32_2 james09_g4land  uncompressed_y        (04.06.2019) --- vtree miBlossom
+ex_6_emnist_32_2 staff_compute  uncompressed_y        (05.06.2019) --- vtree miBlosssom
+ex_6_emnist_32_2 jamse08                              (05.06.2019) --- vtree miBlosssom
+
+james11 --- sampleing all missing
+
 
 ==========================================================================================================================
-==========================================================================================================================
-stopped
+Finished =================================================================================================================
 
-james17 (name is james10)               ex_7_mnist_48_2    ---- iteration 93
+student_compute      uncompressed_y     ex_7_mnist_32_2    ---- 336 iterations -- 0.8955
+staff_compute_plus                      ex_7_mnist_32_2    ---- 381 iterations -- 0.0992
+james08_g4land                          ex_7_mnist_32_2    ---- 327 iterations -- 0.6528
+james03_g7land                          ex_7_mnist_32_2    ---- 273 iteraiions -- 0.653
+james10                                 ex_7_mnist_28_2    ---- 254 iterations -- 0.8910
+james17             noisy-1             ex_7_mnist_32_2    ---- 195 iterations -- 0.7781
+james02             noisy-2             ex_7_mnist_32_2    ---- 198 iterations -- 0.8214
+james09             noisy-3             ex_7_mnist_32_2    ---- 190 iterations -- 0.718
+james17 (name is james10)               ex_7_mnist_48_2    ----  93 iterations -- 0.8434
 
 relational experiments:
 (all run with miGreedyBU vtree search)
 
-student_compute_succ    ex_7_mnist_16_4 -- ----    --- 356 iterations
+student_compute_succ    ex_7_mnist_16_4 --     --- 356 iterations
 
 james02_blor            ex_7_mnist_32_2 -- 0.966   --- 412 iterations
 james01_bland           ex_7_mnist_32_2 -- 0.978   --- 224 iterations

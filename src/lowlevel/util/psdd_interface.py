@@ -51,7 +51,7 @@ def write_fl_batch_to_file_new(file_encoded_path, fls_data, fl_info, batch_idx):
 	for idx, fl_domain in enumerate(fls_data):
 		if fl_info[idx].bin_encoded and fl_info[idx].name == 'fly':
 			fls_encoded.append(encode_onehot_to_binary_batch(fl_domain))
-		elif fl_info[idx].bin_encoded:
+		elif fl_info[idx].bin_encoded and not fl_info[idx].name == 'fly':
 			fls_encoded.append(encode_flx_to_binary_batch(fl_domain))
 		else:
 			fls_encoded.append(fl_domain)
@@ -89,6 +89,8 @@ def read_info_file(file_encoded_path):
 				continue
 			fl_info = FlDomainInfo(*line.split(','))
 			domains[fl_info.name] = fl_info
+
+	print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(fl_info, '/'.join(file_encoded_path.split('/')[-3:])))
 	return domains
 
 def recreate_fl_info_for_old_experiments(exeriment_dir):

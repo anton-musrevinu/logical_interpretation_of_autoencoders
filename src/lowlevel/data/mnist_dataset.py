@@ -42,6 +42,8 @@ class MNISTDataset(BaseDataset):
 
 		loaded = np.load(self.dir)
 		self.inputs = loaded['inputs'].astype(np.float32)
+		if np.max(self.inputs) > 1:
+			self.inputs = self.inputs / 255.0
 		self.targets = loaded['targets'].astype(np.float32)
 
 		# print(np.min(self.inputs), np.max(self.inputs))

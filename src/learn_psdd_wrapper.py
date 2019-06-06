@@ -756,9 +756,6 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 		vtree_path, psdds, weights, at_iteration = get_file_names_and_check(psdd_out_dir, at_iteration)
 		fl_info = read_info_file(query_data_path)
 
-	write('fist: {}'.format(psdds))
-	write('second: {}'.format(*psdds))
-
 	evaluationDir = os.path.abspath(os.path.join(psdd_out_dir, './evaluation/'))
 	if not _check_if_dir_exists(evaluationDir, raiseException = False):
 		os.mkdir(evaluationDir)
@@ -864,6 +861,53 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 # ==========================================   Higher level methods    ======================================================
 #============================================================================================================================
 
+def query_psdd_from_dir(train_data_path, query_data_path, out_learnpsdd_tmp_dir,\
+		valid_data_path = None, out_file = None):
+	vtree_path, psdd_files, componentweights = _get_psdd_file_names_and_check(out_learnpsdd_tmp_dir)
+	query_psdd(train_data_path, vtree_path, query_data_path, psdd_files, componentweights, valid_data_path, out_file)
+
+def query_psdd(train_data_path, vtree_path, query_data_path, psdd_files, componentweights,\
+		valid_data_path = None, out_file = None):
+	
+	'''
+		  -d, --trainData <file>   
+		  -b, --validData <file>   
+		  -q, --queryFile <file>   
+		  -v, --vtree <file>       
+		  -o, --out <path>         
+		  -a, --componentweights <double>,<double>,...
+		                           
+		  -p, --psdds <file>,<file>,...
+		                           
+		  --help                   prints this usage text
+
+	'''
+	_check_if_file_exists(train_data_path)
+	_check_if_file_exists(vtree_path)
+	_check_if_file_exists(query_data_path)
+	for i in psdd_files:
+		_check_if_file_exists(i)
+
+	if out_file == None:
+		out_file = query_data_path + '.anwser'
+
+	cmd_str = 'java -jar {} query '.format(LEARNPSDD_CMD) + \
+		  ' --trainData {}'.format(train_data_path) + \
+		  ' --vtree {}'.format(vtree_path) + \
+		  ' --out {}'.format(out_file) + \
+		  ' --queryFile {}'.format(query_data_path) + \
+		  ' --psdds {}'.format(_list_to_cs_string(psdd_files)) + \
+		  ' --componentweights {}'.format(_list_to_cs_string(componentweights))
+
+	if valid_data_path != None and _check_if_file_exists(valid_data_path, raiseException = False):
+		cmd_str += ' --validData {}'.format(valid_data_path)
+
+	write(cmd_str,'cmd-start')
+	os.system(cmd_str)
+
+	write('Finished PSDD Query for query file: {}'.format(query_data_path), 'cmd-end')
+	_check_if_file_exists(out_file)
+
 def learn_psdd(psdd_out_dir, train_data_path, 
 		valid_data_path = None, test_data_path = None, replace_existing = False, vtree_method = 'miBlossom', \
 		num_compent_learners = 1, constraints_cnf_file = None, keep_generated_files = True, convert_to_pdf = True):
@@ -955,9 +999,6 @@ def learn_psdd(psdd_out_dir, train_data_path,
 			shutil.rmtree(contraints_tmp_dir)
 
 	write('learn_psdd method finished.','final')
-
-	if num_compent_learners == 1:
-		return out_vtree_file, list([out_psdd_file]), list([1.0])
 
 # ============================================================================================================================
 # ============================================================================================================================
