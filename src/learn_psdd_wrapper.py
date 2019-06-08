@@ -177,7 +177,7 @@ def get_old_file_names_and_check(psdd_out_dir,at_iteration):
 	cluster_id = psdd_out_dir.split('psdd_model')[1]
 	vtree_path = os.path.abspath(os.path.join(psdd_out_dir, '../symbolic_stuff{}/model_learned.vtree'.format(cluster_id)))
 
-	return get_ensembly_file_names_and_check(psdd_out_dir, vtree_method, at_iteration)
+	return get_ensembly_file_names_and_check(psdd_out_dir, vtree_path, at_iteration)
 
 def get_ensembly_file_names_and_check(psdd_out_dir, vtree_path, at_iteration):
 	_check_if_file_exists(vtree_path)
