@@ -91,7 +91,7 @@ def read_info_file(file_encoded_path):
 			fl_info = FlDomainInfo(*line.split(','))
 			domains[fl_info.name] = fl_info
 
-	print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(domains, '/'.join(file_encoded_path.split('/')[-3:])))
+	# print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(domains, '/'.join(file_encoded_path.split('/')[-3:])))
 	return domains
 
 def recreate_fl_info_for_old_experiments(exeriment_dir):

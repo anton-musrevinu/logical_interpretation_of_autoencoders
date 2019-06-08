@@ -35,7 +35,8 @@ class Experiment(object):
 			if 'fly' in self.fl_info:
 				self.compress_fly = self.fl_info['fly'].bin_encoded
 		else:
-			print('fl_info file could not be found at this point')
+			pass
+			# print('fl_info file could not be found at this point')
 
 	def _get_encoded_data_dir(self):
 		encoded_data_dir = None
@@ -239,7 +240,7 @@ def do_generative_query_on_test(exp, test = False, \
 		print('[SAMPLING] - END DUE: \tNeccesary data files could not be found')
 		return
 
-	for i in range(5):
+	for i in range(10):
 		try:
 			at_iteration = 'best-{}'.format(i)
 			print('trying at: {}'.format(at_iteration))
@@ -278,7 +279,7 @@ def do_generative_query_for_labels(exp, test = False, type_of_query = 'bin'):
 			fl_data[key] = data
 		write_fl_batch_to_file(file_name, fl_data, fl_info, 0)
 
-		for best_i in range(5):
+		for best_i in range(10):
 			try:
 				at_iteration = 'best-{}'.format(best_i)
 				print('trying at: {}'.format(at_iteration))
