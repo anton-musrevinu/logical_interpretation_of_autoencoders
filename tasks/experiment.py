@@ -224,8 +224,12 @@ def do_generative_query(exp, test = False, type_of_query = 'bin'):
 		do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['flb'])
 	else:
 		#Generate class samples and decode them to png
-		do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [0])
-		do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [1])
+		if exp.compress_fly:
+			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [0])
+			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [1])
+		else:
+			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [0,1])
+			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [1,0])
 
 	do_decode_class_samples(exp)
 
