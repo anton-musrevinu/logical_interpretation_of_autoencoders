@@ -2,23 +2,25 @@ TO RUNNING =====================================================================
 
 Could do:
 
+
 single PSDD with (constraints) vs (without constraints) vs (without constraints and uncompressed)
 
 RUNNING ==================================================================================================================
 
-ex_7_mnist_32_2 james01_plus    uncompressed_y        (03.06.2019)
-ex_7_mnist_40_2 james02         uncompressed_y        (04.06.2019) --- vtree miGreedyBU
-ex_7_mnist_40_2 james03         uncompressed_y        (04.06.2019) --- vtree miBlossom
-ex_7_mnist_32_2 james10_g7land  uncompressed_y        (04.06.2019) --- vtree miBlossom
-ex_7_mnist_32_2 james09_g4land  uncompressed_y        (04.06.2019) --- vtree miBlossom
-ex_6_emnist_32_2 staff_compute  uncompressed_y        (05.06.2019) --- vtree miBlosssom
-ex_6_emnist_32_2 jamse08                              (05.06.2019) --- vtree miBlosssom
-
-james11 --- sampleing all missing
+ex_7_mnist_32_2     james02     plus        uncompressed_y        (07.06.2019)
+ex_7_mnist_32_2     james10_g7land          uncompressed_y        (04.06.2019) --- vtree miBlossom
+ex_6_emnist_32_2    staff_compute           uncompressed_y        (05.06.2019) --- vtree miBlosssom
+ex_6_emnist_32_2    jamse08                                       (05.06.2019) --- vtree miBlosssom
 
 
 ==========================================================================================================================
 Finished =================================================================================================================
+
+
+ex_7_mnist_32_2 james01_plus    
+ex_7_mnist_40_2 james02         uncompressed_y        (04.06.2019) --- vtree miGreedyBU  
+ex_7_mnist_40_2 james03         uncompressed_y        (04.06.2019) --- vtree miBlossom 
+ex_7_mnist_32_2 james09_g4land  uncompressed_y        (04.06.2019) --- vtree miBlossom       
 
 student_compute      uncompressed_y     ex_7_mnist_32_2    ---- 336 iterations -- 0.8955
 staff_compute_plus                      ex_7_mnist_32_2    ---- 381 iterations -- 0.0992

@@ -239,7 +239,7 @@ class VAEManager(BaseManager):
 
 		fla_info = FlDomainInfo('fla', self.opt.feature_layer_size, self.opt.categorical_dim, True, 0, flx_compressed_size)
 		flb_info = FlDomainInfo('flb', self.opt.feature_layer_size, self.opt.categorical_dim, True, flx_compressed_size, flx_compressed_size * 2)
-		fl_info = [fla_info, flb_info]
+		fl_info = {'fla':fla_info, 'flb':flb_info}
 
 		stored_elements = 0
 		total_wrt_batch = len(dataset_to_encode)
@@ -263,7 +263,7 @@ class VAEManager(BaseManager):
 				flb = self.model.feature_layer.detach().numpy() #.view(self.model.feature_layer.shape[0], -1)
 				# fly_onehot = data['targets'].detach().numpy()
 
-				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, [fla, flb], fl_info, batch_idx)
+				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, {'fla':fla, 'flb':flb}, fl_info, batch_idx)
 				pbar.update(1)
 
 				stored_elements += self.opt.batch_size
@@ -292,7 +292,7 @@ class VAEManager(BaseManager):
 
 		fla_info = FlDomainInfo('fla', self.opt.feature_layer_size, self.opt.categorical_dim, True, 0, flx_compressed_size)
 		fly_info = FlDomainInfo('fly', 1, y_classes, compress_fly, flx_compressed_size, flx_compressed_size + fly_compressed_size)
-		fl_info = [fla_info, fly_info]
+		fl_info = {'fla':fla_info, 'fly':fly_info}
 
 		stored_elements = 0
 		total_wrt_batch = len(dataset_to_encode)
@@ -309,7 +309,7 @@ class VAEManager(BaseManager):
 				# fly_onehot = data['targets'].detach().numpy()
 				fly = data['targets'].detach().numpy()
 
-				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, [fla, fly], fl_info, batch_idx)
+				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, {'fla':fla, 'fly':fly}, fl_info, batch_idx)
 				pbar.update(1)
 
 				stored_elements += self.opt.batch_size
@@ -334,7 +334,7 @@ class VAEManager(BaseManager):
 		fla_info = FlDomainInfo('fla', self.opt.feature_layer_size, self.opt.categorical_dim, True, 0, flx_compressed_size)
 		flb_info = FlDomainInfo('flb', self.opt.feature_layer_size, self.opt.categorical_dim, True, flx_compressed_size, flx_compressed_size * 2)
 		fly_info = FlDomainInfo('fly', 1, y_classes, self.opt.compress_fly, flx_compressed_size * 2, flx_compressed_size * 2 + fly_compressed_var_length)
-		fl_info = [fla_info, flb_info, fly_info]
+		fl_info = {'fla':fla_info,'flb': flb_info, 'fly':fly_info}
 
 		stored_elements = 0
 		total_wrt_batch = len(dataset_to_encode)
@@ -359,7 +359,7 @@ class VAEManager(BaseManager):
 				flb = self.model.feature_layer.detach().numpy() #.view(self.model.feature_layer.shape[0], -1)
 				# fly_onehot = data['targets'].detach().numpy()
 
-				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, [fla, flb, fly], fl_info, batch_idx)
+				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, {'fla':fla, 'flb':flb, 'fly':fly}, fl_info, batch_idx)
 				pbar.update(1)
 
 				stored_elements += self.opt.batch_size

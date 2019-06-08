@@ -118,7 +118,10 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
             var iteration_to_del = -1
             var worstLl = Double.PositiveInfinity
             bestKiterations.keys.foreach{i =>
-              if (bestKiterations(i) < worstLl) iteration_to_del = i
+              if (bestKiterations(i) < worstLl){
+               iteration_to_del = i
+               worstLl = bestKiterations(i)
+             }
             }
             
             //Delete found element from map

@@ -48,7 +48,7 @@ def write_fl_batch_to_file(file_encoded_path, flx_categorical, fly_onehot, batch
 
 def write_fl_batch_to_file_new(file_encoded_path, fls_data, fl_info, batch_idx):
 	fls_encoded = []
-	for idx, fl_domain in enumerate(fls_data):
+	for idx, fl_domain in fls_data.items():
 		if fl_info[idx].bin_encoded and fl_info[idx].name == 'fly':
 			fls_encoded.append(encode_onehot_to_binary_batch(fl_domain))
 		elif fl_info[idx].bin_encoded and not fl_info[idx].name == 'fly':
@@ -79,18 +79,19 @@ def create_info_file(file_encoded_path, fl_info):
 	with open(file_encoded_path + '.info', 'w') as f:
 		f.write('domain name; nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx\n')
 		for fl_domain_info in fl_info:
-			f.write('{}\n'.format(fl_domain_info))
+			f.write('{}\n'.format(fl_info[fl_domain_info]))
 
 def read_info_file(file_encoded_path):
 	domains = {}
 	with open(file_encoded_path + '.info', 'r') as f:
 		for line_idx, line in enumerate(f):
-			if line_idx == 0:
+			if line_idx == 0 or len(line.strip().split(',')) < 5 or line.startswith('encoded_data_dir'):
 				continue
+			# print(line, line.replace('\n','').split(','))
 			fl_info = FlDomainInfo(*line.split(','))
 			domains[fl_info.name] = fl_info
 
-	print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(fl_info, '/'.join(file_encoded_path.split('/')[-3:])))
+	print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(domains, '/'.join(file_encoded_path.split('/')[-3:])))
 	return domains
 
 def recreate_fl_info_for_old_experiments(exeriment_dir):
