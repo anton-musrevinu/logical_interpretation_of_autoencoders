@@ -435,9 +435,9 @@ def sample_all_missing():
 	for (exp, type_of_query) in toclassify:
 		if exp.task_type != 'classification' and exp.task_type != 'plus':
 			do_generative_query(exp, type_of_query = type_of_query)
-	for (exp, type_of_query) in toclassify:
-		if exp.task_type == 'classification':
-			do_generative_query(exp, type_of_query = type_of_query)
+	# for (exp, type_of_query) in toclassify:
+	# 	if exp.task_type == 'classification':
+	# 		do_generative_query(exp, type_of_query = type_of_query)
 
 def make_learning_graphs_missing():
 	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
@@ -470,15 +470,15 @@ if __name__ == '__main__':
 
 	# decode_all_possible()
 	# evaluate_all_missing()
-	# sample_all_missing()
+	sample_all_missing()
 
-	experiment_parent_name = 'ex_6_emnist_32_2'
-	cluster_id = 'james08'
-	task_type = 'classification'
-	compress_fly = False
-	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly)
-	# do_everything(exp)
-	do_classification_evaluation(exp)
+	# experiment_parent_name = 'ex_6_emnist_32_2'
+	# cluster_id = 'james08'
+	# task_type = 'classification'
+	# compress_fly = False
+	# exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly)
+	# # do_everything(exp)
+	# do_classification_evaluation(exp)
 	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 
 	# # do_everything(experiment_dir_path, cluster_id, task_type = task_type, vtree_method = 'miBlossom', do_encode_data = True, testing = False,  \
