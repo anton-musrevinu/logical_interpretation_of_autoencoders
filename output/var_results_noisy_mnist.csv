@@ -1,0 +1,4 @@
+dataset, FL categorical size, categorical dimension, MSE, model space complexity, best_it, best_ll, vtree_method, compressed_y, class_acc
+mnist,	32,	2,	0.0214,	2^{32}, 	noisy-1,	195,	-19.43229476462906,	miGreedyBU,	False,	0.7781370606028998
+mnist,	32,	2,	0.0214,	2^{32}, 	noisy-2,	197,	-20.56878296286867,	miGreedyBU,	False,	0.8214023687244524
+mnist,	32,	2,	0.0214,	2^{32}, 	noisy-3,	190,	-21.548969561113026,	miGreedyBU,	False,	0.7179970668342761

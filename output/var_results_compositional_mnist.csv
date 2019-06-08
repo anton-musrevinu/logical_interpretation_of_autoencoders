@@ -1,0 +1,12 @@
+dataset, FL categorical size, categorical dimension, MSE, model space complexity, best_it, best_ll, vtree_method, compressed_y, class_acc
+mnist,	32,	2,	0.0214,	2^{32}, 	bland,	244,	-25.384966305676773,	miBlossom,	True,	0.978
+mnist,	32,	2,	0.0214,	2^{32}, 	blor,	403,	-25.833841238249935,	miBlossom,	True,	0.966
+mnist,	32,	2,	0.0214,	2^{32}, 	g4land,	94,	-34.58058776250805,	miGreedyBU,	True,	0.4788
+mnist,	32,	2,	0.0214,	2^{32}, 	g4land,	327,	-34.17689426065189,	miGreedyBU,	True,	0.6528
+mnist,	32,	2,	0.0214,	2^{32}, 	g4land,	338,	-31.99700977333852,	miBlossom,	False,	0.707
+mnist,	32,	2,	0.0214,	2^{32}, 	g7land,	90,	-34.18123094040078,	miGreedyBU,	True,	0.8284
+mnist,	32,	2,	0.0214,	2^{32}, 	g7land,	272,	-33.79473586891963,	miGreedyBU,	True,	0.653
+mnist,	32,	2,	0.0214,	2^{32}, 	g7land,	205,	-32.16279541620483,	miBlossom,	False,	0.8592
+mnist,	32,	2,	0.0214,	2^{32}, 	plus,	87,	-37.128538626125014,	miGreedyBU,	True,	0.0674
+mnist,	32,	2,	0.0214,	2^{32}, 	plus,	381,	-36.48245425570536,	miGreedyBU,	True,	0.0992
+mnist,	32,	2,	0.0214,	2^{32}, 	plus,	287,	-36.564122041114935,	miGreedyBU,	True,	0.0838
