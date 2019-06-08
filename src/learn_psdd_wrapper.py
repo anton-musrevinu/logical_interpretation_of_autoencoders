@@ -653,7 +653,7 @@ def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train
 	_check_if_file_exists(query_data_path)
 	_check_if_dir_exists(psdd_out_dir)
 
-	if 'psdd_model' in psdd_out_dir:
+	if 'psdd_model' in psdd_out_dir and 'ex_5' in psdd_out_dir:
 		vtree_path, psdds, weights, at_iteration = get_old_file_names_and_check(psdd_out_dir, at_iteration)
 		fl_info = recreate_fl_info_for_old_experiments(psdd_out_dir)
 	else:
