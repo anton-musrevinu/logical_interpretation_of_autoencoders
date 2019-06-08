@@ -468,17 +468,17 @@ def do_everything(exp, vtree_method = 'miBlossom', num_compent_learners = 10, ty
 
 if __name__ == '__main__':
 
-	decode_all_possible()
-	evaluate_all_missing()
-	sample_all_missing()
+	# decode_all_possible()
+	# evaluate_all_missing()
+	# sample_all_missing()
 
-	# experiment_parent_name = 'ex_7_mnist_32_2'
-	# cluster_id = 'james02'
-	# task_type = 'plus'
-	# compress_fly = False
-	# exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly)
+	experiment_parent_name = 'ex_6_emnist_32_2'
+	cluster_id = 'james08'
+	task_type = 'classification'
+	compress_fly = False
+	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly)
 	# do_everything(exp)
-	# do_classification_evaluation(exp)
+	do_classification_evaluation(exp)
 	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 
 	# # do_everything(experiment_dir_path, cluster_id, task_type = task_type, vtree_method = 'miBlossom', do_encode_data = True, testing = False,  \
