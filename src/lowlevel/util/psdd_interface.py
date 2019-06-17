@@ -17,6 +17,12 @@ class FlDomainInfo(object):
 	def get_values_as_str_list(self):
 		return '{},{},{},{},{}'.format(self.nb_vars, self.var_cat_dim, self.bin_encoded, self.encoded_start_idx, self.encoded_end_idx)
 
+	def get_empty_example(self):
+		if self.bin_encoded:
+			return np.zeros((self.nb_vars, self.var_cat_dim))
+		else:
+			return np.zeros(self.encoded_end_idx - self.encoded_start_idx)
+
 def write_fl_batch_to_file(file_encoded_path, flx_categorical, fly_onehot, batch_idx, compress_fly = True):
 	flx_binary = encode_flx_to_binary_batch(flx_categorical)
 	if compress_fly:
@@ -92,6 +98,7 @@ def read_info_file(file_encoded_path):
 			domains[fl_info.name] = fl_info
 
 	# print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(domains, '/'.join(file_encoded_path.split('/')[-3:])))
+	# print('[INFO] \t\t\t info file read succesfully')
 	return domains
 
 def recreate_fl_info_for_old_experiments(exeriment_dir):

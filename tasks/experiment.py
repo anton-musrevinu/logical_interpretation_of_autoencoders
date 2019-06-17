@@ -1,20 +1,22 @@
 import os,sys
 sys.path.append('..')
 from src import learn_psdd_wrapper as learn_psdd_wrapper
-from src.lowlevel.util.psdd_interface import read_info_file
+from src.lowlevel.util.psdd_interface import read_info_file, convert_onehot_to_binary
 from src.lowlevel.util.psdd_interface import write_fl_batch_to_file_new as write_fl_batch_to_file
 import numpy as np
 import shutil
+import traceback
 
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
 
 class Experiment(object):
-	def __init__(self, experiment_parent_name, cluster_id, task_type, compress_fly = None):
+	def __init__(self, experiment_parent_name, cluster_id, task_type, compress_fly = None, data_per = 1):
 		self.experiment_parent_name = experiment_parent_name
 		self.cluster_id = cluster_id
 		self.task_type = task_type
 		self.compress_fly = compress_fly
+		self.data_per = data_per
 
 		self.experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(self.experiment_parent_name)))
 		self.type_of_data = 'emnist' if '_emnist_' in self.experiment_parent_name else 'mnist'
@@ -26,6 +28,18 @@ class Experiment(object):
 		self.set_fl_info_after_enoding()
 
 		self.evaluation_dir_path = os.path.abspath(os.path.join(self.psdd_out_dir, './evaluation/'))
+
+	def identifier(self):
+		outstr = '{}, {}, {}'.format(\
+			self.experiment_parent_name, self.task_type, self.compress_fly)
+		return outstr
+
+	def __str__(self):
+		outstr = 'EXP: parentname: {}, cluster_id: {}, task_type: {}, compress_fly: {}\n'.format(\
+			self.experiment_parent_name, self.cluster_id, self.task_type, self.compress_fly)
+		for name, data in self.fl_info.items():
+			outstr += '\t {} : {}'.format(name, data)
+		return outstr
 
 	def set_fl_info_after_enoding(self):
 		fl_data_file = os.path.join(self.psdd_out_dir, './fl_data.info')
@@ -70,6 +84,9 @@ class Experiment(object):
 			if self.task_type != 'classification':
 				experiment_identifier += '_' + self.task_type
 			encoded_data_dir = os.path.join(self.experiment_dir_path, 'encoded_data' + experiment_identifier)
+
+		if self.data_per != 1:
+			encoded_data_dir += '_per_{}'.format(self.data_per* 100)
 
 		return encoded_data_dir
 
@@ -160,7 +177,7 @@ def encode_data(exp, testing = False):
 	if testing:
 		os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --limit_conversion 300 --compress_fly {} --task_type {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type))
 	else:
-		os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --compress_fly {} --task_type {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type))
+		os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --compress_fly {} --task_type {} --data_per {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type, exp.data_per))
 
 def graph_learning(experiment_parent_name):
 	os.system('python {} --experiment_name {} --phase graph'.format(LOWLEVEL_CMD,experiment_parent_name))
@@ -194,7 +211,6 @@ def do_psdd_training(exp, testing = False, do_encode_data = True, num_compent_le
 
 def do_classification_evaluation(exp, test = False):
 	print('[CLASSIFICATION] - START ON: \t{}'.format(exp))
-
 	try:
 		train_data_path, valid_data_path, query_data_path = exp.get_data_files()
 	except Exception as e:
@@ -222,7 +238,7 @@ def do_generative_query(exp, test = False, type_of_query = 'bin'):
 	elif exp.task_type == 'succ':
 		do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'])
 		do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['flb'])
-	else:
+	elif exp.task_type != 'plus':
 		#Generate class samples and decode them to png
 		if exp.compress_fly:
 			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [0])
@@ -230,6 +246,14 @@ def do_generative_query(exp, test = False, type_of_query = 'bin'):
 		else:
 			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [0,1])
 			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [1,0])
+	else:
+		for filter_int in range(19):
+			data_filter = [0 for i in range(19)]
+			data_filter[filter_int] = 1
+			if exp.compress_fly:
+				size = int(np.ceil(np.log2(19)))
+				data_filter = convert_onehot_to_binary(data_filter,size)
+			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = data_filter)
 
 	do_decode_class_samples(exp)
 
@@ -253,6 +277,7 @@ def do_generative_query_on_test(exp, test = False, \
 			break
 		except Exception as e:
 			print('caught exception: {}'.format(e))
+			# print(traceback.format_exc())
 			continue
 
 def do_generative_query_for_labels(exp, test = False, type_of_query = 'bin'):
@@ -269,7 +294,7 @@ def do_generative_query_for_labels(exp, test = False, type_of_query = 'bin'):
 		os.mkdir(evaluation_dir_path)
 
 	fl_info = exp.fl_info
-	fl_to_query = ['flx'] if task_type == 'classification' else ['fla']
+	fl_to_query = ['flx'] if 'flx' in fl_info.keys() else ['fla']
 
 	for fl_y_value in range(fl_info['fly'].var_cat_dim):
 		file_name = os.path.abspath(os.path.join(evaluation_dir_path, 'query_label_{}.data'.format(fl_y_value)))
@@ -288,7 +313,7 @@ def do_generative_query_for_labels(exp, test = False, type_of_query = 'bin'):
 				at_iteration = 'best-{}'.format(best_i)
 				print('trying at: {}'.format(at_iteration))
 				learn_psdd_wrapper.generative_query_for_file(exp.psdd_out_dir, file_name, train_data_path, valid_data_path = valid_data_path, \
-					test = test, psdd_init_data_per = 0.1 if not test else 0.01, type_of_query = exp.type_of_query, fl_to_query = fl_to_query, at_iteration = at_iteration)
+					test = test, psdd_init_data_per = 0.1 if not test else 0.01, type_of_query = type_of_query, fl_to_query = fl_to_query, at_iteration = at_iteration)
 				break
 			except Exception as e:
 				print('caught exception: {}'.format(e))
@@ -354,7 +379,7 @@ def decode_all_possible():
 		do_decode_class_samples(exp)
 		# break
 
-def evaluate_all_missing():
+def evaluate_all_missing(display_exp = False):
 	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
 
 	toclassify = []
@@ -362,44 +387,49 @@ def evaluate_all_missing():
 		for experiment_parent_name in dir_names:
 			for experiment_dir_path, dir_names_2, file_names_2 in os.walk(os.path.join(root, experiment_parent_name)):
 				for psdd_search_dir in dir_names_2:
-					if 'psdd_search' in psdd_search_dir:
-						identifier = str(psdd_search_dir).split('psdd_search_')[1].replace('/','')
-						if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
-							cluster_id = '_'.join(identifier.split('_')[:-1])
-							task_type = identifier.split('_')[-1]
-						else:
-							cluster_id = identifier
-							task_type = 'classification'
+					for possible_names in ['psdd_search_', 'psdd_model_']:
+						if possible_names in psdd_search_dir:
+							identifier = str(psdd_search_dir).split(possible_names)[1].replace('/','')
+							if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
+								cluster_id = '_'.join(identifier.split('_')[:-1])
+								task_type = identifier.split('_')[-1]
+							else:
+								cluster_id = identifier
+								task_type = 'classification'
 
-						exp = Experiment(experiment_parent_name, cluster_id, task_type)
+							exp = Experiment(experiment_parent_name, cluster_id, task_type)
 
-						progressfile = os.path.join(exp.psdd_out_dir, './learnpsdd_tmp_dir/progress.txt')
-						if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
-							continue
+							progressfile = os.path.join(exp.psdd_out_dir, './learnpsdd_tmp_dir/progress.txt')
+							if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
+								continue
 
-						if not os.path.exists(exp.evaluation_dir_path):
-							toclassify.append(exp)
-							# print('added because evaldir does not exist', evaluationDir)
-						else:
-							for root_3, dir_names_3, file_names_3 in os.walk(exp.evaluation_dir_path):
-								if not any(['classification' in file_name for file_name in file_names_3]):
-									toclassify.append(exp)
-								else:
-									allempty = True
-									for file_4 in file_names_3:
-										if 'classification' in file_4:
-											allempty = allempty and os.path.getsize(os.path.join(root_3, file_4)) == 0
-									if allempty:
+							if not os.path.exists(exp.evaluation_dir_path):
+								toclassify.append(exp)
+								# print('added because evaldir does not exist', evaluationDir)
+							else:
+								for root_3, dir_names_3, file_names_3 in os.walk(exp.evaluation_dir_path):
+									if not any(['classification' in file_name for file_name in file_names_3]):
 										toclassify.append(exp)
-									# print('added because file does not exist', (experiment_dir_path, cluster_id))
+									else:
+										allempty = True
+										for file_4 in file_names_3:
+											if 'classification' in file_4:
+												allempty = allempty and os.path.getsize(os.path.join(root_3, file_4)) == 0
+										if allempty:
+											toclassify.append(exp)
+										# print('added because file does not exist', (experiment_dir_path, cluster_id))
 
+	print('\nCLASSIFICATION for experiments:')
 	for exp in toclassify:
-		if exp.task_type == 'succ':
+		if exp.task_type == 'succ':# or exp.experiment_parent_name == 'ex_6_emnist_32_2' and exp.cluster_id == 'staff_compute':
 			continue
-		do_classification_evaluation(exp)
+		if display_exp:
+			print(exp)
+		else:
+			do_classification_evaluation(exp)
 		# break
 
-def sample_all_missing():
+def sample_all_missing(display_exp = False, only_first = False):
 	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
 
 	toclassify = []
@@ -407,42 +437,56 @@ def sample_all_missing():
 		for experiment_parent_name in dir_names:
 			for experiment_dir_path, dir_names_2, file_names_2 in os.walk(os.path.join(root, experiment_parent_name)):
 				for psdd_search_dir in dir_names_2:
-					if 'psdd_search' in psdd_search_dir:
-						identifier = str(psdd_search_dir).split('psdd_search_')[1].replace('/','')
-						if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
-							cluster_id = '_'.join(identifier.split('_')[:-1])
-							task_type = identifier.split('_')[-1]
-						else:
-							cluster_id = identifier
-							task_type = 'classification'
+					for possible_names in ['psdd_search_', 'psdd_model_']:
+						if possible_names in psdd_search_dir:
+							identifier = str(psdd_search_dir).split(possible_names)[1].replace('/','')
+							if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
+								cluster_id = '_'.join(identifier.split('_')[:-1])
+								task_type = identifier.split('_')[-1]
+							else:
+								cluster_id = identifier
+								task_type = 'classification'
 
-						exp = Experiment(experiment_parent_name, cluster_id, task_type)
+							exp = Experiment(experiment_parent_name, cluster_id, task_type)
 
-						progressfile = os.path.join(exp.psdd_out_dir, './learnpsdd_tmp_dir/progress.txt')
-						if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
-							continue
+							progressfile = os.path.join(exp.psdd_out_dir, './learnpsdd_tmp_dir/progress.txt')
+							if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
+								continue
 
-						if not os.path.exists(exp.evaluation_dir_path):
-							toclassify.append((exp, 'bin'))
-							toclassify.append((exp, 'dis'))
-							# print('added because evaldir does not exist', evaluationDir)
-						else:
-							for root_3, dir_names_3, file_names_3 in os.walk(exp.evaluation_dir_path):
-								if not any(['generated' in file_name and file_name.endswith('.png') and 'binb' in file_name for file_name in file_names_3]):
-									toclassify.append((exp, 'bin'))
-								if not any(['generated' in file_name and file_name.endswith('.png') and 'disb' in file_name for file_name in file_names_3]):
-									toclassify.append((exp, 'dis'))
+							if not os.path.exists(exp.evaluation_dir_path):
+								toclassify.append((exp, 'bin'))
+								toclassify.append((exp, 'dis'))
+								# print('added because evaldir does not exist', evaluationDir)
+							else:
+								for root_3, dir_names_3, file_names_3 in os.walk(exp.evaluation_dir_path):
+									if not any(['generated' in file_name and file_name.endswith('.png') and 'binb' in file_name for file_name in file_names_3]):
+										toclassify.append((exp, 'bin'))
+									if not any(['generated' in file_name and file_name.endswith('.png') and 'disb' in file_name for file_name in file_names_3]):
+										toclassify.append((exp, 'dis'))
 
 
 									# print('added because file does not exist', (experiment_dir_path, cluster_id))
 
-	print('sampling for experiments:')
+	print('\nSAMPLING for experiments:')
+	tried_count = 0
 	for (exp, type_of_query) in toclassify:
-		if exp.task_type != 'classification' and exp.task_type != 'plus':
-			do_generative_query(exp, type_of_query = type_of_query)
-	# for (exp, type_of_query) in toclassify:
-	# 	if exp.task_type == 'classification':
-	# 		do_generative_query(exp, type_of_query = type_of_query)
+		if exp.task_type != 'classification':
+			if display_exp:
+				print(exp)
+			else:
+				do_generative_query(exp, type_of_query = type_of_query)
+			tried_count += 1
+		if only_first and tried_count >= 1:
+			return
+	for (exp, type_of_query) in toclassify:
+		if exp.task_type == 'classification':
+			if display_exp:
+				print(exp)
+			else:
+				do_generative_query(exp, type_of_query = type_of_query)
+			tried_count += 1
+		if only_first and tried_count >= 1:
+			return
 
 def make_learning_graphs_missing():
 	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
@@ -468,21 +512,23 @@ def do_everything(exp, vtree_method = 'miBlossom', num_compent_learners = 10, ty
 	do_classification_evaluation(exp, testing = testing)
 
 	#Generate class samples and decode them to png
-	do_generative_query(exp, testing = testing, type_of_query = type_of_query)
+	do_generative_query(exp, testing = testing, type_of_query = 'bin')
+	do_generative_query(exp, testing = testing, type_of_query = 'dis')
 	
 
 if __name__ == '__main__':
 
 	# decode_all_possible()
-	# evaluate_all_missing()
-	sample_all_missing()
+	# evaluate_all_missing(display_exp = True)
+	sample_all_missing(display_exp = False, only_first = False)
 
-	# experiment_parent_name = 'ex_6_emnist_32_2'
-	# cluster_id = 'james08'
-	# task_type = 'classification'
+	# experiment_parent_name = 'ex_7_mnist_32_2'
+	# cluster_id = 'james11'
+	# task_type = 'noisy-1'
+	# data_per = 1
 	# compress_fly = False
-	# exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly)
-	# # do_everything(exp)
+	# exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
+	# do_everything(exp, do_encode_data = False)
 	# do_classification_evaluation(exp)
 	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 

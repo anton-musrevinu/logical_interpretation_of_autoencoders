@@ -104,6 +104,11 @@ def _add_learn_psdd_lib_to_path(learnpsdd_lib):
 		os.environ['PATH'] += str(os.pathsep + learnpsdd_lib)
 		write('variable PATH updated to: {}'.format(os.environ['PATH']), 'init')
 
+def remove_home(file_path):
+	ret = file_path.replace(os.environ['HOME'], '')
+	ret = ret.replace('/code/msc/output/experiments/','')
+	return ret
+
 #============================================================================================================================
 #======================================  INIT (executed when module is loaded ===============================================
 #============================================================================================================================
@@ -218,7 +223,7 @@ def get_ensembly_file_names_and_check(psdd_out_dir, vtree_path, at_iteration):
 	elif at_iteration == -2:
 		it_idx = last_it_idx
 
-	write('reading experiment files, from iteration: {} (based on: {}) and num_learners: {}'.format(it_idx, at_iteration, num_learners))
+	# write('reading experiment files, from iteration: {} (based on: {}) and num_learners: {}'.format(it_idx, at_iteration, num_learners))
 
 	psdds = []
 	for i in range(num_learners):
@@ -229,6 +234,7 @@ def get_ensembly_file_names_and_check(psdd_out_dir, vtree_path, at_iteration):
 		_check_if_file_exists(psdd_file)
 		psdds.append(psdd_file)
 
+	write('all files found for iteration: {} (based on: {}) and num_learners: {}'.format(it_idx, at_iteration, num_learners))
 	return vtree_path, psdds, it_weights[it_idx], it_idx
 
 def list_to_cs_string(list_to_convert):
@@ -751,12 +757,12 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 
 	org_query_data_path = query_data_path
 
-	if 'psdd_model' in psdd_out_dir:
-		vtree_path, psdds, weights, at_iteration = get_old_file_names_and_check(psdd_out_dir, at_iteration)
-		fl_info = recreate_fl_info_for_old_experiments(psdd_out_dir)
-	else:
-		vtree_path, psdds, weights, at_iteration = get_file_names_and_check(psdd_out_dir, at_iteration)
-		fl_info = read_info_file(query_data_path)
+	# if 'psdd_model' in psdd_out_dir:
+	# 	vtree_path, psdds, weights, at_iteration = get_old_file_names_and_check(psdd_out_dir, at_iteration)
+	# 	fl_info = recreate_fl_info_for_old_experiments(psdd_out_dir)
+	# else:
+	vtree_path, psdds, weights, at_iteration = get_file_names_and_check(psdd_out_dir, at_iteration)
+	fl_info = read_info_file(query_data_path)
 
 	evaluationDir = os.path.abspath(os.path.join(psdd_out_dir, './evaluation/'))
 	if not _check_if_dir_exists(evaluationDir, raiseException = False):
@@ -765,29 +771,30 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 	if out_file == None:
 		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', '-generated_{}-it_{}'.format(list_to_cs_string(fl_to_query).replace(',','_'),at_iteration))))
 		out_file = os.path.abspath(out_file)
-	if y_condition != None:
+	if y_condition is not None:
 		out_file = out_file.replace('generated', 'y_{}-generated'.format(list_to_cs_string(y_condition).replace(',','_')))
 
-	if test or y_condition != None:
-		if test and y_condition == None:
-			sample_data_path = query_data_path + '.sample'
-		elif y_condition != None:
-			sample_data_path = query_data_path.replace('.data', '-y_{}.data'.format(list_to_cs_string(y_condition).replace(',','_')))
-		written_samples = 0
-		with open(sample_data_path, 'w') as f:
-			with open(query_data_path, 'r') as f2:
-				for line_idx, line in enumerate(f2):
-					if y_condition != None:
-						line_split = line.split(',')
-						fly = list(map(int, line_split[fl_info['fly'].encoded_start_idx: fl_info['fly'].encoded_end_idx]))
-						if fly != y_condition:
-							# print('fly: {} != {}: y_condition --> skipping'.format(fly, y_condition))
-							continue
-					f.write(line)
-					written_samples += 1
-					if written_samples >= 100:
-						break
-		query_data_path = sample_data_path
+	write('creating query and init files for psdd with outfile: {} (y_condition: {})'.format(remove_home(out_file), y_condition))
+
+	if y_condition is not None:
+		sample_data_path = query_data_path.replace('.data', '-y_{}.data'.format(list_to_cs_string(y_condition).replace(',','_')))
+	else:
+		sample_data_path = query_data_path + '.sample'
+
+	written_samples = 0
+	with open(sample_data_path, 'w') as f:
+		with open(query_data_path, 'r') as f2:
+			for line_idx, line in enumerate(f2):
+				if y_condition is not None:
+					line_split = line.split(',')
+					fly = list(map(int, line_split[fl_info['fly'].encoded_start_idx: fl_info['fly'].encoded_end_idx]))
+					if all(fly != y_condition):
+						continue
+				f.write(line)
+				written_samples += 1
+				if written_samples >= 100:
+					break
+	query_data_path = sample_data_path
 
 	if psdd_init_data_per != 1:
 		sample_data_path = train_data_path + '.sample'

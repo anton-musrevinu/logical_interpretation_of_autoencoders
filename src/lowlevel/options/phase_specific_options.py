@@ -40,6 +40,7 @@ def phase_encode_options(parser):
     parser.add_argument('--compress_fly', type=str2bool, default=True, help='Compressing fly to a binary represenations enforcing onehot')
     parser.add_argument('--encoded_data_dir', type=str, help='Where the converted data should be stored')
     parser.add_argument('--task_type', type=str,default='', help='Where the converted data should be stored')
+    parser.add_argument('--data_per', type=float,default=1, help='percentage of whole dataset to be converted')
     return parser
 
 def phase_decode_options(parser):

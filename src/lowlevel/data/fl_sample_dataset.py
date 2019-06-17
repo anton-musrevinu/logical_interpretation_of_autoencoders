@@ -49,6 +49,13 @@ class FLSAMPLEDataset(BaseDataset):
 						fl_data[fl_name] = []
 					fl_data[fl_name].append(flx_elem)
 
+		tmp_fl_name = domains.keys()[0] if fl_name == None else fl_name
+		cuccent_size = len(fl_data[tmp_fl_name])
+		if cuccent_size < self.batch_size:
+			for i in range(cuccent_size, self.batch_size):
+				for fl_name, fl_part in domains.items():
+					flx_elem = fl_part.get_empty_example()
+					fl_data[fl_name].append(flx_elem)
 
 		self.fl_images_names = []
 		self.fl_numeric_names = []

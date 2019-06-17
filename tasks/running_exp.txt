@@ -7,15 +7,16 @@ single PSDD with (constraints) vs (without constraints) vs (without constraints 
 
 RUNNING ==================================================================================================================
 
-ex_7_mnist_32_2     james02     plus        uncompressed_y        (07.06.2019)
-ex_6_emnist_32_2    staff_compute           uncompressed_y        (05.06.2019) --- vtree miBlosssom
 
+ex_6_emnist_32_2    jamse08_2                                            (12.06.2019) --- vtree miBlosssom
+ex_7_mnist_32_2     jamse11     noisy-1                                   (13.06.2019) --- vtree miBlosssom
 
 ==========================================================================================================================
 Finished =================================================================================================================
 
 
-ex_6_emnist_32_2    jamse08                                       (05.06.2019) --- vtree miBlosssom
+ex_7_mnist_32_2     james02     plus        uncompressed_y        (07.06.2019)
+ex_6_emnist_32_2    staff_compute           uncompressed_y        (05.06.2019) --- vtree miBlosssom
 ex_7_mnist_32_2 james01_plus    
 ex_7_mnist_40_2 james02         uncompressed_y        (04.06.2019) --- vtree miGreedyBU  
 ex_7_mnist_40_2 james03         uncompressed_y        (04.06.2019) --- vtree miBlossom 

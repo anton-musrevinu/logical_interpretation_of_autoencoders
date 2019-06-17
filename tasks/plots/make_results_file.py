@@ -4,10 +4,12 @@ import csv
 
 
 RELATIVE_BASEDIR = './code/msc/output/experiments/'
-RELATIVE_OUTFILE_loss = './code/msc/output/var_results_mnist.csv'
 RELATIVE_OUTFILE_all = './code/msc/output/var_results_all_mnist.csv'
+RELATIVE_BASEDIR_all = './local_storage/backup_msc/output/experiments/'
 BASEDIR = os.path.abspath(os.path.join(os.environ['HOME'],RELATIVE_BASEDIR))
-OUTFILE_loss = os.path.abspath(os.path.join(os.environ['HOME'],RELATIVE_OUTFILE_loss))
+BLOODBORN_BASE = os.path.abspath(os.path.join(os.environ['HOME'],'./local_storage/backup_msc/output/experiments/'))
+OUTFILE_var_mnist = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/var_results_mnist.csv'))
+OUTFILE_var_emnist = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/var_results_emnist.csv'))
 OUTFILE_all = os.path.abspath(os.path.join(os.environ['HOME'],RELATIVE_OUTFILE_all))
 
 def get_task_type_hiracy(task_type_of_intersest):
@@ -138,7 +140,6 @@ class ExpResultFull(ExpResult):
 		self.add_losses_from_dir(dir)
 		self.add_psdd_exp(dir)
 
-
 class ExpPsdd(object):
 	def __init__(self, task_type):
 		self.task_type = task_type
@@ -256,11 +257,25 @@ def _is_compressed_y(experiment_dir_path, cluster_id, task_type):
 #==========================================================================================================================
 #==========================================================================================================================
 
-def make_mnist_resutls_file():
+def make_var_resutls_file(data = 'ex_7_mnist', sorte_by = lambda x: x.flx_size):
+	expResults = gather_only_var_results(data)
+
+	expResultsSorted = sorted(expResults, key=sorte_by, reverse=False)
+
+	data_type = 'emnist' if 'emnist' in data else 'mnist'
+
+	outfile = OUTFILE_var_mnist if not 'emnist' in data else OUTFILE_var_emnist
+	with open(outfile, 'w') as f:
+		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity\n')
+		for exp in expResultsSorted:
+			line = '{},\t{},\t{},\t{},\t2^{{{}}}'.format(data_type, exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin)
+			f.write(line + '\n')
+
+def gather_only_var_results(data):
 	experiment_dirs = []
-	for root, dir_names, file_names in os.walk(BASEDIR):
+	for root, dir_names, file_names in os.walk(BLOODBORN_BASE):
 		for i in dir_names:
-			if 'ex_7_mnist' in i:
+			if data in i:
 				experiment_dirs.append(os.path.join(root, i))
 	
 	expResults = []
@@ -270,20 +285,14 @@ def make_mnist_resutls_file():
 		expResult = ExpResult(flx_size, flx_cat_dim)
 		expResult.add_losses_from_dir(exp)
 		expResults.append(expResult)
+	return expResults
 
-	with open(OUTFILE, 'w') as f:
-		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity\n')
-		for exp in expResults:
-			line = 'mnist,\t{},\t{},\t{},\t2^{{{}}}'.format(exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin)
-			f.write(line + '\n')
-
-
-def make_mnist_resutls_file_full(task_type_of_intersest):
+def gather_results(data):
 	print('\nRetrieving experiments\n')
 	experiment_dirs = []
-	for root, dir_names, file_names in os.walk(BASEDIR):
+	for root, dir_names, file_names in os.walk(BLOODBORN_BASE):
 		for i in dir_names:
-			if 'ex_7_mnist' in i:
+			if data in i:
 				experiment_dirs.append(os.path.join(root, i))
 	
 	expResults = []
@@ -294,26 +303,46 @@ def make_mnist_resutls_file_full(task_type_of_intersest):
 		expResult.add_all_possible_information_for_dir(exp)
 		expResults.append(expResult)
 
+	return expResults
+
+def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', ):
+	print('\nRetrieving experiments\n')
+	expResults = gather_results(data)
+	data_type = 'emnist' if 'emnist' in data else 'mnist'
+	if data_type == 'emnist':
+		OUTFILE_all.replace('mnist', 'emnist')
+
 	for exp in expResults:
 		print(exp)
 
+
+	expResultsSorted = sorted(expResults, key=lambda x: x.flx_size, reverse=False)
+
 	with open(OUTFILE_all.replace('_all_', '_{}_'.format(task_type_of_intersest)), 'w') as f:
-		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity, best_it, best_ll, vtree_method, compressed_y, class_acc\n')
-		for exp in expResults:
+		if task_type_of_intersest == 'classification':
+			f.write('dataset, FL c.s., c.d., MSE, model space comp., best it, best ll, vtree method, compressed y, class acc\n')
+		else:
+			f.write('dataset, FL c.s., c.d., MSE, task type, best it, best ll, vtree method, compressed y, class acc\n')
+
+		for exp in expResultsSorted:
 			for task_type in exp.exp_psdds:
 				if not get_task_type_hiracy(task_type_of_intersest)(task_type):
 					continue
 				psdd_exp = exp.exp_psdds[task_type]
 				for cluster_id in psdd_exp.classification_acc.keys():
-					line = 'mnist,\t{},\t{},\t{},\t2^{{{}}}, \t{}'.format(exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin, task_type)
-					line += ',\t{},\t{},\t{},\t{},\t{}'.format(psdd_exp.best_it[cluster_id], psdd_exp.best_ll[cluster_id], \
+					line = '{},\t{},\t{},\t{}'.format(data_type,exp.flx_size, exp.flx_cat_dim, exp.loss)
+					if task_type_of_intersest == 'classification':
+						line += ',\t2^{{{}}}'.format(exp.complexity_bin)
+					if task_type_of_intersest != 'classification':
+						line += ', \t{}'.format(task_type)
+					line += ',\t{},\t{:.2},\t{},\t{},\t{:.4}'.format(psdd_exp.best_it[cluster_id], psdd_exp.best_ll[cluster_id], \
 							psdd_exp.vtree_method[cluster_id], psdd_exp.compressed_y[cluster_id], max(psdd_exp.classification_acc[cluster_id]))
 					f.write(line + '\n')
 	
-def read_mnist_result_file():
+def read_mnist_result_file(file):
 	expResults = []
 	names = []
-	with open(OUTFILE, 'r') as f:
+	with open(file, 'r') as f:
 		spamreader = csv.reader(f, delimiter=',')
 		for idx,row in enumerate(spamreader):
 			if idx == 0:
@@ -334,7 +363,8 @@ def read_mnist_result_file():
 
 
 if __name__ == '__main__':
-	# make_mnist_resutls_file()
+	make_var_resutls_file()
+	make_var_resutls_file(data = 'ex_6_emnist')
 	make_mnist_resutls_file_full('classification')
 	make_mnist_resutls_file_full('noisy')
 	make_mnist_resutls_file_full('compositional')
