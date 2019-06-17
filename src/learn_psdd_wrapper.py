@@ -24,7 +24,7 @@ from src.lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_fo
 # - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
 LEARNPSDD_ROOT_DIR_USER = './code/msc/src/Scala-LearnPsdd/'
-RECOMPILE_PSDD_SOURCE = True
+RECOMPILE_PSDD_SOURCE = False
 # -------------------------------------------------------------------------------------------------------------------------
 #
 # - GRAPHVIZ   			(graphing software)     -   Please specify if finstalled:
