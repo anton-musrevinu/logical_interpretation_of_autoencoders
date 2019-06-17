@@ -26,12 +26,18 @@ class FLSAMPLEDataset(BaseDataset):
 		self.num_classes = opt.num_classes
 
 		fl_data = {}
+		self.example_prob = []
 
 		# print('original fl_flat size {} and binary fl size {}'.format(self.model.netAE.fl_flat_shape[1],new_fl_size))
 
 		with open(self.data_file, 'r') as f:
 			for line in f:
-				line = line.split(',')
+				if len(line.split(';')) == 2:
+					line_prob = float(line.split(';')[1])
+					line = line.split(';')[0].split(',')
+				else:
+					line = line.split(',')
+					line_prob = -1
 				# print(line)
 
 				for fl_name, fl_part in domains.items():
@@ -48,6 +54,7 @@ class FLSAMPLEDataset(BaseDataset):
 					if not fl_name in fl_data:
 						fl_data[fl_name] = []
 					fl_data[fl_name].append(flx_elem)
+				self.example_prob.append(line_prob)
 
 		tmp_fl_name = domains.keys()[0] if fl_name == None else fl_name
 		cuccent_size = len(fl_data[tmp_fl_name])

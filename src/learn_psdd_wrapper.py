@@ -797,7 +797,7 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 						continue
 					elif fly != y_condition and impossible_examples:
 						for fly_idx, line_idx in enumerate(range(fl_info['fly'].encoded_start_idx, fl_info['fly'].encoded_end_idx)):
-							line_split[i] = fly[fly_idx]
+							line_split[line_idx] = fly[fly_idx]
 						line = list_to_cs_string(line_split)
 					elif fly == y_condition and impossible_examples:
 						continue
