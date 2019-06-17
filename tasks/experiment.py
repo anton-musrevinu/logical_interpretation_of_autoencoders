@@ -243,9 +243,13 @@ def do_generative_query(exp, testing = False, type_of_query = 'bin'):
 		if exp.compress_fly:
 			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [0])
 			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [1])
+			if 'land' in exp.task_type:
+				do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 		else:
 			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [0,1])
 			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [1,0])
+			if 'land' in exp.task_type:
+				do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [0,1], impossible_examples = True)
 	else:
 		for filter_int in range(19):
 			data_filter = [0 for i in range(19)]
@@ -523,12 +527,15 @@ if __name__ == '__main__':
 	# sample_all_missing(display_exp = False, only_first = False)
 
 	experiment_parent_name = 'ex_7_mnist_32_2'
-	cluster_id = 'staff_compute'
-	task_type = 'blxor'
+	cluster_id = 'james01'
+	task_type = 'bland'
 	data_per = 1
 	compress_fly = True
 	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
-	do_everything(exp, do_encode_data = True)
+	# do_everything(exp, do_encode_data = True)
+
+	do_generative_query(exp, type_of_query = 'bin')
+	do_generative_query(exp, type_of_query = 'dis')
 	# do_classification_evaluation(exp)
 	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 

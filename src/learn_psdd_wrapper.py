@@ -24,7 +24,7 @@ from src.lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_fo
 # - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
 LEARNPSDD_ROOT_DIR_USER = './code/msc/src/Scala-LearnPsdd/'
-RECOMPILE_PSDD_SOURCE = False
+RECOMPILE_PSDD_SOURCE = True
 # -------------------------------------------------------------------------------------------------------------------------
 #
 # - GRAPHVIZ   			(graphing software)     -   Please specify if finstalled:
@@ -751,7 +751,7 @@ class PsddQueryException(Exception):
 	pass
 
 def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, \
-							psdd_init_data_per = .1, at_iteration = 'best-0', type_of_query = 'dis', fl_to_query = ['flx'], y_condition = None):
+							psdd_init_data_per = .1, at_iteration = 'best-0', type_of_query = 'dis', fl_to_query = ['flx'], y_condition = None, impossible_examples = False):
 	_check_if_file_exists(query_data_path)
 	_check_if_dir_exists(psdd_out_dir)
 
@@ -770,16 +770,21 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 
 	if out_file == None:
 		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', '-generated_{}-it_{}'.format(list_to_cs_string(fl_to_query).replace(',','_'),at_iteration))))
+		if impossible_examples:
+			out_file += '_impossible'
 		out_file = os.path.abspath(out_file)
 	if y_condition is not None:
 		out_file = out_file.replace('generated', 'y_{}-generated'.format(list_to_cs_string(y_condition).replace(',','_')))
 
 	write('creating query and init files for psdd with outfile: {} (y_condition: {})'.format(remove_home(out_file), y_condition))
 
-	if y_condition is not None:
-		sample_data_path = query_data_path.replace('.data', '-y_{}.data'.format(list_to_cs_string(y_condition).replace(',','_')))
-	else:
-		sample_data_path = query_data_path + '.sample'
+
+	sample_data_path = out_file.replace('generated', 'query-input')
+	shutil.copyfile(org_query_data_path + '.info', sample_data_path + '.info')
+	# if y_condition is not None:
+	# 	sample_data_path = query_data_path.replace('.data', '-y_{}.data'.format(list_to_cs_string(y_condition).replace(',','_')))
+	# else:
+	# 	sample_data_path = query_data_path + '.sample'
 
 	written_samples = 0
 	with open(sample_data_path, 'w') as f:
@@ -788,7 +793,13 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 				if y_condition is not None:
 					line_split = line.split(',')
 					fly = list(map(int, line_split[fl_info['fly'].encoded_start_idx: fl_info['fly'].encoded_end_idx]))
-					if all(fly != y_condition):
+					if any(fly != y_condition) and not impossible_examples:
+						continue
+					elif any(fly != y_condition) and impossible_examples:
+						for fly_idx, line_idx in enumerate(range(fl_info['fly'].encoded_start_idx, fl_info['fly'].encoded_end_idx)):
+							line_split[i] = fly[fly_idx]
+						line = list_to_cs_string(line_split)
+					elif all(fly == y_condition) and impossible_examples:
 						continue
 				f.write(line)
 				written_samples += 1

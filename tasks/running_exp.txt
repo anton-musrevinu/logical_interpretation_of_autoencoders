@@ -2,7 +2,6 @@ TO RUNNING =====================================================================
 
 Could do:
 
-mnist-blxor
 fashion -- classification
 fashion-blxor
 
@@ -11,6 +10,9 @@ single PSDD with (constraints) vs (without constraints) vs (without constraints 
 RUNNING ==================================================================================================================
 
 
+ex_7_mnist_32_2 staff_compute blxor (17.06.2019) -- vtree miBlossom
+
+ex_9 on cdtcluster learning autoencoder
 
 ==========================================================================================================================
 Finished =================================================================================================================
