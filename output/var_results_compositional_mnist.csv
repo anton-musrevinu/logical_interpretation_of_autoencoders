@@ -1,1 +1,13 @@
 dataset, FL c.s., c.d., MSE, task type, best it, best ll, vtree method, compressed y, class acc
+mnist,	32,	2,	0.0214, 	g7land,	205,	-3.2e+01,	miBlossom,	False,	0.8592
+mnist,	32,	2,	0.0214, 	g7land,	90,	-3.4e+01,	miGreedyBU,	True,	0.8284
+mnist,	32,	2,	0.0214, 	g7land,	272,	-3.4e+01,	miGreedyBU,	True,	0.653
+mnist,	32,	2,	0.0214, 	plus,	302,	-3.5e+01,	miBlossom,	False,	0.0922
+mnist,	32,	2,	0.0214, 	plus,	87,	-3.7e+01,	miGreedyBU,	True,	0.0674
+mnist,	32,	2,	0.0214, 	plus,	381,	-3.6e+01,	miGreedyBU,	True,	0.0992
+mnist,	32,	2,	0.0214, 	plus,	287,	-3.7e+01,	miGreedyBU,	True,	0.0838
+mnist,	32,	2,	0.0214, 	g4land,	327,	-3.4e+01,	miGreedyBU,	True,	0.6528
+mnist,	32,	2,	0.0214, 	g4land,	94,	-3.5e+01,	miGreedyBU,	True,	0.4788
+mnist,	32,	2,	0.0214, 	g4land,	338,	-3.2e+01,	miBlossom,	False,	0.707
+mnist,	32,	2,	0.0214, 	bland,	244,	-2.5e+01,	miBlossom,	True,	0.978
+mnist,	32,	2,	0.0214, 	blor,	403,	-2.6e+01,	miBlossom,	True,	0.966
