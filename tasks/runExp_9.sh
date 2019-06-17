@@ -1,0 +1,4 @@
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_7_mnist_32_2 --dataset fashion --gpu_ids 0,1 --feature_layer_size 32 --categorical_dim 2 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_7_mnist_28_2 --dataset fashion --gpu_ids 0,1 --feature_layer_size 28 --categorical_dim 2 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_7_mnist_40_2 --dataset fashion --gpu_ids 0,1 --feature_layer_size 40 --categorical_dim 2 --num_epochs 200
+~/miniconda3/envs/mlp/bin/python3.7 ../src/lowlevel/main.py --phase train --experiment_name ex_7_mnist_24_2 --dataset fashion --gpu_ids 0,1 --feature_layer_size 24 --categorical_dim 2 --num_epochs 200

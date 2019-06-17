@@ -1324,11 +1324,13 @@ object Main {
 
               val random = new Random
 
+              var fl_evidence:Map[Int,Boolean] = Map()
+                assigned_vars.foreach{j =>
+                  fl_evidence += (j -> assignment.backend(i)(j)) 
+                }
+
               for ( i <- 0 to nb_queries_total -1) {
                 var fl_sampled:Map[Int,Boolean] = Map()
-                assigned_vars.foreach{j =>
-                  fl_sampled += (j -> assignment.backend(i)(j)) 
-                }
 
                 var unsassinged_stack = unassigned_vars.toList
                 // var fl_sampled:Map[Int,Boolean] = Map()
@@ -1343,23 +1345,31 @@ object Main {
                   new_var = unsassinged_stack(new_var_idx)
                   unsassinged_stack = unsassinged_stack.dropRight(unsassinged_stack.length - new_var_idx) ++ unsassinged_stack.drop(new_var_idx + 1)
 
-                  fl_tmp_num = (fl_sampled) + (new_var -> true)
-                  fl_tmp_div = (fl_sampled)
+                  fl_tmp_num = (fl_evidence ++ fl_sampled) + (new_var -> true)
+                  fl_tmp_div = (fl_evidence ++ fl_sampled)
                   // pr(FLx_j = true| fly + flx)
                   var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp_num) * componentweights(x)).sum
                   var prob_div:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp_div) * componentweights(x)).sum
-
                   var prob_j = prob_num/prob_div
+                  
                   var value_j = random.nextDouble() <= prob_j
                   fl_sampled += (new_var -> value_j)
                   // var tmpStr = "new_var_idx: %d, new_var: %d, prob_j: %.2f, value_j: %s, unsassinged_stack.length: %d\n".format(new_var_idx,new_var, prob_j, value_j.toString, unsassinged_stack.length)
                   // print(tmpStr)
                   // pw.write(tmpStr)
                 }
+
+                var fl_fully_assigned = (fl_evidence ++ fl_sampled)
+                //Compute the probability of the fully assigmed fl conditional on the evidence given
+                var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_fully_assigned) * componentweights(x)).sum
+                var prob_div:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_evidence) * componentweights(x)).sum
+                var prob_fl_fully_assigned = prob_num/prob_div 
+
                 for(j <- 1 to total_size - 1){
-                  pw_samples.write("%d,".format(if (fl_sampled(j)) 1 else 0))
+                  pw_samples.write("%d,".format(if (fl_fully_assigned(j)) 1 else 0))
                 }
-                pw_samples.write("%d\n".format(if (fl_sampled(total_size)) 1 else 0))
+                pw_samples.write("%d".format(if (fl_fully_assigned(total_size)) 1 else 0))
+                pw_samples.write(";" + prob_fl_fully_assigned + "\n")
 
                 if ((i) % one_hundreth_of_total_queries == 0 && i != 0){
                   var current_percent = BigDecimal((i/nb_queries_total.toDouble) * 100).setScale(0, BigDecimal.RoundingMode.CEILING)
@@ -1397,12 +1407,12 @@ object Main {
               val pw_samples = new PrintWriter(new File(config.out + "_dis.data"))
 
               val random = new Random
-
+              var fl_evidence:Map[Int,Boolean] = Map()
+              assigned_bin_vars.foreach{j =>
+                fl_evidence += (j -> assignment.backend(i)(j)) 
+              }
               for ( i <- 0 to nb_queries_total -1) {
                 var fl_sampled:Map[Int,Boolean] = Map()
-                assigned_bin_vars.foreach{j =>
-                  fl_sampled += (j -> assignment.backend(i)(j)) 
-                }
 
                 var unsassinged_stack = unassigned_bin_vars
                 // var fl_sampled:Map[Int,Boolean] = Map()
@@ -1448,8 +1458,8 @@ object Main {
                   
                   var contender_probs:Seq[BigDecimal] = Seq()
                   for (contender <- unknownMaps){
-                    fl_tmp_num = fl_sampled ++ contender
-                    fl_tmp_div = fl_sampled
+                    fl_tmp_num = (fl_sampled ++ fl_evidence) ++ contender
+                    fl_tmp_div = (fl_sampled ++ fl_evidence)
 
                     var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp_num) * componentweights(x)).sum
                     var prob_div:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_tmp_div) * componentweights(x)).sum
@@ -1468,10 +1478,19 @@ object Main {
                   // print(tmpStr)
                   // pw.write(tmpStr)
                 }
+
+                var fl_fully_assigned = (fl_evidence ++ fl_sampled)
+                //Compute the probability of the fully assigmed fl conditional on the evidence given
+                var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_fully_assigned) * componentweights(x)).sum
+                var prob_div:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_evidence) * componentweights(x)).sum
+                var prob_fl_fully_assigned = prob_num/prob_div 
+
+                //Write resulting fl_assignment to file with corresponding probability
                 for(j <- 1 to total_size - 1){
-                  pw_samples.write("%d,".format(if (fl_sampled(j)) 1 else 0))
+                  pw_samples.write("%d,".format(if (fl_fully_assigned(j)) 1 else 0))
                 }
-                pw_samples.write("%d\n".format(if (fl_sampled(total_size)) 1 else 0))
+                pw_samples.write("%d".format(if (fl_fully_assigned(total_size)) 1 else 0))
+                pw_samples.write(";" + prob_fl_fully_assigned + "\n")
 
                 if ((i) % one_hundreth_of_total_queries == 0 && i != 0){
                   var current_percent = BigDecimal((i/nb_queries_total.toDouble) * 100).setScale(0, BigDecimal.RoundingMode.CEILING)

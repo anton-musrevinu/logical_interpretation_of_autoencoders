@@ -519,7 +519,7 @@ def do_everything(exp, vtree_method = 'miBlossom', num_compent_learners = 10, ty
 if __name__ == '__main__':
 
 	# decode_all_possible()
-	evaluate_all_missing(display_exp = False)
+	# evaluate_all_missing(display_exp = False)
 	# sample_all_missing(display_exp = False, only_first = False)
 
 	# experiment_parent_name = 'ex_7_mnist_32_2'
