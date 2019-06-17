@@ -522,13 +522,13 @@ if __name__ == '__main__':
 	# evaluate_all_missing(display_exp = False)
 	# sample_all_missing(display_exp = False, only_first = False)
 
-	# experiment_parent_name = 'ex_7_mnist_32_2'
-	# cluster_id = 'james11'
-	# task_type = 'noisy-1'
-	# data_per = 1
-	# compress_fly = False
-	# exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
-	# do_everything(exp, do_encode_data = False)
+	experiment_parent_name = 'ex_7_mnist_32_2'
+	cluster_id = 'staff_compute'
+	task_type = 'blxor'
+	data_per = 1
+	compress_fly = True
+	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
+	do_everything(exp, do_encode_data = True)
 	# do_classification_evaluation(exp)
 	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 
