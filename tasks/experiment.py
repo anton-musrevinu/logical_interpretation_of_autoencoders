@@ -209,7 +209,7 @@ def do_psdd_training(exp, testing = False, do_encode_data = True, num_compent_le
 # ==========================================================================================================================================================
 # ==========================================================================================================================================================
 
-def do_classification_evaluation(exp, test = False):
+def do_classification_evaluation(exp, testing = False):
 	print('[CLASSIFICATION] - START ON: \t{}'.format(exp))
 	try:
 		train_data_path, valid_data_path, query_data_path = exp.get_data_files()
@@ -223,29 +223,29 @@ def do_classification_evaluation(exp, test = False):
 			at_iteration = 'best-{}'.format(i)
 			print('trying at: {}'.format(at_iteration))
 			learn_psdd_wrapper.measure_classification_accuracy_on_file(exp.psdd_out_dir, query_data_path, train_data_path, valid_data_path = valid_data_path, \
-									test = test, psdd_init_data_per = 0.1 if not test else 0.01, at_iteration = at_iteration)
+									test = testing, psdd_init_data_per = 0.1 if not testing else 0.01, at_iteration = at_iteration)
 			break
 		except Exception as e:
 			print('caught exception: {}'.format(e))
 			continue
 
-def do_generative_query(exp, test = False, type_of_query = 'bin'):
+def do_generative_query(exp, testing = False, type_of_query = 'bin'):
 
 	print('[DOINGIN GENERATIVE QUERY WITH ARGS: {}, --  {}'.format(exp, type_of_query))
 	
 	if exp.task_type == 'classification' or 'noisy' in exp.task_type:
 		do_generative_query_for_labels(exp, type_of_query = type_of_query)
 	elif exp.task_type == 'succ':
-		do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'])
-		do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['flb'])
+		do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'])
+		do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['flb'])
 	elif exp.task_type != 'plus':
 		#Generate class samples and decode them to png
 		if exp.compress_fly:
-			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [0])
-			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [1])
+			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [0])
+			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [1])
 		else:
-			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [0,1])
-			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = [1,0])
+			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [0,1])
+			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = [1,0])
 	else:
 		for filter_int in range(19):
 			data_filter = [0 for i in range(19)]
@@ -253,11 +253,11 @@ def do_generative_query(exp, test = False, type_of_query = 'bin'):
 			if exp.compress_fly:
 				size = int(np.ceil(np.log2(19)))
 				data_filter = convert_onehot_to_binary(data_filter,size)
-			do_generative_query_on_test(exp, type_of_query = type_of_query, test = True, fl_to_query = ['fla'], y_condition = data_filter)
+			do_generative_query_on_test(exp, type_of_query = type_of_query, testing = True, fl_to_query = ['fla'], y_condition = data_filter)
 
 	do_decode_class_samples(exp)
 
-def do_generative_query_on_test(exp, test = False, \
+def do_generative_query_on_test(exp, testing = False, \
 	fl_to_query = ['flx'], type_of_query = 'dis', y_condition = None):
 
 	print('[SAMPLING] - START ON: \t{} -- {}'.format(exp, type_of_query))
@@ -273,14 +273,14 @@ def do_generative_query_on_test(exp, test = False, \
 			at_iteration = 'best-{}'.format(i)
 			print('trying at: {}'.format(at_iteration))
 			learn_psdd_wrapper.generative_query_for_file(exp.psdd_out_dir, query_data_path, train_data_path, valid_data_path = valid_data_path, \
-				test = test, psdd_init_data_per = 0.1, type_of_query = type_of_query, fl_to_query = fl_to_query, y_condition = y_condition, at_iteration = at_iteration)
+				test = testing, psdd_init_data_per = 0.1, type_of_query = type_of_query, fl_to_query = fl_to_query, y_condition = y_condition, at_iteration = at_iteration)
 			break
 		except Exception as e:
 			print('caught exception: {}'.format(e))
 			# print(traceback.format_exc())
 			continue
 
-def do_generative_query_for_labels(exp, test = False, type_of_query = 'bin'):
+def do_generative_query_for_labels(exp, testing = False, type_of_query = 'bin'):
 
 	try:
 		train_data_path, valid_data_path, query_data_path = exp.get_data_files()
@@ -313,7 +313,7 @@ def do_generative_query_for_labels(exp, test = False, type_of_query = 'bin'):
 				at_iteration = 'best-{}'.format(best_i)
 				print('trying at: {}'.format(at_iteration))
 				learn_psdd_wrapper.generative_query_for_file(exp.psdd_out_dir, file_name, train_data_path, valid_data_path = valid_data_path, \
-					test = test, psdd_init_data_per = 0.1 if not test else 0.01, type_of_query = type_of_query, fl_to_query = fl_to_query, at_iteration = at_iteration)
+					test = testing, psdd_init_data_per = 0.1 if not testing else 0.01, type_of_query = type_of_query, fl_to_query = fl_to_query, at_iteration = at_iteration)
 				break
 			except Exception as e:
 				print('caught exception: {}'.format(e))
@@ -519,8 +519,8 @@ def do_everything(exp, vtree_method = 'miBlossom', num_compent_learners = 10, ty
 if __name__ == '__main__':
 
 	# decode_all_possible()
-	# evaluate_all_missing(display_exp = True)
-	sample_all_missing(display_exp = False, only_first = False)
+	evaluate_all_missing(display_exp = True)
+	# sample_all_missing(display_exp = False, only_first = False)
 
 	# experiment_parent_name = 'ex_7_mnist_32_2'
 	# cluster_id = 'james11'
