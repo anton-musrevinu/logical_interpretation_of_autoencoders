@@ -793,13 +793,13 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 				if y_condition is not None:
 					line_split = line.split(',')
 					fly = list(map(int, line_split[fl_info['fly'].encoded_start_idx: fl_info['fly'].encoded_end_idx]))
-					if any(fly != y_condition) and not impossible_examples:
+					if fly != y_condition and not impossible_examples:
 						continue
-					elif any(fly != y_condition) and impossible_examples:
+					elif fly != y_condition and impossible_examples:
 						for fly_idx, line_idx in enumerate(range(fl_info['fly'].encoded_start_idx, fl_info['fly'].encoded_end_idx)):
 							line_split[i] = fly[fly_idx]
 						line = list_to_cs_string(line_split)
-					elif all(fly == y_condition) and impossible_examples:
+					elif fly == y_condition and impossible_examples:
 						continue
 				f.write(line)
 				written_samples += 1
