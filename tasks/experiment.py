@@ -262,7 +262,7 @@ def do_generative_query(exp, testing = False, type_of_query = 'bin'):
 	do_decode_class_samples(exp)
 
 def do_generative_query_on_test(exp, testing = False, \
-	fl_to_query = ['flx'], type_of_query = 'dis', y_condition = None):
+	fl_to_query = ['flx'], type_of_query = 'dis', y_condition = None, impossible_examples = False):
 
 	print('[SAMPLING] - START ON: \t{} -- {}'.format(exp, type_of_query))
 
@@ -277,11 +277,12 @@ def do_generative_query_on_test(exp, testing = False, \
 			at_iteration = 'best-{}'.format(i)
 			print('trying at: {}'.format(at_iteration))
 			learn_psdd_wrapper.generative_query_for_file(exp.psdd_out_dir, query_data_path, train_data_path, valid_data_path = valid_data_path, \
-				test = testing, psdd_init_data_per = 0.1, type_of_query = type_of_query, fl_to_query = fl_to_query, y_condition = y_condition, at_iteration = at_iteration)
+				test = testing, psdd_init_data_per = 0.1, type_of_query = type_of_query, fl_to_query = fl_to_query, y_condition = y_condition, \
+				at_iteration = at_iteration, impossible_examples = impossible_examples)
 			break
 		except Exception as e:
 			print('caught exception: {}'.format(e))
-			# print(traceback.format_exc())
+			print(traceback.format_exc())
 			continue
 
 def do_generative_query_for_labels(exp, testing = False, type_of_query = 'bin'):
