@@ -1324,13 +1324,14 @@ object Main {
 
               val random = new Random
 
-              var fl_evidence:Map[Int,Boolean] = Map()
-                assigned_vars.foreach{j =>
-                  fl_evidence += (j -> assignment.backend(i)(j)) 
-                }
+
 
               for ( i <- 0 to nb_queries_total -1) {
                 var fl_sampled:Map[Int,Boolean] = Map()
+                var fl_evidence:Map[Int,Boolean] = Map()
+                assigned_vars.foreach{j =>
+                  fl_evidence += (j -> assignment.backend(i)(j)) 
+                }
 
                 var unsassinged_stack = unassigned_vars.toList
                 // var fl_sampled:Map[Int,Boolean] = Map()
@@ -1407,12 +1408,13 @@ object Main {
               val pw_samples = new PrintWriter(new File(config.out + "_dis.data"))
 
               val random = new Random
-              var fl_evidence:Map[Int,Boolean] = Map()
-              assigned_bin_vars.foreach{j =>
-                fl_evidence += (j -> assignment.backend(i)(j)) 
-              }
+              
               for ( i <- 0 to nb_queries_total -1) {
                 var fl_sampled:Map[Int,Boolean] = Map()
+                var fl_evidence:Map[Int,Boolean] = Map()
+                assigned_bin_vars.foreach{j =>
+                  fl_evidence += (j -> assignment.backend(i)(j)) 
+                }
 
                 var unsassinged_stack = unassigned_bin_vars
                 // var fl_sampled:Map[Int,Boolean] = Map()
