@@ -114,6 +114,10 @@ class VAEManager(BaseManager):
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_blor-encoded-{}.data'.format(self.opt.dataset, type_of_data))
 				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
+		elif task_type == 'blxor':
+			for type_of_data in ['train', 'valid', 'test']:
+				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_blxor-encoded-{}.data'.format(self.opt.dataset, type_of_data))
+				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
 		elif task_type == 'g4land':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_g4and-encoded-{}.data'.format(self.opt.dataset, type_of_data))
