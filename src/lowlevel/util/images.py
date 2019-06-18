@@ -39,7 +39,8 @@ def get_examples_image_for_epoch(save_dir, epoch_idx, image_size = 28):
     path = os.path.join(save_dir, 'transfer_example_epoch_{}.png'.format(epoch_idx))
     image = Image.open(path)
     elems = 21
-    rows = (image.size[1] -2 ) / (image_size + 2)
+    print(image.size[1], image.size[1] - 2,(image.size[1] - 2 ) / (image_size + 2))
+    rows = (image.size[1] - 2 ) / (image_size + 4)
     # print('number of rows: {}'.format(rows))
     columns = 3
     whole_image_w = (image.size[0] -2 ) / columns
