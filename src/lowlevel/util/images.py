@@ -35,15 +35,23 @@ def read_expiriment_data(expirimentDir):
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
+def infer_offest(panel_image_size, image_size, current_offset):
+    remainder = float(panel_image_size - current_offset) % (image_size + current_offset)
+    if remainder == 0:
+        return current_offset
+    else:
+        infer_offest(panel_image_size, image_size, current_offset + 1)
+
+
 def get_examples_image_for_epoch(save_dir, epoch_idx, image_size = 28):
     path = os.path.join(save_dir, 'transfer_example_epoch_{}.png'.format(epoch_idx))
     image = Image.open(path)
     elems = 21
-    print(image.size[1], image.size[1] - 2,(image.size[1] - 2 ) / (image_size + 2))
-    rows = (image.size[1] - 2 ) / (image_size + 4)
+    offset = infer_offest(image.size[1], image_size, 1)
+    rows = (image.size[1] - offset ) / (image_size + offset)
     # print('number of rows: {}'.format(rows))
     columns = 3
-    whole_image_w = (image.size[0] -2 ) / columns
+    whole_image_w = (image.size[0] - offset ) / columns
     print(rows, image_size, epoch_idx, image, columns, whole_image_w)
     line_num = random.randint(0, rows - 1)
     # padding = int((image.size[0] - 6 * image_size) / 7)
