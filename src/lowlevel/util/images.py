@@ -43,6 +43,7 @@ def get_examples_image_for_epoch(save_dir, epoch_idx, image_size = 28):
     # print('number of rows: {}'.format(rows))
     columns = 3
     whole_image_w = (image.size[0] -2 ) / columns
+    print(rows, image_size, epoch_idx, image, columns, whole_image_w)
     line_num = random.randint(0, rows - 1)
     # padding = int((image.size[0] - 6 * image_size) / 7)
     padding = 2
