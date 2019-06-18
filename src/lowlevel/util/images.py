@@ -40,7 +40,7 @@ def infer_offest(panel_image_size, image_size, current_offset):
     if remainder == 0:
         return current_offset
     else:
-        infer_offest(panel_image_size, image_size, current_offset + 1)
+        return infer_offest(panel_image_size, image_size, current_offset + 1)
 
 
 def get_examples_image_for_epoch(save_dir, epoch_idx, image_size = 28):
