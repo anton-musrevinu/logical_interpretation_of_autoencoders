@@ -38,6 +38,7 @@ def is_image_file(filename):
 def infer_offest(panel_image_size, image_size, current_offset):
     remainder = float(panel_image_size - current_offset) % (image_size + current_offset)
     if remainder == 0:
+        print('[INFO] -- offset found with value: {}'.format(current_offset))
         return current_offset
     else:
         return infer_offest(panel_image_size, image_size, current_offset + 1)
@@ -55,13 +56,13 @@ def get_examples_image_for_epoch(save_dir, epoch_idx, image_size = 28):
     # print(rows, image_size, epoch_idx, image, columns, whole_image_w)
     line_num = random.randint(0, rows - 1)
     # padding = int((image.size[0] - 6 * image_size) / 7)
-    padding = 2
-    box = (0, line_num * (image_size + padding) + padding, whole_image_w + 2 * padding, (line_num + 1) * (image_size + padding))    
+    # padding = 2
+    box = (0, line_num * (image_size + offset) + padding, whole_image_w, (line_num + 1) * (image_size + offset))    
     image_line = image.crop(box)#left, upper, right, lower
 
     # print(box,image.size, image_line.size)
     # image_line.show()
-    return image_line
+    return image_line, offset
     # image_line.show( )
 
 def make_time_image(image_dir, image_size = 28):
@@ -77,7 +78,6 @@ def make_time_image(image_dir, image_size = 28):
 
     num_of_examples_to_show = min(20, len(file_names))
 
-    padding = 2
     # print('num_of_examples_to_show',num_of_examples_to_show)
 
     save_epochs = list(map(int, np.linspace(1,len(file_names),num_of_examples_to_show, endpoint = True)))
@@ -85,7 +85,10 @@ def make_time_image(image_dir, image_size = 28):
 
     image_lines = []
     for i in save_epochs:
-        image_lines.append(get_examples_image_for_epoch(image_dir, i,image_size = image_size))
+        image_line, offset = get_examples_image_for_epoch(image_dir, i,image_size = image_size)
+        image_lines.append(image_line)
+
+    padding = offset
     # image_lines[0].show()
     # print('one image line: {}'.format(image_lines[0].size))
     total_height = (num_of_examples_to_show) * (image_size + padding) + padding
