@@ -4,11 +4,16 @@ import numpy as np
 import random
 
 class FASHIONLOGICDataset(FASHIONDataset):
-	def __init__(self, opt, type_of_data, mydir = None, additional_constraint_on_data = True, relational_func = lambda a,b: a and b, domain_constraints = True):
+	def __init__(self, opt, type_of_data, mydir = None,\
+		 additional_constraint_on_data = lambda a,b: True, \
+		 relational_func = lambda a,b: a and b,\
+		  domain_constraints = lambda a: True,
+		  y_classes = 2):
 		FASHIONDataset.__init__(self, opt, type_of_data, mydir)
 		self.additional_constraint_on_data = additional_constraint_on_data
 		self.relational_func = relational_func
 		self.domain_constraints = domain_constraints
+		self.y_classes = y_classes
 
 		self.allign_data_for_func(additional_constraint_on_data, relational_func, domain_constraints)
 
@@ -50,7 +55,7 @@ class FASHIONLOGICDataset(FASHIONDataset):
 
 
 	def __str__(self):
-		return 'domains: 2, num_points: {}, domain_x {}'.format(self.num_data_points, super(FASHIONLOGICDataset, self).__str__())
+		return 'domains: 2, y_classes: {}, num_points: {}, domain_x {}'.format(self.y_classes,self.num_data_points, super(FASHIONLOGICDataset, self).__str__())
 
 	def __getitem__(self, index):
 		"""Return a data point and its metadata information.
@@ -67,4 +72,4 @@ class FASHIONLOGICDataset(FASHIONDataset):
 
 		return {'domain_a': super(FASHIONLOGICDataset, self).__getitem__(self.domain_a[index]),\
 				 'domain_b': super(FASHIONLOGICDataset, self).__getitem__(self.domain_b[index]), \
-				 'y_label': self.to_one_of_k(int(self.y_label[index]), 2)}
+				 'y_label': self.to_one_of_k(int(self.y_label[index]), self.y_classes)}

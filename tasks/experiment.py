@@ -636,8 +636,8 @@ if __name__ == '__main__':
 	# evaluate_all_missing(display_exp = True)
 	# sample_all_missing(display_exp = True, only_first = False, types_of_query = ['dis'])
 
-	experiment_parent_name = 'ex_7_mnist_32_2'
-	cluster_id = 'james02'
+	experiment_parent_name = 'ex_9_fashion_32_2'
+	cluster_id = 'james04'
 	task_type = 'plus-ring-10'
 	data_per = 1
 	compress_fly = False

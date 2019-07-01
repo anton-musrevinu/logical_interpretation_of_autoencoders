@@ -55,7 +55,7 @@ class MNISTLOGICDataset(MNISTDataset):
 
 
 	def __str__(self):
-		return 'domains: 2, num_points: {}, domain_x {}'.format(self.num_data_points, super(MNISTLOGICDataset, self).__str__())
+		return 'domains: 2, y_classes: {}, num_points: {}, domain_x {}'.format(self.y_classes, self.num_data_points, super(MNISTLOGICDataset, self).__str__())
 
 	def __getitem__(self, index):
 		"""Return a data point and its metadata information.
