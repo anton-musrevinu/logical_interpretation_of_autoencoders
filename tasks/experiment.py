@@ -636,11 +636,11 @@ if __name__ == '__main__':
 	# evaluate_all_missing(display_exp = True)
 	# sample_all_missing(display_exp = True, only_first = False, types_of_query = ['dis'])
 
-	experiment_parent_name = 'ex_9_fashion_32_2'
-	cluster_id = 'james04'
+	experiment_parent_name = 'ex_7_mnist_32_2'
+	cluster_id = 'james06'
 	task_type = 'plus-ring-10'
 	data_per = 1
-	compress_fly = False
+	compress_fly = True
 	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
 	# do_make_class_samples_smaller(exp)
 	do_everything(exp, do_encode_data = True)

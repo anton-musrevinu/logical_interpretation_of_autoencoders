@@ -2,6 +2,10 @@ TO RUNNING =====================================================================
 
 Could do:
 
+plus-ring-10 mnist james02
+plus-ring-10 fahsion james04
+
+
 single PSDD with (constraints) vs (without constraints) vs (without constraints and uncompressed)
 
 confidence analysis --> need new dataset creater that enusres to have impossible vs. impossible scenariaos
