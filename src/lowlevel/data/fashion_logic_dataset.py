@@ -1,4 +1,4 @@
-from data.mnist_dataset import FASHIONDataset
+from data.fashion_dataset import FASHIONDataset
 import os.path
 import numpy as np
 import random
