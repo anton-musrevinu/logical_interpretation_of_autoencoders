@@ -7,11 +7,13 @@ class MNISTLOGICDataset(MNISTDataset):
 	def __init__(self, opt, type_of_data, mydir = None,\
 		 additional_constraint_on_data = lambda a,b: True, \
 		 relational_func = lambda a,b: a and b,\
-		  domain_constraints = lambda a: True):
+		  domain_constraints = lambda a: True,
+		  y_classes = 2):
 		MNISTDataset.__init__(self, opt, type_of_data, mydir)
 		self.additional_constraint_on_data = additional_constraint_on_data
 		self.relational_func = relational_func
 		self.domain_constraints = domain_constraints
+		self.y_classes = y_classes
 
 		self.allign_data_for_func(additional_constraint_on_data, relational_func, domain_constraints)
 
@@ -70,4 +72,4 @@ class MNISTLOGICDataset(MNISTDataset):
 
 		return {'domain_a': super(MNISTLOGICDataset, self).__getitem__(self.domain_a[index]),\
 				 'domain_b': super(MNISTLOGICDataset, self).__getitem__(self.domain_b[index]), \
-				 'y_label': self.to_one_of_k(int(self.y_label[index]), 2)}
+				 'y_label': self.to_one_of_k(int(self.y_label[index]), self.y_classes)}

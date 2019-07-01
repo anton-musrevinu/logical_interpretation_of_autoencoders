@@ -326,6 +326,7 @@ class VAEManager(BaseManager):
 		return True
 
 	def encode_logic_dataset(self, file_encoded_path, task_type, type_of_data = 'train', limit_conversion = -1, y_classes = 2, args_for_dataset = {}):
+		args_for_dataset['y_classes'] = y_classes
 		dataset_to_encode = create_dataset(self.opt, self.opt.dataset + '_logic', type_of_data = type_of_data, args_for_dataset = args_for_dataset)
 		self.encode_3_part_dataset(file_encoded_path, dataset_to_encode, limit_conversion, y_classes)
 
