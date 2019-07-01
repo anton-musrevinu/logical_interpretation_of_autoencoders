@@ -799,6 +799,7 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 				if nbqueries > 0 and written_samples >= nbqueries:
 					break
 	query_data_path = sample_data_path
+	write('query file with {} queries created based on y_condition: {} from orignal with {} examples'.format(written_samples, y_condition,line_idx))
 
 	if psdd_init_data_per != 1:
 		sample_data_path = train_data_path + '.sample'
