@@ -1,0 +1,33 @@
+dataset, FL categorical size, categorical dimension, MSE, Model Space
+
+
+emnist,	256,	4,		 ,  2^512
+emnist,	256,	1,		 ,  2^256
+
+emnist,	128,  16,		 ,  2^512
+emnist,	128,   8,  0.0068,  2^384
+emnist,	128,   4,  0.0066,  2^256
+emnist,	128,   2,  0.0105,  2^128
+
+emnist,	64,	  32,	     ,  2^512
+emnist,	64,	  16,		 ,  2^256
+emnist,	64,	   8,  0.0080,  2^192
+emnist,	64,	   4,  0.0088,  2^128
+emnist,	64,	   2,  0.0157,  2^64
+
+emnist,	32,	  32,		 ,  2^256
+emnist,	32,	  16,        ,  2^128
+emnist,	32,	   8,  0.0106,  2^96
+emnist,	32,	   4,  0.0126,  2^64
+emnist,	32,	   2,  0.0274,  2^32
+
+emnist,	16,	  32,		 ,  2^128
+emnist,	16,	  16,		 ,  2^64
+emnist,	16,	   8,		 ,  2^48
+emnist,	16,	   4,		 ,  2^32
+emnist,	16,	   2,		 ,  2^16
+ 
+
+#error_flx_c4 < error_fl(x*2)_c2
+#error_flx_c8 > error_fl(x*2)_c4
+

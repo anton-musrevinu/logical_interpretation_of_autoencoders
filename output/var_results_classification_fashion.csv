@@ -1,0 +1,6 @@
+dataset, FL c.s., c.d., MSE, model space comp., best it, best ll, vtree method, compressed y, class acc
+fashion,	24,	2,	0.0198,	2^{24},	346,	-1.1e+01,	miBlossom,	False,	0.7052
+fashion,	24,	2,	0.0198,	2^{24},	425,	-1.1e+01,	miBlossom,	True,	0.6961
+fashion,	32,	2,	0.0177,	2^{32},	213,	-1.4e+01,	miBlossom,	False,	0.7534
+fashion,	32,	2,	0.0177,	2^{32},	145,	-1.4e+01,	miBlossom,	True,	0.7193
+fashion,	40,	2,	0.0156,	2^{40},	95,	-2e+01,	miBlossom,	True,	0.6641

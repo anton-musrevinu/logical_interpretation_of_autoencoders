@@ -1,0 +1,2 @@
+dataset, FL c.s., c.d., MSE, task type, best it, best ll, vtree method, compressed y, class acc
+fashion,	32,	2,	0.0177, 	blxor,	581,	-2.5e+01,	miBlossom,	True,	0.882
