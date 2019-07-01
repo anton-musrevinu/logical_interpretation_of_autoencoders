@@ -634,16 +634,16 @@ if __name__ == '__main__':
 
 	# decode_all_possible(display_exp = True)
 	# evaluate_all_missing(display_exp = True)
-	sample_all_missing(display_exp = True, only_first = False, types_of_query = ['dis'])
+	# sample_all_missing(display_exp = True, only_first = False, types_of_query = ['dis'])
 
-	# experiment_parent_name = 'ex_7_mnist_32_2'
-	# cluster_id = 'james01'
-	# task_type = 'bland'
-	# data_per = 1
-	# compress_fly = False
-	# exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
-	# # do_make_class_samples_smaller(exp)
-	# # do_everything(exp, do_encode_data = True)
+	experiment_parent_name = 'ex_7_mnist_32_2'
+	cluster_id = 'james02'
+	task_type = 'plus-ring-10'
+	data_per = 1
+	compress_fly = False
+	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
+	# do_make_class_samples_smaller(exp)
+	do_everything(exp, do_encode_data = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'bin', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'dis', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 	

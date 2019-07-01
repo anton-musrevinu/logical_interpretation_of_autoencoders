@@ -139,6 +139,12 @@ class VAEManager(BaseManager):
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_plus-encoded-{}.data'.format(self.opt.dataset, type_of_data))
 				args_for_dataset = {'relational_func': lambda a,b: a + b}
 				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion, y_classes = 19)
+		elif task_type.task_type.startswith('plus-ring-'):
+			ring = int(task_type.split('-')[2])
+			for type_of_data in ['train', 'valid', 'test']:
+				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_plus-ring-{}-encoded-{}.data'.format(self.opt.dataset,ring, type_of_data))
+				args_for_dataset = {'relational_func': lambda x,y: (x + y) % ring}
+				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion, y_classes = ring)
 		elif task_type.startswith('noisy-'):
 			noisiness = int(task_type.split('-')[1])
 			args_for_dataset = {'noisiness': noisiness}
