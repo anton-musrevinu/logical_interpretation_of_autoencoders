@@ -4,7 +4,10 @@ import numpy as np
 import random
 
 class MNISTLOGICDataset(MNISTDataset):
-	def __init__(self, opt, type_of_data, mydir = None, additional_constraint_on_data = True, relational_func = lambda a,b: a and b, domain_constraints = True):
+	def __init__(self, opt, type_of_data, mydir = None,\
+		 additional_constraint_on_data = lambda a,b: True, \
+		 relational_func = lambda a,b: a and b,\
+		  domain_constraints = lambda a: True):
 		MNISTDataset.__init__(self, opt, type_of_data, mydir)
 		self.additional_constraint_on_data = additional_constraint_on_data
 		self.relational_func = relational_func
