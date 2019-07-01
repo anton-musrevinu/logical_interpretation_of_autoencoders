@@ -1153,7 +1153,7 @@ object Main {
             sddMgr.useAutoGcMin(false)
 
 
-            val pw = new PrintWriter(new File(config.out + ".info"))
+            val pw = new PrintWriter(new File(config.out + "_" + config.mode + ".info"))
 
             print("Prepare psdd manager...")
             val vtree = VtreeNode.read(config.vtree)
@@ -1218,18 +1218,27 @@ object Main {
 
             if(config.mode == "classify"){
 
+              if (fls_to_query.length != 1){
+                var out_str = "classify only supoorts one varibel to query but given where: " + fls_to_query
+                println(out_str)
+                pw.write(out_str + '\n')
+                pw.close()
+                return -1
+              }
+
+              var class_fl = fls_to_query(0)
               //fls_maps must contain fly
 
               var ymaps:Seq[Map[Int,Boolean]] = null
-              if (fls_maps("fly")(idx_binary_encoded) == 1){
-                ymaps = Seq.tabulate(fls_maps("fly")(idx_var_cat_dim))(x => int2map(x, fls_maps("fly")(idx_end_idx) - fls_maps("fly")(idx_start_idx), fls_maps("fly")(idx_start_idx)))
+              if (fls_maps(class_fl)(idx_binary_encoded) == 1){
+                ymaps = Seq.tabulate(fls_maps(class_fl)(idx_var_cat_dim))(x => int2map(x, fls_maps(class_fl)(idx_end_idx) - fls_maps(class_fl)(idx_start_idx), fls_maps("fly")(idx_start_idx)))
               }else {
-                ymaps = Seq.tabulate(fls_maps("fly")(idx_var_cat_dim))(x => int2onehot(x, fls_maps("fly")(idx_end_idx) - fls_maps("fly")(idx_start_idx), fls_maps("fly")(idx_start_idx)))
+                ymaps = Seq.tabulate(fls_maps(class_fl)(idx_var_cat_dim))(x => int2onehot(x, fls_maps(class_fl)(idx_end_idx) - fls_maps(class_fl)(idx_start_idx), fls_maps("fly")(idx_start_idx)))
               }
               println( "Calculated ymaps: " + ymaps)
               pw.write("Calculated ymaps: " + ymaps + '\n')
 
-              var priors:Seq[BigDecimal] = Seq.tabulate(fls_maps("fly")(idx_var_cat_dim))(x =>
+              var priors:Seq[BigDecimal] = Seq.tabulate(fls_maps(class_fl)(idx_var_cat_dim))(x =>
                 Seq.tabulate(numComponents)(xx => PsddQueries.bigDecimalProb(psdds(xx), ymaps(x)) * componentweights(xx)).sum
                 )
               println("Calculated Priors: " + priors)
@@ -1240,7 +1249,7 @@ object Main {
               println(" done!")
               var accuracy:Seq[Int] = Seq()
               val nb_queries_total = (assignment.backend.length)
-              val one_hundreth_of_total_queries = (nb_queries_total/100).toInt
+              val one_hundreth_of_total_queries = if (nb_queries_total > 100) (nb_queries_total/100).toInt else 1
               println("nb_queries_total: " + nb_queries_total)
               println("one_hundreth_of_total_queries: " + one_hundreth_of_total_queries)
               for ( i <- 0 to nb_queries_total -1) {
@@ -1251,7 +1260,7 @@ object Main {
                   if (j == 0){
                     println("INDEXING MISTAKE AT POS: adsfadsfasfd (assuming 1 - ..)")
                   }
-                  if(fls_maps("fly")(idx_start_idx) < j && j <= fls_maps("fly")(idx_end_idx)){
+                  if(fls_maps(class_fl)(idx_start_idx) < j && j <= fls_maps(class_fl)(idx_end_idx)){
                     actual_label += (j -> assignment.backend(i)(j))
                   } else {
                     xmap += (j -> assignment.backend(i)(j))
@@ -1263,7 +1272,7 @@ object Main {
                 var highestProbIdx = 0
                 var correct_class_prob:BigDecimal = 0.0
 
-                for (j <- 0 to fls_maps("fly")(idx_var_cat_dim) - 1){
+                for (j <- 0 to fls_maps(class_fl)(idx_var_cat_dim) - 1){
                   var assignment_tmp = xmap ++ ymaps(j)
                   var result = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), assignment_tmp) * componentweights(x)).sum
                   result = result/priors(j)
@@ -1304,7 +1313,7 @@ object Main {
               pw.close
             }
 
-            if(config.mode == "generateive_query_bin"){
+            if(config.mode == "generative_query_bin"){
 
               print("Read Assignment...")
               val assignment = Assignment.readFromFile(config.query)
@@ -1324,7 +1333,7 @@ object Main {
 
               val random = new Random
 
-
+              var sumConfidence:BigDecimal = 0
 
               for ( i <- 0 to nb_queries_total -1) {
                 var fl_sampled:Map[Int,Boolean] = Map()
@@ -1365,6 +1374,7 @@ object Main {
                 var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_fully_assigned) * componentweights(x)).sum
                 var prob_div:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_evidence) * componentweights(x)).sum
                 var prob_fl_fully_assigned = prob_num/prob_div 
+                sumConfidence = sumConfidence + prob_fl_fully_assigned
 
                 for(j <- 1 to total_size - 1){
                   pw_samples.write("%d,".format(if (fl_fully_assigned(j)) 1 else 0))
@@ -1374,19 +1384,20 @@ object Main {
 
                 if ((i) % one_hundreth_of_total_queries == 0 && i != 0){
                   var current_percent = BigDecimal((i/nb_queries_total.toDouble) * 100).setScale(0, BigDecimal.RoundingMode.CEILING)
+                  var current_confidence = sumConfidence/i.toDouble
 
-                  var outputString = "computed :" + current_percent + "% (" + i + ") \tof all queries \n"
+                  var outputString = "computed :" + current_percent + "% (" + i + ") \tof all queries - ave confidence: " + current_confidence + "\n"
                   print(outputString)
                   pw.write(outputString)
                 }
 
               }
-
+              pw.write("Overall confidence in the genreated samples is: " + sumConfidence.toDouble/nb_queries_total.toDouble + "\n")
               pw.close
               pw_samples.close
             }
 
-            if(config.mode == "generateive_query_dis"){
+            if(config.mode == "generative_query_dis"){
 
               print("Read Assignment...")
               val assignment = Assignment.readFromFile(config.query)
@@ -1408,6 +1419,7 @@ object Main {
               val pw_samples = new PrintWriter(new File(config.out + "_dis.data"))
 
               val random = new Random
+              var sumConfidence:BigDecimal = 0
               
               for ( i <- 0 to nb_queries_total -1) {
                 var fl_sampled:Map[Int,Boolean] = Map()
@@ -1486,6 +1498,7 @@ object Main {
                 var prob_num:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_fully_assigned) * componentweights(x)).sum
                 var prob_div:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), fl_evidence) * componentweights(x)).sum
                 var prob_fl_fully_assigned = prob_num/prob_div 
+                sumConfidence = sumConfidence + prob_fl_fully_assigned
 
                 //Write resulting fl_assignment to file with corresponding probability
                 for(j <- 1 to total_size - 1){
@@ -1496,14 +1509,16 @@ object Main {
 
                 if ((i) % one_hundreth_of_total_queries == 0 && i != 0){
                   var current_percent = BigDecimal((i/nb_queries_total.toDouble) * 100).setScale(0, BigDecimal.RoundingMode.CEILING)
+                  var current_confidence = sumConfidence.toDouble/i.toDouble
 
-                  var outputString = "computed :" + current_percent + "% (" + i + ") \tof all queries \n"
+                  var outputString = "computed :" + current_percent + "% (" + i + ") \tof all queries - ave confidence: " + current_confidence + "\n"
                   print(outputString)
                   pw.write(outputString)
                 }
 
               }
 
+              pw.write("Overall confidence in the genreated samples is: " + sumConfidence.toDouble/nb_queries_total.toDouble + "\n")
               pw.close
               pw_samples.close
             }

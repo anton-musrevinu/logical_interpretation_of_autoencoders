@@ -117,6 +117,7 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
             //Find element to delete if bestKiterations map already equals k in size
             var iteration_to_del = -1
             var worstLl = Double.PositiveInfinity
+            //Retrieve the model iteration wich has the LOWEST (neg) logLikelihood
             bestKiterations.keys.foreach{i =>
               if (bestKiterations(i) < worstLl){
                iteration_to_del = i

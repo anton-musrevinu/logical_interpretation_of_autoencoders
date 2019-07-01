@@ -1,33 +1,90 @@
 import os,sys
 sys.path.append('..')
 from src import learn_psdd_wrapper as learn_psdd_wrapper
-from src.lowlevel.util.psdd_interface import read_info_file, convert_onehot_to_binary
+from src.lowlevel.util.psdd_interface import read_info_file, convert_onehot_to_binary, FlDomainInfo
 from src.lowlevel.util.psdd_interface import write_fl_batch_to_file_new as write_fl_batch_to_file
 import numpy as np
 import shutil
 import traceback
+import random
+
+from PIL import Image
+import PIL
 
 LOWLEVEL_CMD = '../src/lowlevel/main.py'
 WMISDD_CMD = '../src/wmisdd/wmisdd.py'
 
+class CombinatorialFunction(object):
+	def __init__(self, task_type):
+		self.task_type = task_type
+		self.func = self.get_function_for_identifier(task_type)
+
+	def get_function_for_identifier(self, task_type):
+		if task_type == 'bland':
+			return lambda x,y: x and y
+		elif task_type == 'blor':
+			return lambda x,y: x or y
+		elif task_type == 'blxor':
+			return lambda x,y: x != y
+		elif task_type == 'g7land':
+			return lambda x,y: x > 7 and y > 7
+		elif task_type == 'g4land':
+			return lambda x,y: x > 4 and y > 4
+		elif task_type == 'plus':
+			return lambda x,y: x + y
+		elif task_type.startswith('plus-ring-'):
+			ring = int(task_type.split('-')[2])
+			return lambda x,y: (x + y) % ring
+		else:
+			return None
+
+	def get_image_size(self, codomain_x1_size, codomain_x2_size):
+		if self.func is None:
+			raise Exception('Cant retrieve image size for given task_type ---> not a functional task')
+		results = []
+		for x1_value in range(codomain_x1_size):
+			for x2_value in range(codomain_x2_size):
+				results.append(self.func(x1_value, x2_value))
+		image_size = len(set(results))
+		return image_size
+
 class Experiment(object):
+
 	def __init__(self, experiment_parent_name, cluster_id, task_type, compress_fly = None, data_per = 1):
 		self.experiment_parent_name = experiment_parent_name
 		self.cluster_id = cluster_id
 		self.task_type = task_type
 		self.compress_fly = compress_fly
 		self.data_per = data_per
+		self.fl_info = None
 
 		self.experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(self.experiment_parent_name)))
-		self.type_of_data = 'emnist' if '_emnist_' in self.experiment_parent_name else 'mnist'
+		self.type_of_data = None
+		if '_emnist_' in self.experiment_parent_name:
+			self.type_of_data = 'emnist'
+			self.has_encoder = True
+		elif '_mnist_' in self.experiment_parent_name:
+			self.type_of_data = 'mnist'
+			self.has_encoder = True
+		elif '_fashion_' in self.experiment_dir_path:
+			self.type_of_data = 'fashion'
+			self.has_encoder = True
+		elif '_symbolic_' in self.experiment_parent_name:
+			self.type_of_data = 'symbolic'
+			self.has_encoder = False
+			if not os.path.exists(self.experiment_dir_path):
+				os.mkdir(self.experiment_dir_path)
+		else:
+			raise Exception('type of data could not be recognized: {}'.format(self))
 
 		self.psdd_out_dir = self._get_psdd_out_dir(self.experiment_dir_path, self.cluster_id, self.task_type)
 		self.encoded_data_dir = self._get_encoded_data_dir()
 
-		self.fl_info = None
 		self.set_fl_info_after_enoding()
 
 		self.evaluation_dir_path = os.path.abspath(os.path.join(self.psdd_out_dir, './evaluation/'))
+
+		self.comb_func = CombinatorialFunction(self.task_type)
 
 	def identifier(self):
 		outstr = '{}, {}, {}'.format(\
@@ -37,8 +94,9 @@ class Experiment(object):
 	def __str__(self):
 		outstr = 'EXP: parentname: {}, cluster_id: {}, task_type: {}, compress_fly: {}\n'.format(\
 			self.experiment_parent_name, self.cluster_id, self.task_type, self.compress_fly)
-		for name, data in self.fl_info.items():
-			outstr += '\t {} : {}'.format(name, data)
+		if self.fl_info is not None:
+			for name, data in self.fl_info.items():
+				outstr += '\t {} : {}'.format(name, data)
 		return outstr
 
 	def set_fl_info_after_enoding(self):
@@ -100,72 +158,81 @@ class Experiment(object):
 
 		return os.path.abspath(psdd_out_dir)
 
-	def get_data_files(self):
+	def get_data_files(self,impossible_examples = False):
 		print('Searching {} for data files'.format(self.encoded_data_dir))
+		test_data_path = None
 		for root, dir_names, file_names in os.walk(self.encoded_data_dir):
 			for i in file_names:
 				if i.endswith('train.data'):
 					train_data_path = os.path.join(root, i)
 				elif i.endswith('valid.data'):
 					valid_data_path = os.path.join(root, i)
-				elif i.endswith('test.data'):
+				elif i.endswith('test{}.data'.format('_impossible' if impossible_examples else '')):
 					test_data_path = os.path.join(root, i)
+
+		if impossible_examples and test_data_path is None:
+			create_impossible_dataset(self)
+			return self.get_data_files(impossible_examples)
 
 		return train_data_path, valid_data_path, test_data_path
 
-# def _get_psdd_out_dir(experiment_dir_path, cluster_id, task_type):
-# 	identifier = cluster_id + '_' + task_type if task_type != 'classification' else cluster_id
-
-# 	if 'ex_5' in experiment_dir_path or 'ex_6' in experiment_dir_path:
-# 		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_model_{}'.format(identifier))
-# 	else:
-# 		psdd_out_dir = os.path.join(experiment_dir_path,'./psdd_search_{}'.format(identifier))
-
-# 	return os.path.abspath(psdd_out_dir)
-
-# def _get_data_files(experiment_dir_path, cluster_id, task_type):
-	# encoded_data_dir = None
-
-	# #Read info file located at tte root of psdd_out_dir
-	# psdd_out_dir = _get_psdd_out_dir(experiment_dir_path, cluster_id, task_type)
-	# # print('psdd out dir: {}, {}, {}, {}'.format(psdd_out_dir, experiment_dir_path, cluster_id, task_type))
-	# fl_data_file = os.path.join(psdd_out_dir, './fl_data.info')
-	# if os.path.exists(fl_data_file):
-	# 	identifier = 'encoded_data_dir:'
-	# 	with open(fl_data_file, 'r') as f:
-	# 		for line in f:
-	# 			if line.startswith(identifier):
-	# 				relative_path = line.split(identifier)[-1].strip()
-	# 				joined = os.path.join(psdd_out_dir, relative_path)
-	# 				encoded_data_dir = os.path.abspath(joined)
-
-	# #Reconstruct the information in case the file does not exists (old experiemnts)
-	# if encoded_data_dir == None:
-	# 	if 'ex_7_mnist_16_4' in experiment_dir_path and 'james10' == cluster_id or\
-	# 		'ex_7_mnist_32_2' in experiment_dir_path and 'student_compute' == cluster_id:
-	# 		encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data_uncompressed_y')
-	# 	elif task_type != 'classification':
-	# 		if task_type == 'succ':
-	# 			task_type = 'successor'
-	# 		encoded_data_dir = os.path.join(experiment_dir_path, 'encoded_data_' + task_type)
-	# 	else:
-	# 		encoded_data_dir = os.path.join(experiment_dir_path,'encoded_data')
-
-	# print('Searching {} for data files'.format(encoded_data_dir))
-	# for root, dir_names, file_names in os.walk(encoded_data_dir):
-	# 	for i in file_names:
-	# 		if i.endswith('train.data'):
-	# 			train_data_path = os.path.join(root, i)
-	# 		elif i.endswith('valid.data'):
-	# 			valid_data_path = os.path.join(root, i)
-	# 		elif i.endswith('test.data'):
-	# 			test_data_path = os.path.join(root, i)
-
-	# return train_data_path, valid_data_path, test_data_path
-
 # ==========================================================================================================================================================
 # ==========================================================================================================================================================
 # ==========================================================================================================================================================
+def create_symbolic_dataset_for_task(exp):
+	compress_all = exp.compress_fly
+	categorical_dim_x = 10
+	num_variables = 1
+	train_data_per = 0.8
+	valid_data_per = 0.1
+	test_data_per = 1 - train_data_per - valid_data_per
+
+
+	categorical_dim_y = exp.comb_func.get_image_size(categorical_dim_x ** num_variables, categorical_dim_x ** num_variables)
+	codomain_x_size = categorical_dim_x ** num_variables * categorical_dim_y ** num_variables
+
+	# Create encoded data directory
+	if not os.path.exists(exp.encoded_data_dir):
+		os.mkdir(exp.encoded_data_dir)
+
+	# Write train, valid and test set to file
+	if compress_all:
+		flx_compressed_var_length = int(np.ceil(np.log2(categorical_dim_x)))
+		flx_compressed_size = flx_compressed_var_length * num_variables
+
+		fly_compressed_var_length = int(np.ceil(np.log2(categorical_dim_y)))
+		fly_compressed_size = fly_compressed_var_length * num_variables
+	else:
+		flx_compressed_size = categorical_dim_x * num_variables
+		fly_compressed_size = categorical_dim_y
+
+	flx1_info = FlDomainInfo('flx1', num_variables, categorical_dim_x, compress_all, 0, flx_compressed_size)
+	flx2_info = FlDomainInfo('flx2', num_variables, categorical_dim_x, compress_all, flx_compressed_size	, flx_compressed_size * 2)
+	fly_info = FlDomainInfo('fly',  num_variables, categorical_dim_y, compress_all, flx_compressed_size * 2, flx_compressed_size * 2 + fly_compressed_size)
+	fl_info = {'flx1':flx1_info, 'flx2':flx2_info, 'fly': fly_info}
+
+	codomain = []
+	for x1_value in range(categorical_dim_x ** num_variables):
+		for x2_value in range(categorical_dim_x ** num_variables):
+			codomain.append((x1_value, x2_value, exp.comb_func.func(x1_value, x2_value)))
+
+	random.shuffle(codomain)
+	break_point_train = int(train_data_per * len(codomain))
+	break_point_valid = int((valid_data_per + train_data_per) * len(codomain))
+	for (type_of_data, start_idx, end_idx) in [('train', 0, break_point_train), ('valid', break_point_train, break_point_valid), ('test', break_point_valid, len(codomain))]: 
+		file_encoded_path = os.path.join(exp.encoded_data_dir,'symbolic_{}-encoded-{}.data'.format(exp.task_type, type_of_data))
+		for elem_idx, (x1_value, x2_value, y_value) in enumerate(codomain[start_idx:end_idx]):  # sample batch
+			x1_batch, x2_batch = np.zeros((1,num_variables, categorical_dim_x)), np.zeros((1,num_variables, categorical_dim_x))
+			x1_batch[:,:, x1_value] += 1
+			x2_batch[:,:, x2_value] += 1
+
+			y_batch = np.zeros((1, categorical_dim_y))
+			y_batch[:, y_value] += 1
+
+			fl_encoded_size = write_fl_batch_to_file(file_encoded_path, {'flx1':x1_batch, 'flx2':x2_batch, 'fly':y_batch}, fl_info, elem_idx)
+		print('[ENCODE]\t finished creating symbolic dataset: {}-{} - size: ({},{}) \n\t\t to file: {}'.format(exp.task_type, type_of_data, elem_idx + 1, fl_encoded_size, file_encoded_path))
+		
+	# Write fl information file
 
 def learn_encoder(experiment_name, dataset = 'mnist',testing = False, ):
 	if testing:
@@ -173,11 +240,17 @@ def learn_encoder(experiment_name, dataset = 'mnist',testing = False, ):
 	else:
 		os.system('python {} --phase train --experiment_name {} --dataset {} --gpu_ids 0,1 --feature_layer_size 32 --categorical_dim 2 --num_epochs 400 --batch_size 100'.format(LOWLEVEL_CMD, experiment_name,dataset))
 
+def create_impossible_dataset(exp):
+	os.system('python {} --phase create_impossible --experiment_name {} --encoded_data_dir {} --compress_fly {} --task_type {} --data_per {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type, exp.data_per))
+
 def encode_data(exp, testing = False):
-	if testing:
-		os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --limit_conversion 300 --compress_fly {} --task_type {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type))
+	if not exp.has_encoder:
+		create_symbolic_dataset_for_task(exp)
 	else:
-		os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --compress_fly {} --task_type {} --data_per {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type, exp.data_per))
+		if testing:
+			os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --limit_conversion 300 --compress_fly {} --task_type {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type))
+		else:
+			os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --compress_fly {} --task_type {} --data_per {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type, exp.data_per))
 
 def graph_learning(experiment_parent_name):
 	os.system('python {} --experiment_name {} --phase graph'.format(LOWLEVEL_CMD,experiment_parent_name))
@@ -209,7 +282,7 @@ def do_psdd_training(exp, testing = False, do_encode_data = True, num_compent_le
 # ==========================================================================================================================================================
 # ==========================================================================================================================================================
 
-def do_classification_evaluation(exp, testing = False):
+def do_classification_evaluation(exp, testing = False, fl_to_query = 'fly'):
 	print('[CLASSIFICATION] - START ON: \t{}'.format(exp))
 	try:
 		train_data_path, valid_data_path, query_data_path = exp.get_data_files()
@@ -222,8 +295,11 @@ def do_classification_evaluation(exp, testing = False):
 		try:
 			at_iteration = 'best-{}'.format(i)
 			print('trying at: {}'.format(at_iteration))
+			psdd_init_data_per = 0.1 if not testing else 0.01
+			if not exp.has_encoder:
+				psdd_init_data_per = 1
 			learn_psdd_wrapper.measure_classification_accuracy_on_file(exp.psdd_out_dir, query_data_path, train_data_path, valid_data_path = valid_data_path, \
-									test = testing, psdd_init_data_per = 0.1 if not testing else 0.01, at_iteration = at_iteration)
+									test = testing, psdd_init_data_per = psdd_init_data_per, at_iteration = at_iteration, fl_to_query = fl_to_query)
 			break
 		except Exception as e:
 			print('caught exception: {}'.format(e))
@@ -267,7 +343,7 @@ def do_generative_query_on_test(exp, testing = False, \
 	print('[SAMPLING] - START ON: \t{} -- {}'.format(exp, type_of_query))
 
 	try:
-		train_data_path, valid_data_path, query_data_path = exp.get_data_files()
+		train_data_path, valid_data_path, query_data_path = exp.get_data_files(impossible_examples)
 	except Exception as e:
 		print('[SAMPLING] - END DUE: \tNeccesary data files could not be found')
 		return
@@ -278,7 +354,7 @@ def do_generative_query_on_test(exp, testing = False, \
 			print('trying at: {}'.format(at_iteration))
 			learn_psdd_wrapper.generative_query_for_file(exp.psdd_out_dir, query_data_path, train_data_path, valid_data_path = valid_data_path, \
 				test = testing, psdd_init_data_per = 0.1, type_of_query = type_of_query, fl_to_query = fl_to_query, y_condition = y_condition, \
-				at_iteration = at_iteration, impossible_examples = impossible_examples)
+				at_iteration = at_iteration)
 			break
 		except Exception as e:
 			print('caught exception: {}'.format(e))
@@ -324,7 +400,7 @@ def do_generative_query_for_labels(exp, testing = False, type_of_query = 'bin'):
 				print('caught exception: {}'.format(e))
 				continue
 
-def do_decode_class_samples(exp):
+def do_decode_class_samples(exp, display_exp = False):
 
 	if not os.path.exists(exp.evaluation_dir_path):
 		raise Exception('no samples could be found')
@@ -347,11 +423,37 @@ def do_decode_class_samples(exp):
 	# 	print(file)
 
 	for file in files_to_decode:
-		decode_data(exp, file)
+		if display_exp:
+			print(exp)
+		else:
+			decode_data(exp, file)
+
+def infer_offest(panel_image_size, image_size, current_offset):
+	remainder = float(panel_image_size - current_offset) % (image_size + current_offset)
+	if remainder == 0:
+		# print('[INFO] -- offset found with value: {}'.format(current_offset))
+		return current_offset
+	else:
+		return infer_offest(panel_image_size, image_size, current_offset + 1)
+
+def do_make_class_samples_smaller(exp, image_size = 28, new_nb_rows = 3):
+	print('searching ', exp.evaluation_dir_path)
+	for root, folders, files in os.walk(exp.evaluation_dir_path):
+		for file in files:
+			if file.endswith('.png') and not 'small' in file:
+				print('found file: ', file)
+				image = Image.open(os.path.join(root,file))
+				padding = int(infer_offest(image.size[1], image_size, 1) / 2)
+				rows = (image.size[1] - (padding * 2) ) / (image_size + (padding * 2))
+
+				box = (0, 0, image.size[0], (new_nb_rows) * (image_size + (padding * 2)) + padding * 2)    
+				small_image = image.crop(box)
+				small_image.save(os.path.join(root, file.replace('.png','_small.png')))
+
 # ==========================================================================================================================================================
 # ==========================================================================================================================================================
 # ==========================================================================================================================================================
-def decode_all_possible():
+def decode_all_possible(display_exp = False):
 	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
 
 	toclassify = []
@@ -359,29 +461,30 @@ def decode_all_possible():
 		for experiment_parent_name in dir_names:
 			for experiment_dir_path, dir_names_2, file_names_2 in os.walk(os.path.join(root, experiment_parent_name)):
 				for psdd_search_dir in dir_names_2:
-					if 'psdd_search' in psdd_search_dir:
-						identifier = str(psdd_search_dir).split('psdd_search_')[1].replace('/','')
-						if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
-							cluster_id = '_'.join(identifier.split('_')[:-1])
-							task_type = identifier.split('_')[-1]
-						else:
-							cluster_id = identifier
-							task_type = 'classification'
-						exp_cluster_dir = os.path.abspath(os.path.join(experiment_dir_path, psdd_search_dir))
-						progressfile = os.path.join(exp_cluster_dir, './learnpsdd_tmp_dir/progress.txt')
+					for possible_names in ['psdd_search_', 'psdd_model_']:
+						if possible_names in psdd_search_dir:
+							identifier = str(psdd_search_dir).split(possible_names)[1].replace('/','')
+							if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
+								cluster_id = '_'.join(identifier.split('_')[:-1])
+								task_type = identifier.split('_')[-1]
+							else:
+								cluster_id = identifier
+								task_type = 'classification'
+							exp_cluster_dir = os.path.abspath(os.path.join(experiment_dir_path, psdd_search_dir))
+							progressfile = os.path.join(exp_cluster_dir, './learnpsdd_tmp_dir/progress.txt')
 
-						if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
-							continue
+							if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
+								continue
 
-						evaluationDir = os.path.abspath(os.path.join(exp_cluster_dir, './evaluation'))
-						if not os.path.exists(evaluationDir):
-							continue
-							# print('added because evaldir does not exist', evaluationDir)
-						exp = Experiment(experiment_parent_name, cluster_id, task_type)
-						toclassify.append(exp)
+							evaluationDir = os.path.abspath(os.path.join(exp_cluster_dir, './evaluation'))
+							if not os.path.exists(evaluationDir):
+								continue
+								# print('added because evaldir does not exist', evaluationDir)
+							exp = Experiment(experiment_parent_name, cluster_id, task_type)
+							toclassify.append(exp)
 
 	for exp in toclassify:
-		do_decode_class_samples(exp)
+		do_decode_class_samples(exp, display_exp = display_exp)
 		# break
 
 def evaluate_all_missing(display_exp = False):
@@ -434,7 +537,7 @@ def evaluate_all_missing(display_exp = False):
 			do_classification_evaluation(exp)
 		# break
 
-def sample_all_missing(display_exp = False, only_first = False):
+def sample_all_missing(display_exp = False, only_first = False, types_of_query = ['dis', 'bin']):
 	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
 
 	toclassify = []
@@ -453,6 +556,8 @@ def sample_all_missing(display_exp = False, only_first = False):
 								task_type = 'classification'
 
 							exp = Experiment(experiment_parent_name, cluster_id, task_type)
+							if exp.type_of_data == 'symbolic':
+								continue
 
 							progressfile = os.path.join(exp.psdd_out_dir, './learnpsdd_tmp_dir/progress.txt')
 							if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
@@ -475,7 +580,7 @@ def sample_all_missing(display_exp = False, only_first = False):
 	print('\nSAMPLING for experiments:')
 	tried_count = 0
 	for (exp, type_of_query) in toclassify:
-		if exp.task_type != 'classification':
+		if exp.task_type != 'classification' and type_of_query in types_of_query:
 			if display_exp:
 				print(exp)
 			else:
@@ -484,7 +589,7 @@ def sample_all_missing(display_exp = False, only_first = False):
 		if only_first and tried_count >= 1:
 			return
 	for (exp, type_of_query) in toclassify:
-		if exp.task_type == 'classification':
+		if exp.task_type == 'classification' and type_of_query in types_of_query:
 			if display_exp:
 				print(exp)
 			else:
@@ -514,30 +619,40 @@ def do_everything(exp, vtree_method = 'miBlossom', num_compent_learners = 10, ty
 	do_psdd_training(exp, do_encode_data = do_encode_data, num_compent_learners = num_compent_learners , vtree_method = vtree_method, testing = testing)
 
 	#record classification acc on held out test set
-	do_classification_evaluation(exp, testing = testing)
+	if exp.type_of_data == 'symbolic':
+		for fl_name in exp.fl_info.keys():
+			do_classification_evaluation(exp, fl_to_query = fl_name)
+	else:
+		do_classification_evaluation(exp, testing = testing)
 
-	#Generate class samples and decode them to png
-	do_generative_query(exp, testing = testing, type_of_query = 'bin')
-	do_generative_query(exp, testing = testing, type_of_query = 'dis')
+		#Generate class samples and decode them to png
+		do_generative_query(exp, testing = testing, type_of_query = 'bin')
+		do_generative_query(exp, testing = testing, type_of_query = 'dis')
 	
 
 if __name__ == '__main__':
 
-	# decode_all_possible()
-	# evaluate_all_missing(display_exp = False)
-	# sample_all_missing(display_exp = False, only_first = False)
+	# decode_all_possible(display_exp = True)
+	# evaluate_all_missing(display_exp = True)
+	sample_all_missing(display_exp = True, only_first = False, types_of_query = ['dis'])
 
-	experiment_parent_name = 'ex_7_mnist_32_2'
-	cluster_id = 'james01'
-	task_type = 'bland'
-	data_per = 1
-	compress_fly = True
-	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
-	# do_everything(exp, do_encode_data = True)
-
-	do_generative_query(exp, type_of_query = 'bin')
-	do_generative_query(exp, type_of_query = 'dis')
-	# do_classification_evaluation(exp)
+	# experiment_parent_name = 'ex_7_mnist_32_2'
+	# cluster_id = 'james01'
+	# task_type = 'bland'
+	# data_per = 1
+	# compress_fly = False
+	# exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
+	# # do_make_class_samples_smaller(exp)
+	# # do_everything(exp, do_encode_data = True)
+	# # do_generative_query_on_test(exp, type_of_query = 'bin', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
+	# # do_generative_query_on_test(exp, type_of_query = 'dis', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
+	
+	# do_generative_query(exp, type_of_query = 'bin')
+	# do_generative_query(exp, type_of_query = 'dis')
+	# do_decode_class_samples(exp)
+	# if exp.type_of_data == 'symbolic':
+	# 	for fl_name in exp.fl_info.keys():
+	# 		do_classification_evaluation(exp, fl_to_query = fl_name)
 	# experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(experiment_name)))
 
 	# # do_everything(experiment_dir_path, cluster_id, task_type = task_type, vtree_method = 'miBlossom', do_encode_data = True, testing = False,  \

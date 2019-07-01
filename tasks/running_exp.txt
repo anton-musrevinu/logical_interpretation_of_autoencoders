@@ -2,20 +2,30 @@ TO RUNNING =====================================================================
 
 Could do:
 
-fashion -- classification
-fashion-blxor
-
 single PSDD with (constraints) vs (without constraints) vs (without constraints and uncompressed)
+
+confidence analysis --> need new dataset creater that enusres to have impossible vs. impossible scenariaos
 
 RUNNING ==================================================================================================================
 
-
-ex_7_mnist_32_2 staff_compute blxor (17.06.2019) -- vtree miBlossom
-
-ex_9 on cdtcluster learning autoencoder
+sampling all missing on james01
 
 ==========================================================================================================================
 Finished =================================================================================================================
+
+
+ex_symbolic_1_10    james10         plus            uncompressed_y  (20.06.2019)
+ex_symbolic_1_10    james11         plus-ring-10    uncompressed_y  (19.06.2019)
+
+ex_9_fashion_32_2   james03         classifcation   uncompressed_y  (18.06.2019)
+ex_9_fashion_32_2   james02         classifcation                   (18.06.2019)
+ex_9_fashion_40_2   james06         classifcation                   (18.06.2019)
+ex_9_fashion_24_2   james07         classifcation                   (18.06.2019)
+ex_9_fashion_24_2   james09         classifcation   uncompressed_y  (18.06.2019)
+
+ex_9_fashion_32_2   james08         blxor                           (18.06.2019)
+ex_7_mnist_32_2     staff_compute   blxor                           (17.06.2019) -- vtree miBlossom
+
 
 
 ex_6_emnist_32_2    jamse08_2                                            (12.06.2019) --- vtree miBlosssom

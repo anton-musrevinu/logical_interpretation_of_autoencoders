@@ -24,5 +24,9 @@ if __name__ == '__main__':
 		manager.make_graphs()
 	elif opt.phase == 'encode':
 		manager.convert_all_data(opt.task_type)
+	elif opt.phase == 'create_impossible':
+		manager.create_impossible_test_set_for_land(opt.task_type)
 	elif opt.phase == 'decode':
 		manager.decode_specific_file(opt.file_to_decode)
+	elif opt.phase == 'examples':
+		manager.make_class_examples()

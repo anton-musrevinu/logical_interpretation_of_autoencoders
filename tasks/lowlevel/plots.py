@@ -2,6 +2,23 @@ import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 import numpy as np
 from os import walk
+import os
+
+    # for k in total_losses.keys():
+    #     if "train" in k:
+    #         t = ax_1.plot(np.arange(len(total_losses[k])), total_losses[k], label=k)
+    # ax_1.legend(loc=0)
+    # ax_1.set_xlabel('Epoch number')
+    
+    
+    # fig_2 = plt.figure(figsize=(8, 4))
+    # ax_2 = fig_2.add_subplot(111)
+    # for k in total_losses.keys():
+    #     if "valid" in k:
+    #         t = ax_2.plot(np.arange(len(total_losses[k])), total_losses[k], label=k)
+    # ax_2.legend(loc=0)
+    # ax_2.set_xlabel('Epoch number')
+
 
 def plot_stats_in_graph(expirimentDir):
 
@@ -11,7 +28,7 @@ def plot_stats_in_graph(expirimentDir):
     fig_1 = plt.figure(figsize=(8, 4))
     ax_1 = fig_1.add_subplot(111)
     for k in total_losses.keys():
-        if "loss" in k:
+        if "train" in k:
             ax_1.plot(np.arange(len(total_losses[k])), total_losses[k], label=k)
     ax_1.legend(loc=0)
     ax_1.set_xlabel('Epoch number')
@@ -20,7 +37,7 @@ def plot_stats_in_graph(expirimentDir):
     fig_2 = plt.figure(figsize=(8, 4))
     ax_2 = fig_2.add_subplot(111)
     for k in total_losses.keys():
-        if "acc" in k:
+        if "valid" in k:
             ax_2.plot(np.arange(len(total_losses[k])), total_losses[k], label=k)
             ax_2.legend(loc=0)
             ax_2.set_xlabel('Epoch number')
@@ -31,7 +48,7 @@ def plot_stats_in_graph(expirimentDir):
     plt.close(fig_1)
     plt.close(fig_2)
 
-def plot_stats_in_one_graph(expirimentDir):
+def plot_stats_in_one_graph(expirimentDir, for_error):
 
     total_losses = read_expiriment_data(expirimentDir)
 
@@ -45,37 +62,38 @@ def plot_stats_in_one_graph(expirimentDir):
     fig_1 = plt.figure(figsize=(8, 4))
     ax_1 = fig_1.add_subplot(111)
     for k in total_losses.keys():
-        if "loss" in k:
+        if 'BCE' in k:
             if 'train' in k:
                 ls = linestyle_trail
             else:
                 ls = linestyle_valid
             ax_1.plot(np.arange(len(total_losses[k])), total_losses[k], label=k, c = colour_loss,ls = ls)
     ax_1.set_xlabel('Epoch number')
-    ax_1.set_ylabel('loss', color = colour_loss)
-    ax_1.set_ylim([0,1.1])
+    ax_1.set_ylabel('BCE loss term', color = colour_loss)
+    # ax_1.set_ylim([0,1.1])
     ax_2 = ax_1.twinx()
     
     for k in total_losses.keys():
-        if "acc" in k:
+        if "KLD" in k:
             if 'train' in k:
                 ls = linestyle_trail
             else:
                 ls = linestyle_valid
             ax_2.plot(np.arange(len(total_losses[k])), total_losses[k], label=k, c = colour_acc, ls = ls)
-    ax_2.set_ylabel('acc', color = colour_acc)
-    ax_2.set_ylim([0.7,1])
+    ax_2.set_ylabel('KLD loss term', color = colour_acc)
+    # ax_2.set_ylim([0.7,1])
     fig_1.legend(loc=4)
     # ax_2.set_xlabel('Epoch number')
-
+    image_save_path = os.path.join(expirimentDir,'./trainging_loss_both.pdf'.format(for_error))
+    print('saving figure at:', image_save_path)
+    fig_1.savefig(image_save_path)
     plt.show()
-    fig_1.savefig('{}/fig_all.pdf'.format(expirimentDir))
     plt.close(fig_1)
 
 def read_expiriment_data(expirimentDir):
     total_losses = {}
     indexes = {}
-    with open('{}/result_outputs/summary.csv'.format(expirimentDir),'r') as f:
+    with open('{}/result_outputs/summary.txt'.format(expirimentDir),'r') as f:
         for lineNumber, line in enumerate(f):
             if lineNumber == 0:
                 for idx,elem in enumerate(line.split(',')):
@@ -89,7 +107,7 @@ def read_expiriment_data(expirimentDir):
 
     for key in total_losses.keys():
         total_losses[key] = np.array(total_losses[key])
-        print(total_losses[key])
+        print(key,total_losses[key])
 
     return total_losses
 
@@ -127,4 +145,5 @@ def compare_test_acc_val():
 if __name__ == "__main__":
 
     # compare_test_acc_val()
-    plot_stats_in_one_graph('./exp_14/') 
+    # plot_stats_in_one_graph('./exp_14/') 
+    plot_stats_in_one_graph(os.path.join(os.environ['HOME'],'./local_storage/backup_msc/output/experiments/ex_7_mnist_32_2/VAEManager/'), 'MSE')

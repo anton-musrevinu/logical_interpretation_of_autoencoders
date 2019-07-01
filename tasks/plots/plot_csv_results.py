@@ -7,7 +7,7 @@ plt.style.use('ggplot')
 import numpy as np
 from scipy.interpolate import griddata
 
-from .make_results_file import gather_only_var_results, gather_results, get_task_type_hiracy
+from plots.make_results_file import gather_only_var_results, gather_results, get_task_type_hiracy
 from experiment import Experiment
 
 
@@ -419,12 +419,16 @@ def plot_all_psdd_learning():
 		plot_psdd_learning(i)
 
 if __name__ == '__main__':
+	BLOODBORN_BASE = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
+	myexp = os.path.join(BLOODBORN_BASE, './ex_7_mnist_32_2/psdd_search_james01/')
+	exp = Experiment('ex_7_mnist_32_2', 'james01', 'classification')
+	plot_psdd_learning(exp)
 
 	# make_vae_loss_graph_wrt_complexity('ex_7_mnist')
 	# make_vae_loss_graph_wrt_complexity('ex_6_emnist')
 	# make_acc_graph_wrt_complexity('ex_7_mnist')
 	# make_acc_graph_wrt_ll('ex_7_mnist')
-	make_acc_graph_wrt_noisy_level()
+	# make_acc_graph_wrt_noisy_level()
 	# plot_all_psdd_learning()
 
 

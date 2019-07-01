@@ -56,7 +56,7 @@ def write(message, level = 'info'):
 		raise Exception(out_string)
 	elif level == 'cmd-start':
 		out_string = '\n{}\n'.format(out_string)
-		out_string += '-'* 40 + ' CMD OUTPUT ' + '-'*40
+		out_string += '-' * 40 + ' CMD OUTPUT ' + '-' * 40
 	elif level == 'cmd-end':
 		out_string = '=' * 40 + ' CMD OUTPUT END ' + '=' * 40 + '\n' + out_string + '\n'
 
@@ -654,7 +654,7 @@ def learn_ensembly_psdd2_from_data(train_data_path, vtree_path, out_psdd_file, \
 	print('excuting: {}'.format(cmd_str))
 	os.system(cmd_str)
 
-def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, psdd_init_data_per = .1, at_iteration = 'best-0'):
+def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, psdd_init_data_per = .1, at_iteration = 'best-0', fl_to_query = 'fly'):
 
 	_check_if_file_exists(query_data_path)
 	_check_if_dir_exists(psdd_out_dir)
@@ -671,7 +671,7 @@ def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train
 		os.mkdir(evaluationDir)
 
 	if out_file == None:
-		out_file = os.path.join(evaluationDir, './classification_{}_it_{}'.format(psdd_init_data_per, at_iteration))
+		out_file = os.path.join(evaluationDir, './classification_query_{}_data_{}_it_{}'.format(fl_to_query,psdd_init_data_per, at_iteration))
 
 	if test:
 		sample_data_path = query_data_path + '.sample'
@@ -732,7 +732,7 @@ def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train
 			' --fl_binary_encoded {}'.format(str([i.bin_encoded for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
 			' --fl_encoded_start_idx {}'.format(str([i.encoded_start_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
 			' --fl_encoded_end_idx {}'.format(str([i.encoded_end_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_to_query fly' + \
+			' --fl_to_query {}'.format(fl_to_query) + \
 			' --data_bug {}'.format('data_bug' in query_data_path)
 	if valid_data_path != None:
 		cmd_str += ' -b {}'.format(valid_data_path)
@@ -751,7 +751,7 @@ class PsddQueryException(Exception):
 	pass
 
 def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, \
-							psdd_init_data_per = .1, at_iteration = 'best-0', type_of_query = 'dis', fl_to_query = ['flx'], y_condition = None, impossible_examples = False):
+							psdd_init_data_per = .1, at_iteration = 'best-0', type_of_query = 'dis', fl_to_query = ['flx'], y_condition = None, num_examples = 100):
 	_check_if_file_exists(query_data_path)
 	_check_if_dir_exists(psdd_out_dir)
 
@@ -770,8 +770,6 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 
 	if out_file == None:
 		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', '-generated_{}-it_{}'.format(list_to_cs_string(fl_to_query).replace(',','_'),at_iteration))))
-		if impossible_examples:
-			out_file += '_impossible'
 		out_file = os.path.abspath(out_file)
 	if y_condition is not None:
 		out_file = out_file.replace('generated', 'y_{}-generated'.format(list_to_cs_string(y_condition).replace(',','_')))
@@ -779,7 +777,7 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 	write('creating query and init files for psdd with outfile: {} (y_condition: {})'.format(remove_home(out_file), y_condition))
 
 
-	sample_data_path = out_file.replace('generated', 'query-input')
+	sample_data_path = out_file.replace('generated', 'query-input') + '.data'
 	shutil.copyfile(org_query_data_path + '.info', sample_data_path + '.info')
 	# if y_condition is not None:
 	# 	sample_data_path = query_data_path.replace('.data', '-y_{}.data'.format(list_to_cs_string(y_condition).replace(',','_')))
@@ -793,17 +791,12 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 				if y_condition is not None:
 					line_split = line.split(',')
 					fly = list(map(int, line_split[fl_info['fly'].encoded_start_idx: fl_info['fly'].encoded_end_idx]))
-					if fly != y_condition and not impossible_examples:
-						continue
-					elif fly != y_condition and impossible_examples:
-						for fly_idx, line_idx in enumerate(range(fl_info['fly'].encoded_start_idx, fl_info['fly'].encoded_end_idx)):
-							line_split[line_idx] = fly[fly_idx]
-						line = list_to_cs_string(line_split)
-					elif fly == y_condition and impossible_examples:
+					if fly != y_condition:
 						continue
 				f.write(line)
+				# print(line)
 				written_samples += 1
-				if written_samples >= 100:
+				if written_samples >= num_examples:
 					break
 	query_data_path = sample_data_path
 
@@ -843,7 +836,7 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
                      # // fl_encoded_start_idx: Seq[Int] = null,
                      # // fl_encoded_end_idx: Seq[Int] = null,
                      # // fl_to_query: Seq[String] = null,
-	cmd_str = 'java -jar ' + LEARNPSDD_CMD + ' query --mode generateive_query_{} '.format(type_of_query) + \
+	cmd_str = 'java -jar ' + LEARNPSDD_CMD + ' query --mode generative_query_{} '.format(type_of_query) + \
 			' --vtree {}'.format(vtree_path) + \
 			' --query {}'.format(query_data_path) + \
 			' --psdds {}'.format(list_to_cs_string(psdds)) + \
@@ -864,7 +857,7 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	out_file_info = out_file + '.info'
+	out_file_info = out_file + '_generative_query_{}.info'.format(type_of_query)
 	out_file = out_file + '_{}.data'.format(type_of_query)
 	_check_if_file_exists(out_file_info)
 	_check_if_file_exists(out_file)

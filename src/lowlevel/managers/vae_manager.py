@@ -109,26 +109,35 @@ class VAEManager(BaseManager):
 		elif task_type == 'bland':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_bland-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func'   : lambda a,b: a and b, \
+									'domain_constraints': lambda label: label == 0 or label == 1}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'blor':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_blor-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func'   : lambda a,b: a or b, \
+									'domain_constraints': lambda label: label == 0 or label == 1}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'blxor':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_blxor-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func':    lambda a,b: a != b, \
+									'domain_constraints': lambda label: label == 0 or label == 1}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'g4land':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_g4and-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func': lambda a,b: (a > 4) and (b > 4)}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'g7land':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_g7and-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path, task_type, type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func': lambda a,b: (a > 7) and (b > 7)}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'plus':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_plus-encoded-{}.data'.format(self.opt.dataset, type_of_data))
+				args_for_dataset = {'relational_func': lambda a,b: a + b}
 				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion, y_classes = 19)
 		elif task_type.startswith('noisy-'):
 			noisiness = int(task_type.split('-')[1])
@@ -150,6 +159,35 @@ class VAEManager(BaseManager):
 		else:
 			raise Exception('unknown task_type: {}'.format(task_type))
 
+	def create_impossible_test_set_for_land(self, task_type):
+		#Create a dataset for the 'land' tasks, where fly is one and the one image given is 0 (impossible)
+		if task_type not in ['bland', 'g7land', 'g4land']:
+			return
+
+		if not os.path.exists(self.opt.encoded_data_dir):
+			os.mkdir(self.opt.encoded_data_dir)
+
+		type_of_data = 'test'
+
+		additional_constraint_on_data = lambda x_label,domain_x: True if domain_x == 'domain_b' and x_label == 0 else True if domain_x != 'domain_b' else False
+			# not (domain_x == 'domain_b' and x_label == 1)
+		relational_func = lambda a, b: True
+		if task_type == 'bland':
+			additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label == 1)
+			domain_constraints = lambda label: label == 0 or label == 1
+		else:
+			if task_type   == 'g7land':
+				additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label > 7)
+			elif task_type == 'g4land':
+				additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label > 4)
+			domain_constraints = lambda label: True
+
+		args_for_dataset = {'additional_constraint_on_data': additional_constraint_on_data, \
+							'relational_func': relational_func,\
+							'domain_constraints': domain_constraints}
+
+		file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_{}-encoded-{}_impossible.data'.format(self.opt.dataset, task_type, type_of_data))
+		self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset = args_for_dataset)
 
 	def encode_specific_file(self, file_encoded_path, type_of_data = 'train', limit_conversion = -1, compress_fly = True):
 		#Create specified dataset
@@ -225,6 +263,10 @@ class VAEManager(BaseManager):
 			tosave = list(rec.values())
 			save_example_image(tosave, path)
 
+	def make_class_examples(self):
+		pass
+
+
 	def load_net_at_best_epoch(self):
 		key = 'valid_{}'.format(self.opt.for_error.upper())
 		if not key in self.best_val_model_idx:
@@ -277,8 +319,8 @@ class VAEManager(BaseManager):
 		print('[ENCODE]\t finished converting dataset: {} - size: ({},{}) \n\t\t to file: {}'.format(dataset_to_encode, stored_elements, fl_encoded_size, file_encoded_path))
 		return True
 
-	def encode_logic_dataset(self, file_encoded_path, task_type, type_of_data = 'train', limit_conversion = -1, y_classes = 2):
-		dataset_to_encode = create_dataset(self.opt, self.opt.dataset + '_' + task_type, type_of_data = type_of_data)
+	def encode_logic_dataset(self, file_encoded_path, task_type, type_of_data = 'train', limit_conversion = -1, y_classes = 2, args_for_dataset = {}):
+		dataset_to_encode = create_dataset(self.opt, self.opt.dataset + '_logic', type_of_data = type_of_data, args_for_dataset = args_for_dataset)
 		self.encode_3_part_dataset(file_encoded_path, dataset_to_encode, limit_conversion, y_classes)
 
 

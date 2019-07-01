@@ -37,7 +37,10 @@ class ExpResult(object):
 			for line in f:
 				if line.startswith('for error: valid_MSE'):
 					for_right_error = True
-				if line.strip().startswith('valid_MSE:'):
+				elif line.startswith('for error:'):
+					for_right_error = False
+
+				if for_right_error and (line.strip().startswith('valid_MSE:') or line.strip().startswith('corresponding value:')):
 					loss = float(line.strip().split(':')[-1])
 		self.loss = loss
 
@@ -57,42 +60,43 @@ class ExpResultFull(ExpResult):
 	def add_psdd_exp(self, dir):
 		for experiment_dir_path, dir_names_2, file_names_2 in os.walk(dir):
 			for psdd_search_dir in dir_names_2:
-				if 'psdd_search' in psdd_search_dir:
-					identifier = str(psdd_search_dir).split('psdd_search_')[1].replace('/','')
-					if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
-						cluster_id = '_'.join(identifier.split('_')[:-1])
-						task_type = identifier.split('_')[-1]
-					else:
-						cluster_id = identifier
-						task_type = 'classification'
+				for psdd_dir_name in ['psdd_search', 'psdd_model']:
+					if psdd_dir_name in psdd_search_dir:
+						identifier = str(psdd_search_dir).split(psdd_dir_name + '_')[1].replace('/','')
+						if len(identifier.split('_')) == 3 or (len(identifier.split('_')) == 2 and 'james' in identifier):
+							cluster_id = '_'.join(identifier.split('_')[:-1])
+							task_type = identifier.split('_')[-1]
+						else:
+							cluster_id = identifier
+							task_type = 'classification'
 
-					exp_cluster_dir = os.path.abspath(os.path.join(experiment_dir_path, psdd_search_dir))
-					progressfile = os.path.join(exp_cluster_dir, './learnpsdd_tmp_dir/progress.txt')
+						exp_cluster_dir = os.path.abspath(os.path.join(experiment_dir_path, psdd_search_dir))
+						progressfile = os.path.join(exp_cluster_dir, './learnpsdd_tmp_dir/progress.txt')
 
-					if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
-						continue
+						if not os.path.exists(progressfile) or os.path.getsize(progressfile) == 0:
+							continue
 
-					if not task_type in self.exp_psdds:
-						self.exp_psdds[task_type] = ExpPsdd(task_type)
+						if not task_type in self.exp_psdds:
+							self.exp_psdds[task_type] = ExpPsdd(task_type)
 
-					self.exp_psdds[task_type].get_best_ll_from_progress(progressfile, cluster_id)
-					self.exp_psdds[task_type].add_fly_info(experiment_dir_path, cluster_id)
+						self.exp_psdds[task_type].get_best_ll_from_progress(progressfile, cluster_id)
+						self.exp_psdds[task_type].add_fly_info(experiment_dir_path, cluster_id)
 
-					vtree_folder = os.path.join(exp_cluster_dir, './learnvtree_tmp_dir')
-					self.exp_psdds[task_type].add_vtree_method(cluster_id, vtree_folder)
+						vtree_folder = os.path.join(exp_cluster_dir, './learnvtree_tmp_dir')
+						self.exp_psdds[task_type].add_vtree_method(cluster_id, vtree_folder)
 
-					evaluationDir = os.path.abspath(os.path.join(exp_cluster_dir, './evaluation'))
-					if not os.path.exists(evaluationDir):
-						continue
-						# print('added because evaldir does not exist', evaluationDir)
-					else:
-						for root_3, dir_names_3, file_names_3 in os.walk(evaluationDir):
-							if not any(['classification' in file_name for file_name in file_names_3]):
-								continue
-							else:
-								for file_4 in file_names_3:
-									if 'classification' in file_4 and file_4.endswith('.info') and os.path.getsize(os.path.join(root_3, file_4)) != 0:
-										self.exp_psdds[task_type].extract_and_add_acc_from_file(os.path.join(root_3, file_4), cluster_id)
+						evaluationDir = os.path.abspath(os.path.join(exp_cluster_dir, './evaluation'))
+						if not os.path.exists(evaluationDir):
+							continue
+							# print('added because evaldir does not exist', evaluationDir)
+						else:
+							for root_3, dir_names_3, file_names_3 in os.walk(evaluationDir):
+								if not any(['classification' in file_name for file_name in file_names_3]):
+									continue
+								else:
+									for file_4 in file_names_3:
+										if 'classification' in file_4 and file_4.endswith('.info') and os.path.getsize(os.path.join(root_3, file_4)) != 0:
+											self.exp_psdds[task_type].extract_and_add_acc_from_file(os.path.join(root_3, file_4), cluster_id)
 
 	# def add_class_acc_from_dir(self,dir, task_type_of_intersest):
 
@@ -263,12 +267,15 @@ def make_var_resutls_file(data = 'ex_7_mnist', sorte_by = lambda x: x.flx_size):
 	expResultsSorted = sorted(expResults, key=sorte_by, reverse=False)
 
 	data_type = 'emnist' if 'emnist' in data else 'mnist'
+	if int(data.split('_')[1]) < 6:
+		outfile = OUTFILE_var_mnist.replace('mnist', '{}mnist'.format(data))
+	else:
+		outfile = OUTFILE_var_mnist if not 'emnist' in data else OUTFILE_var_emnist
 
-	outfile = OUTFILE_var_mnist if not 'emnist' in data else OUTFILE_var_emnist
 	with open(outfile, 'w') as f:
 		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity\n')
 		for exp in expResultsSorted:
-			line = '{},\t{},\t{},\t{},\t2^{{{}}}'.format(data_type, exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin)
+			line = '{},\t{},\t{},\t{:.3},\t2^{{{}}}'.format(data_type, exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin)
 			f.write(line + '\n')
 
 def gather_only_var_results(data):
@@ -280,8 +287,12 @@ def gather_only_var_results(data):
 	
 	expResults = []
 	for exp in experiment_dirs:
-		flx_size = int(str(exp).split('_')[-2])
-		flx_cat_dim = int(str(exp).split('_')[-1])
+		if int(data.split('_')[1]) < 6:
+			flx_size = int(str(exp).split('/')[-1].split('_')[2].replace('fl',''))
+			flx_cat_dim = int(str(exp).split('/')[-1].split('_')[3].replace('c',''))
+		else:
+			flx_size = int(str(exp).split('_')[-2])
+			flx_cat_dim = int(str(exp).split('_')[-1])
 		expResult = ExpResult(flx_size, flx_cat_dim)
 		expResult.add_losses_from_dir(exp)
 		expResults.append(expResult)
@@ -308,17 +319,20 @@ def gather_results(data):
 def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', ):
 	print('\nRetrieving experiments\n')
 	expResults = gather_results(data)
-	data_type = 'emnist' if 'emnist' in data else 'mnist'
-	if data_type == 'emnist':
-		OUTFILE_all.replace('mnist', 'emnist')
-
+	data_type = 'emnist' if 'emnist' in data else 'mnist' if 'mnist' in data else 'fashion'
+	if data_type != 'mnist':
+		my_outfile = OUTFILE_all.replace('mnist', data_type)
+	else:
+		my_outfile = OUTFILE_all
+	print(data_type)
 	for exp in expResults:
 		print(exp)
 
 
 	expResultsSorted = sorted(expResults, key=lambda x: x.flx_size, reverse=False)
 
-	with open(OUTFILE_all.replace('_all_', '_{}_'.format(task_type_of_intersest)), 'w') as f:
+	with open(my_outfile.replace('_all_', '_{}_'.format(task_type_of_intersest)), 'w') as f:
+		print(f)
 		if task_type_of_intersest == 'classification':
 			f.write('dataset, FL c.s., c.d., MSE, model space comp., best it, best ll, vtree method, compressed y, class acc\n')
 		else:
@@ -363,8 +377,11 @@ def read_mnist_result_file(file):
 
 
 if __name__ == '__main__':
-	make_var_resutls_file()
-	make_var_resutls_file(data = 'ex_6_emnist')
-	make_mnist_resutls_file_full('classification')
-	make_mnist_resutls_file_full('noisy')
-	make_mnist_resutls_file_full('compositional')
+	# make_var_resutls_file()
+	make_var_resutls_file(data = 'ex_1_')
+	# make_mnist_resutls_file_full('classification')
+	# make_mnist_resutls_file_full('classification', data = 'ex_6_emnist')
+	# make_mnist_resutls_file_full('classification', data = 'ex_9_fashion')
+	# # make_mnist_resutls_file_full('noisy')
+	# make_mnist_resutls_file_full('compositional')
+	# make_mnist_resutls_file_full('compositional', data = 'ex_9_fashion')

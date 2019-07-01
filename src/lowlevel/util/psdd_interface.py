@@ -59,8 +59,18 @@ def write_fl_batch_to_file_new(file_encoded_path, fls_data, fl_info, batch_idx):
 			fls_encoded.append(encode_onehot_to_binary_batch(fl_domain))
 		elif fl_info[idx].bin_encoded and not fl_info[idx].name == 'fly':
 			fls_encoded.append(encode_flx_to_binary_batch(fl_domain))
-		else:
+		elif fl_info[idx].name == 'fly':
 			fls_encoded.append(fl_domain)
+		else:
+			columns = []
+			#iterate over the individual variables
+			for i in range(fl_domain.shape[1]):
+				column = fl_domain[:,i,:]
+				columns.append(column)
+
+			fl_domain = np.concatenate(columns, axis = 1)
+			fls_encoded.append(fl_domain)
+		# print(fls_encoded[-1])
 
 	fl_all = np.concatenate(fls_encoded, axis = 1)
 
@@ -128,6 +138,7 @@ def encode_flx_to_binary_batch(flx_categorical):
 	flx_binary_size = int(np.ceil(np.log2(flx_categorical.shape[2])))
 	vec_func = np.vectorize(convert_onehot_to_binary,otypes=[np.ndarray], signature = '(m),()->(t)')
 	columns = []
+	#iterate over the individual variables
 	for i in range(flx_categorical.shape[1]):
 		column = flx_categorical[:,i,:]
 		column_as_bin = vec_func(column, flx_binary_size)
