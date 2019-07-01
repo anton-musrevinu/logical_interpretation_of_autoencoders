@@ -655,7 +655,7 @@ if __name__ == '__main__':
 	# # do_generative_query_on_test(exp, type_of_query = 'bin', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'dis', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 	
-		do_generative_query(exp, type_of_query = 'dis', nbqueries = -1)
+		do_generative_query(exp, type_of_query = 'dis', nbqueries = 500)
 	# do_generative_query(exp, type_of_query = 'dis')
 	# do_decode_class_samples(exp)
 	# if exp.type_of_data == 'symbolic':
