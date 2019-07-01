@@ -165,9 +165,9 @@ class VAEManager(BaseManager):
 		else:
 			raise Exception('unknown task_type: {}'.format(task_type))
 
-	def create_impossible_test_set_for_land(self, task_type):
+	def create_impossible_test_set(self, task_type):
 		#Create a dataset for the 'land' tasks, where fly is one and the one image given is 0 (impossible)
-		if task_type not in ['bland', 'g7land', 'g4land']:
+		if task_type not in ['bland', 'g7land', 'g4land', 'blor']:
 			return
 
 		if not os.path.exists(self.opt.encoded_data_dir):
@@ -175,18 +175,21 @@ class VAEManager(BaseManager):
 
 		type_of_data = 'test'
 
-		additional_constraint_on_data = lambda x_label,domain_x: True if domain_x == 'domain_b' and x_label == 0 else True if domain_x != 'domain_b' else False
 			# not (domain_x == 'domain_b' and x_label == 1)
 		relational_func = lambda a, b: True
+		domain_constraints = lambda label: True
 		if task_type == 'bland':
 			additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label == 1)
 			domain_constraints = lambda label: label == 0 or label == 1
-		else:
-			if task_type   == 'g7land':
-				additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label > 7)
-			elif task_type == 'g4land':
-				additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label > 4)
-			domain_constraints = lambda label: True
+		elif task_type == 'blor':
+			additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label == 0)
+			domain_constraints = lambda label: label == 0 or label == 1
+
+		elif task_type   == 'g7land':
+			additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label > 7)
+
+		elif task_type == 'g4land':
+			additional_constraint_on_data = lambda x_label,domain_x: not (domain_x == 'domain_b' and x_label > 4)
 
 		args_for_dataset = {'additional_constraint_on_data': additional_constraint_on_data, \
 							'relational_func': relational_func,\

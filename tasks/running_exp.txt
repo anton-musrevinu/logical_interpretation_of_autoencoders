@@ -4,6 +4,8 @@ Could do:
 
 plus-ring-10 mnist james02
 plus-ring-10 fahsion james04
+plus-ring-10 mnist compressed_y james06
+
 
 
 single PSDD with (constraints) vs (without constraints) vs (without constraints and uncompressed)

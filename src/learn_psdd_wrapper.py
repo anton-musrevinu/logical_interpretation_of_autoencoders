@@ -750,8 +750,8 @@ def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train
 class PsddQueryException(Exception):
 	pass
 
-def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, test = False, \
-							psdd_init_data_per = .1, at_iteration = 'best-0', type_of_query = 'dis', fl_to_query = ['flx'], y_condition = None, num_examples = 100):
+def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, valid_data_path = None, out_file = None, nbqueries = 100, \
+							psdd_init_data_per = .1, at_iteration = 'best-0', type_of_query = 'dis', fl_to_query = ['flx'], y_condition = None):
 	_check_if_file_exists(query_data_path)
 	_check_if_dir_exists(psdd_out_dir)
 
@@ -769,7 +769,7 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 		os.mkdir(evaluationDir)
 
 	if out_file == None:
-		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', '-generated_{}-it_{}'.format(list_to_cs_string(fl_to_query).replace(',','_'),at_iteration))))
+		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', '-generated_{}-it_{}_nb_'.format(list_to_cs_string(fl_to_query).replace(',','_'),at_iteration, nbqueries))))
 		out_file = os.path.abspath(out_file)
 	if y_condition is not None:
 		out_file = out_file.replace('generated', 'y_{}-generated'.format(list_to_cs_string(y_condition).replace(',','_')))
@@ -796,7 +796,7 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 				f.write(line)
 				# print(line)
 				written_samples += 1
-				if written_samples >= num_examples:
+				if nbqueries > 0 and written_samples >= nbqueries:
 					break
 	query_data_path = sample_data_path
 
