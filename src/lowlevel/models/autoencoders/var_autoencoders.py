@@ -326,8 +326,8 @@ class VarResNetAutoEncoder(VarAutoencoder):
         self.ngf= opt.ngf
         self.normType = opt.norm
         self.use_dropout = opt.no_dropout
-        self.n_blocks = 4
-        self.padding_type='reflect'
+        self.n_blocks = 2
+        self.padding_type = 'reflect'
 
         self.n_downsampling = 4
         
@@ -340,7 +340,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 
         print('building build_model_basic')
 
-        feature_layer = self.build_encoder(self.input_nc, self.output_nc)
+        feature_layer = self.build_encoder(self.input_nc, self.output_nc, use_dropout = not self.opt.no_dropout)
 
         # ======================== FEATURE LAYER =================================
 

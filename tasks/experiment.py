@@ -630,7 +630,7 @@ def do_everything(exp, vtree_method = 'miBlossom', num_compent_learners = 10, ty
 		do_classification_evaluation(exp, testing = testing)
 
 		#Generate class samples and decode them to png
-		do_generative_query(exp, testing = testing, type_of_query = 'bin')
+		# do_generative_query(exp, testing = testing, type_of_query = 'bin')
 		do_generative_query(exp, testing = testing, type_of_query = 'dis')
 	
 
@@ -639,9 +639,9 @@ if __name__ == '__main__':
 	# decode_all_possible(display_exp = True)
 	# evaluate_all_missing(display_exp = True)
 	# sample_all_missing(display_exp = True, only_first = False, types_of_query = ['dis'])
-	exps = [('ex_7_mnist_32_2', 'james10', 'g7land', False),\
-			('ex_7_mnist_32_2', 'james09', 'g4land', False),\
-			('ex_7_mnist_32_2', 'james01', 'bland', True),\
+	#exps = [#('ex_7_mnist_32_2', 'james10', 'g7land', False),\
+			#('ex_7_mnist_32_2', 'james09', 'g4land', False),\
+	exps = [('ex_7_mnist_32_2', 'james01', 'bland', True),\
 			('ex_7_mnist_32_2', 'james02', 'blor', True)]
 	# experiment_parent_name = 'ex_7_mnist_32_2'
 	# cluster_id = 'james06'

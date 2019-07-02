@@ -769,7 +769,7 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 		os.mkdir(evaluationDir)
 
 	if out_file == None:
-		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', '-generated_{}-it_{}_nb_'.format(list_to_cs_string(fl_to_query).replace(',','_'),at_iteration, nbqueries))))
+		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', '-generated_{}-it_{}_nb_{}'.format(list_to_cs_string(fl_to_query).replace(',','_'),at_iteration, nbqueries))))
 		out_file = os.path.abspath(out_file)
 	if y_condition is not None:
 		out_file = out_file.replace('generated', 'y_{}-generated'.format(list_to_cs_string(y_condition).replace(',','_')))

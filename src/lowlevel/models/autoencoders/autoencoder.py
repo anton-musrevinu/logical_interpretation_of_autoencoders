@@ -206,6 +206,7 @@ class VarAutoencoder(nn.Module):
         self.input_shape = (opt.batch_size, opt.input_nc, opt.image_height, opt.image_width)
         self.feature_layer_size = opt.feature_layer_size
         self.use_bias = opt.use_bias
+        self.opt = opt
 
         if buildModule:
             self.layer_dict = nn.ModuleDict()

@@ -51,6 +51,9 @@ class VAEModel(BaseModel):
         parser.add_argument('--beta_kld', nargs="?",type=float, default=.7)
         parser.add_argument('--hard', nargs="?",type=str2bool, default=True)
         parser.add_argument('--loss_type',type=str, default='bce')
+
+        parser.add_argument('--ae_model_type', type=str, default='vanilla') #Other option is 'resnet'
+
         return parser
 
     def __init__(self, opt):
@@ -74,7 +77,10 @@ class VAEModel(BaseModel):
         # define networks (both Generators and discriminators)
         # The naming is different from those used in the paper.
         # Code (vs. paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
-        self.netAE = networks.define_AE(opt)
+        if self.opt.ae_model_type == 'vanilla':
+            self.netAE = networks.define_AE(opt)
+        else:
+            self.netAE = networks.define_resNetAE(opt)
 
         if self.isTrain:
             # define loss functions
