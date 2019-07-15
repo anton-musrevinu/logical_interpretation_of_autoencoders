@@ -40,6 +40,9 @@ def phase_encode_options(parser):
     parser.add_argument('--encoded_data_dir', type=str, help='Where the converted data should be stored')
     parser.add_argument('--task_type', type=str,default='', help='Where the converted data should be stored')
     parser.add_argument('--data_per', type=float,default=1, help='percentage of whole dataset to be converted')
+    parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
+    parser.add_argument('--norm', type=str, default='batch', help='instance normalization or batch normalization [instance | batch | none]')
+    parser.add_argument('--no_dropout', type=str2bool, default=True, help='no dropout for the generator')
     return parser
 
 def phase_create_impossible_options(parser):

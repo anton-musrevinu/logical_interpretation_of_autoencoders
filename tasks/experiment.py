@@ -314,7 +314,7 @@ def do_generative_query(exp, nbqueries = 100, type_of_query = 'bin'):
 	elif exp.task_type == 'succ':
 		do_generative_query_on_test(exp, type_of_query = type_of_query, nbqueries = nbqueries, fl_to_query = ['fla'])
 		do_generative_query_on_test(exp, type_of_query = type_of_query, nbqueries = nbqueries, fl_to_query = ['flb'])
-	elif exp.task_type != 'plus':
+	elif not 'plus' in exp.task_type:
 		#Generate class samples and decode them to png
 		if exp.compress_fly:
 			do_generative_query_on_test(exp, type_of_query = type_of_query, nbqueries = nbqueries, fl_to_query = ['fla'], y_condition = [0])
@@ -330,13 +330,24 @@ def do_generative_query(exp, nbqueries = 100, type_of_query = 'bin'):
 				do_generative_query_on_test(exp, type_of_query = type_of_query,nbqueries = nbqueries, fl_to_query = ['fla'], y_condition = [0,1], impossible_examples = True)
 			elif 'lor' in exp.task_type:
 				do_generative_query_on_test(exp, type_of_query = type_of_query, nbqueries = nbqueries,fl_to_query = ['fla'], y_condition = [1,0], impossible_examples = True)
-	else:
+	elif exp.task_type == 'plus':
 		for filter_int in range(19):
 			data_filter = [0 for i in range(19)]
 			data_filter[filter_int] = 1
 			if exp.compress_fly:
 				size = int(np.ceil(np.log2(19)))
 				data_filter = convert_onehot_to_binary(data_filter,size)
+				print('data_filter', data_filter)
+			do_generative_query_on_test(exp, type_of_query = type_of_query, nbqueries = nbqueries, fl_to_query = ['fla'], y_condition = data_filter)
+	elif exp.task_type.startswith('plus-ring-'):
+		ring_length = int(exp.task_type.split('-')[2])
+		for filter_int in range(ring_length):
+			data_filter = [0 for i in range(ring_length)]
+			data_filter[filter_int] = 1
+			if exp.compress_fly:
+				size = int(np.ceil(np.log2(ring_length)))
+				data_filter = convert_onehot_to_binary(data_filter,size)
+			print('data_filter:', data_filter, ', ring_length:', ring_length)
 			do_generative_query_on_test(exp, type_of_query = type_of_query, nbqueries = nbqueries, fl_to_query = ['fla'], y_condition = data_filter)
 
 	do_decode_class_samples(exp)
@@ -365,7 +376,7 @@ def do_generative_query_on_test(exp, nbqueries = 100, \
 			print(traceback.format_exc())
 			continue
 
-def do_generative_query_for_labels(exp, nbqueries = 100, type_of_query = 'bin'):
+def do_generative_query_for_labels(exp, nbqueries = 100, type_of_query = 'bin', specified_fly = None, testing = False):
 
 	try:
 		train_data_path, valid_data_path, query_data_path = exp.get_data_files()
@@ -382,6 +393,8 @@ def do_generative_query_for_labels(exp, nbqueries = 100, type_of_query = 'bin'):
 	fl_to_query = ['flx'] if 'flx' in fl_info.keys() else ['fla']
 
 	for fl_y_value in range(fl_info['fly'].var_cat_dim):
+		if not specified_fly is None and fl_y_value != specified_fly:
+			continue
 		file_name = os.path.abspath(os.path.join(evaluation_dir_path, 'query_label_{}.data'.format(fl_y_value)))
 		fl_data = {}
 		for key in fl_info.keys():
@@ -442,6 +455,7 @@ def infer_offest(panel_image_size, image_size, current_offset):
 
 def do_make_class_samples_smaller(exp, image_size = 28, new_nb_rows = 3):
 	print('searching ', exp.evaluation_dir_path)
+	rowtotake = 5
 	for root, folders, files in os.walk(exp.evaluation_dir_path):
 		for file in files:
 			if file.endswith('.png') and not 'small' in file:
@@ -450,7 +464,7 @@ def do_make_class_samples_smaller(exp, image_size = 28, new_nb_rows = 3):
 				padding = int(infer_offest(image.size[1], image_size, 1) / 2)
 				rows = (image.size[1] - (padding * 2) ) / (image_size + (padding * 2))
 
-				box = (0, 0, image.size[0], (new_nb_rows) * (image_size + (padding * 2)) + padding * 2)    
+				box = (0, rowtotake * (image_size + (padding * 2)), image.size[0], (new_nb_rows + rowtotake) * (image_size + (padding * 2)) + padding * 2)    
 				small_image = image.crop(box)
 				small_image.save(os.path.join(root, file.replace('.png','_small.png')))
 
@@ -638,24 +652,28 @@ if __name__ == '__main__':
 
 	# decode_all_possible(display_exp = True)
 	# evaluate_all_missing(display_exp = True)
-	# sample_all_missing(display_exp = True, only_first = False, types_of_query = ['dis'])
+	# sample_all_missing(display_exp = False, only_first = False, types_of_query = ['dis'])
 	#exps = [#('ex_7_mnist_32_2', 'james10', 'g7land', False),\
 			#('ex_7_mnist_32_2', 'james09', 'g4land', False),\
-	exps = [('ex_7_mnist_32_2', 'james01', 'bland', True),\
-			('ex_7_mnist_32_2', 'james02', 'blor', True)]
+	# exps = [('ex_7_mnist_32_2', 'james01', 'bland', True),\
+	(experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_6_emnist_32_2', 'james08', 'classification', True)
 	# experiment_parent_name = 'ex_7_mnist_32_2'
 	# cluster_id = 'james06'
 	# task_type = 'plus-ring-10'
 	data_per = 1
 	# compress_fly = True
-	for (experiment_parent_name,cluster_id,task_type,compress_fly) in exps:
-		exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
-	# do_make_class_samples_smaller(exp)
-		# do_everything(exp, do_encode_data = True)
+	# for (experiment_parent_name,cluster_id,task_type,compress_fly) in exps:
+	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
+	do_make_class_samples_smaller(exp)
+	# do_everything(exp, do_encode_data = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'bin', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'dis', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 	
-		do_generative_query(exp, type_of_query = 'dis', nbqueries = 500)
+	# do_generative_query_for_labels(exp, type_of_query = 'dis', nbqueries = 100)
+	# do_generative_query_for_labels(exp, type_of_query = 'bin', nbqueries = 100, specified_fly = 4)
+	# do_generative_query_for_labels(exp, type_of_query = 'ind', nbqueries = 100, specified_fly = 4)
+	# do_decode_class_samples(exp)
+	# do_generative_query_on_test(exp, type_of_query = 'dis', nbqueries = 500, fl_to_query = ['fla'], y_condition = [0], impossible_examples = True)
 	# do_generative_query(exp, type_of_query = 'dis')
 	# do_decode_class_samples(exp)
 	# if exp.type_of_data == 'symbolic':

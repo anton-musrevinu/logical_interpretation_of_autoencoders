@@ -235,9 +235,10 @@ class BaseOptions():
         expr_dir = os.path.abspath(opt.experiment_dir)
         util.mkdirs(expr_dir)
         file_name = os.path.join(expr_dir, 'opt.txt')
-        with open(file_name, 'wt') as opt_file:
-            opt_file.write(message)
-            opt_file.write('\n')
+        if not os.path.exists(file_name):
+            with open(file_name, 'wt') as opt_file:
+                opt_file.write(message)
+                opt_file.write('\n')
 
     def make_experiment_dir(self,opt):
         experiment_name = opt.experiment_name

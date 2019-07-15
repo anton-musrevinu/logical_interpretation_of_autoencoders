@@ -229,6 +229,7 @@ class BaseManager():
 		:param y: The targets for the model. A numpy array of shape batch_size, num_classes
 		:return: the loss and accuracy for this batch
 		"""
+		self.model.eval()
 		self.model.set_input(data)
 		results_comp,predicted_idxs, real_idxs = self.model.compute_network()
 

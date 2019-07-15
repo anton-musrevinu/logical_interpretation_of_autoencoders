@@ -2,10 +2,12 @@ TO RUNNING =====================================================================
 
 Could do:
 
-plus-ring-10 mnist james02
-plus-ring-10 fahsion james04
-plus-ring-10 mnist compressed_y james06
-
+plus-ring-10 mnist james02                  === done needs sampling
+plus-ring-10 fahsion james04                === done needs smapling
+plus-ring-10 mnist compressed_y james06     === done needs smapling
+classification ex_10_mnist_vanilla james08  === done
+classification ex_10_mnist_resnet james05
+classification ex_10_mnist_resnet_dropout james07  === broke
 
 
 single PSDD with (constraints) vs (without constraints) vs (without constraints and uncompressed)
@@ -14,7 +16,11 @@ confidence analysis --> need new dataset creater that enusres to have impossible
 
 RUNNING ==================================================================================================================
 
-sampling all missing on james01
+            
+plus-ring-10 fahsion compressed_y james07       
+plus-ring-10 fahsion james06                
+plus-ring-10 mnist compressed_y james01    
+plus-ring-10 mnist james03     
 
 ==========================================================================================================================
 Finished =================================================================================================================

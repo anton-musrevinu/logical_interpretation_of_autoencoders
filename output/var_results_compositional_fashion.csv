@@ -1,2 +1,3 @@
-dataset, FL c.s., c.d., MSE, task type, best it, best ll, vtree method, compressed y, class acc
-fashion,	32,	2,	0.0177, 	blxor,	581,	-2.5e+01,	miBlossom,	True,	0.882
+dataset, $|FL^{A,B}|$, $|FL^{A,B}_i|$, VAE-MSE, task type, best ll, vtree method, class acc
+fashion,	32,	2,	0.0177, 	blxor,	-2.5e+01,	miBlossom,	0.882
+fashion,	32,	2,	0.0177, 	plus-ring-10,	-3.3e+01,	miBlossom,	0.2134

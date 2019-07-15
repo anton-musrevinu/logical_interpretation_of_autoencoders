@@ -16,6 +16,7 @@
 #=============================================================================================================================================
 import os, platform, shutil
 from src.lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_for_old_experiments
+import functools
 
 #DEPENDENCIES and USER variables:
 
@@ -791,8 +792,17 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 				if y_condition is not None:
 					line_split = line.split(',')
 					fly = list(map(int, line_split[fl_info['fly'].encoded_start_idx: fl_info['fly'].encoded_end_idx]))
-					if fly != y_condition:
+					assert len(fly) == len(y_condition)
+					fits_condition = map(lambda ab: ab[0] == ab[1],zip(fly, y_condition))
+					fits_condition = functools.reduce(lambda a,b: a and b, fits_condition, True)
+					if not 'impossible' in out_file and not fits_condition:
 						continue
+					elif 'impossible' in out_file and not fits_condition:
+						print('old_line:', line_split)
+						new_line = line_split[:fl_info['fly'].encoded_start_idx] + y_condition
+						print('new_line:', new_line)
+						assert len(new_line) == len(line_split)
+						line = list_to_cs_string(new_line) + '\n'
 				f.write(line)
 				# print(line)
 				written_samples += 1

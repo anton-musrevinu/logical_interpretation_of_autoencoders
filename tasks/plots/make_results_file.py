@@ -334,9 +334,9 @@ def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', ):
 	with open(my_outfile.replace('_all_', '_{}_'.format(task_type_of_intersest)), 'w') as f:
 		print(f)
 		if task_type_of_intersest == 'classification':
-			f.write('dataset, FL c.s., c.d., MSE, model space comp., best it, best ll, vtree method, compressed y, class acc\n')
+			f.write('dataset, $|FL^A|$, $|FL^A_i|$, VAE-MSE, best ll, vtree method, compressed y, class acc\n')
 		else:
-			f.write('dataset, FL c.s., c.d., MSE, task type, best it, best ll, vtree method, compressed y, class acc\n')
+			f.write('dataset, $|FL^{A,B}|$, $|FL^{A,B}_i|$, VAE-MSE, task type, best ll, vtree method, class acc\n')
 
 		for exp in expResultsSorted:
 			for task_type in exp.exp_psdds:
@@ -345,12 +345,12 @@ def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', ):
 				psdd_exp = exp.exp_psdds[task_type]
 				for cluster_id in psdd_exp.classification_acc.keys():
 					line = '{},\t{},\t{},\t{}'.format(data_type,exp.flx_size, exp.flx_cat_dim, exp.loss)
-					if task_type_of_intersest == 'classification':
-						line += ',\t2^{{{}}}'.format(exp.complexity_bin)
+					# if task_type_of_intersest == 'classification':
+					# 	line += ',\t2^{{{}}}'.format(exp.complexity_bin)
 					if task_type_of_intersest != 'classification':
 						line += ', \t{}'.format(task_type)
-					line += ',\t{},\t{:.2},\t{},\t{},\t{:.4}'.format(psdd_exp.best_it[cluster_id], psdd_exp.best_ll[cluster_id], \
-							psdd_exp.vtree_method[cluster_id], psdd_exp.compressed_y[cluster_id], max(psdd_exp.classification_acc[cluster_id]))
+					line += ',\t{:.2},\t{},\t{:.4}'.format(psdd_exp.best_ll[cluster_id], \
+							psdd_exp.vtree_method[cluster_id], max(psdd_exp.classification_acc[cluster_id]))
 					f.write(line + '\n')
 	
 def read_mnist_result_file(file):
@@ -378,10 +378,10 @@ def read_mnist_result_file(file):
 
 if __name__ == '__main__':
 	# make_var_resutls_file()
-	make_var_resutls_file(data = 'ex_1_')
+	# make_var_resutls_file(data = 'ex_1_')
 	# make_mnist_resutls_file_full('classification')
 	# make_mnist_resutls_file_full('classification', data = 'ex_6_emnist')
 	# make_mnist_resutls_file_full('classification', data = 'ex_9_fashion')
-	# # make_mnist_resutls_file_full('noisy')
-	# make_mnist_resutls_file_full('compositional')
-	# make_mnist_resutls_file_full('compositional', data = 'ex_9_fashion')
+	# make_mnist_resutls_file_full('noisy')
+	make_mnist_resutls_file_full('compositional')
+	make_mnist_resutls_file_full('compositional', data = 'ex_9_fashion')
