@@ -106,12 +106,13 @@ def read_info_file_basic(info_file):
 			# print(line, line.replace('\n','').split(','))
 			fl_info = FlDomainInfo(*line.split(','))
 			domains[fl_info.name] = fl_info
+	return domains
 
 	# print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(domains, '/'.join(file_encoded_path.split('/')[-3:])))
 	# print('[INFO] \t\t\t info file read succesf
 
 def read_info_file(file_encoded_path):
-	return read_info_file(file_encoded_path + '.info')
+	return read_info_file_basic(file_encoded_path + '.info')
 
 def recreate_fl_info_for_old_experiments(exeriment_dir):
 	exeriment_dir = os.path.abspath(exeriment_dir)

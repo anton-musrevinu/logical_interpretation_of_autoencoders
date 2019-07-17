@@ -1,5 +1,5 @@
 from data.base_dataset import BaseDataset
-from util.psdd_interface import decode_binary_to_onehot, decode_binary_to_int,read_info_file
+from util.psdd_interface import decode_binary_to_onehot, decode_binary_to_int,read_info_file,read_info_file_basic
 import os.path
 import numpy as np
 import torch
@@ -21,7 +21,10 @@ class FLSAMPLEDataset(BaseDataset):
 		self.data_file = os.path.join(mydir, '{}'.format(type_of_data))
 		self.type_of_data = type_of_data
 
-		domains = read_info_file(self.data_file)
+		if opt.fl_info_file is not None:
+			domains = read_info_file_basic(opt.fl_info_file)
+		else:
+			domains = read_info_file(self.data_file)
 
 		self.num_classes = opt.num_classes
 

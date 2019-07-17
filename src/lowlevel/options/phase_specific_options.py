@@ -51,5 +51,9 @@ def phase_create_impossible_options(parser):
 def phase_decode_options(parser):
     parser.add_argument('--for_error', type=str, default='mse', help='picking the best model for the given error on the validation set')
     parser.add_argument('--file_to_decode', type=str)
+    parser.add_argument('--fl_info_file', type=str, default = None)
     return parser
+
+def phase_decode_ave_options(parser):
+    return phase_decode_options(parser)
 

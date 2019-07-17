@@ -894,15 +894,10 @@ def generative_query_missing(psdd_out_dir, query_data_path, train_data_path, fl_
 	vtree_path, psdds, weights, at_iteration = get_file_names_and_check(psdd_out_dir, at_iteration)
 	fl_info =  read_info_file_basic(fl_info_file)
 
-	evaluationDir = os.path.abspath(os.path.join(psdd_out_dir, './evaluation/'))
-	if not _check_if_dir_exists(evaluationDir, raiseException = False):
-		os.mkdir(evaluationDir)
-
 	if out_file == None:
-		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', 'anwser.data')))
-		out_file = os.path.abspath(out_file)
+		out_file = query_data_path.replace('.data', '.anwser.data')
 
-	write('creating query and init files for psdd with outfile: {} (y_condition: {})'.format(remove_home(out_file), y_condition))
+	# write('creating query and init files for psdd with outfile: {} (y_condition: {})'.format(remove_home(out_file), y_condition))
 
 	if psdd_init_data_per != 1:
 		sample_data_path = train_data_path + '.sample'
@@ -941,7 +936,7 @@ def generative_query_missing(psdd_out_dir, query_data_path, train_data_path, fl_
                      # // fl_encoded_end_idx: Seq[Int] = null,
                      # // fl_to_query: Seq[String] = null,
 
-    fl_names = str(list(fl_info.keys())).replace('[', '').replace(']','').replace(' ','')
+	fl_names = str(list(fl_info.keys())).replace('[', '').replace(']','').replace(' ','')
 	cmd_str = 'java -jar ' + LEARNPSDD_CMD + ' query --mode generative_query_missing_bin ' + \
 			' --vtree {}'.format(vtree_path) + \
 			' --query {}'.format(query_data_path) + \
@@ -954,7 +949,8 @@ def generative_query_missing(psdd_out_dir, query_data_path, train_data_path, fl_
 			' --fl_binary_encoded {}'.format(str([i.bin_encoded for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
 			' --fl_encoded_start_idx {}'.format(str([i.encoded_start_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
 			' --fl_encoded_end_idx {}'.format(str([i.encoded_end_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
-			' --fl_to_query {}'.format(fl_names) \
+			' --fl_to_query {}'.format(fl_names) + \
+			' --data_bug {}'.format('data_bug' in query_data_path) + \
 			' -d {}'.format(train_data_path)
 	if valid_data_path != None:
 		cmd_str += ' -b {}'.format(valid_data_path)
@@ -962,7 +958,7 @@ def generative_query_missing(psdd_out_dir, query_data_path, train_data_path, fl_
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	out_file_info = out_file + '_generative_query_missing.info'
+	out_file_info = out_file + '_generative_query_missing_bin.info'
 	_check_if_file_exists(out_file_info)
 	_check_if_file_exists(out_file)
 

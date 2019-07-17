@@ -103,7 +103,7 @@ class Experiment(object):
 	def set_fl_info_after_enoding(self):
 		self.fl_data_file = os.path.join(self.psdd_out_dir, './fl_data.info')
 		if os.path.exists(self.fl_data_file):
-			fl_info = read_info_file(self.fl_data_file.replace('.info', ''))
+			fl_info = read_info_file_basic(self.fl_data_file)
 			self.fl_info = fl_info
 			if 'fly' in self.fl_info:
 				self.compress_fly = self.fl_info['fly'].bin_encoded
@@ -258,6 +258,12 @@ def graph_learning(experiment_parent_name):
 
 def decode_data(exp, file_to_decode):
 	cmd = 'python {} --phase decode --experiment_name {} --file_to_decode {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, file_to_decode)
+	print('executing: {}'.format(cmd))
+	os.system(cmd)
+
+def decode_and_average_data(exp, file_to_decode):
+	cmd = 'python {} --phase decode_ave --experiment_name {} --file_to_decode {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, file_to_decode)
+	cmd = cmd + ' --fl_info_file {}'.format(exp.fl_data_file)
 	print('executing: {}'.format(cmd))
 	os.system(cmd)
 
@@ -469,16 +475,25 @@ def do_make_class_samples_smaller(exp, image_size = 28, new_nb_rows = 3):
 				small_image = image.crop(box)
 				small_image.save(os.path.join(root, file.replace('.png','_small.png')))
 
-def do_analyse_feature_layer(exp, nbqueries):
-	for fl_name, fl_info in read_info_file_basic(exp.fl_info_file):
-		if fl_name != 'fly':
-			for i in range(fl_info.nb_vars):
-				for j in range(fl_info.var_cat_dim):
+def do_analyse_feature_layer(exp, nbqueries, testing = False):
+	for fl_name, fl_info in read_info_file_basic(exp.fl_data_file).items():
+		if fl_name == 'fly':
+			continue
+
+		if fl_info.var_cat_dim > 2:
+			raise Exception("Only binary varibales support thus far")
+
+		for i in range(fl_info.nb_vars):
+			variable = fl_info.encoded_start_idx + i + 1
+			for assignment in range(fl_info.var_cat_dim):
+				_do_analyse_feature_layer_for_variable_assignment(exp,nbqueries, variable, assignment, testing = testing)
+			if testing:
+				raise Exception("test break point")
 					
 
 
-def _do_analyse_feature_layer_for_variable_assignment(exp, nbqueries, variable, assignment):
-	if not _check_if_dir_exists(exp.analysis_dir_path, raiseException = False):
+def _do_analyse_feature_layer_for_variable_assignment(exp, nbqueries, variable, assignment, testing = False):
+	if not os.path.exists(exp.analysis_dir_path):
 		os.mkdir(exp.analysis_dir_path)
 
 	#Create File including nbqueryis
@@ -491,7 +506,7 @@ def _do_analyse_feature_layer_for_variable_assignment(exp, nbqueries, variable, 
 			f.write('{}{}\n'.format('' if assignment else '-', variable))
 
 	try:
-		train_data_path, valid_data_path, _ = exp.get_data_files(impossible_examples)
+		train_data_path, valid_data_path, _ = exp.get_data_files()
 	except Exception as e:
 		print('[SAMPLING] - END DUE: \tNeccesary data files could not be found')
 		return
@@ -500,8 +515,9 @@ def _do_analyse_feature_layer_for_variable_assignment(exp, nbqueries, variable, 
 		try:
 			at_iteration = 'best-{}'.format(i)
 			print('trying at: {}'.format(at_iteration))
-			learn_psdd_wrapper.generative_query_missing(exp.psdd_out_dir, query_data_path, train_data_path, exp.fl_info_file, valid_data_path = valid_data_path, \
-				psdd_init_data_per = 0.1, at_iteration = at_iteration)
+			out_file = learn_psdd_wrapper.generative_query_missing(exp.psdd_out_dir, query_file, train_data_path, exp.fl_data_file, valid_data_path = valid_data_path, \
+				psdd_init_data_per = 0.1 if not testing else 0.001, at_iteration = at_iteration)
+			decode_and_average_data(exp, out_file)
 			break
 		except Exception as e:
 			print('caught exception: {}'.format(e))
@@ -700,7 +716,7 @@ if __name__ == '__main__':
 	#exps = [#('ex_7_mnist_32_2', 'james10', 'g7land', False),\
 			#('ex_7_mnist_32_2', 'james09', 'g4land', False),\
 	# exps = [('ex_7_mnist_32_2', 'james01', 'bland', True),\
-	(experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_6_emnist_32_2', 'james08', 'classification', True)
+	(experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_7_mnist_32_2', 'james01', 'classification', True)
 	# experiment_parent_name = 'ex_7_mnist_32_2'
 	# cluster_id = 'james06'
 	# task_type = 'plus-ring-10'
@@ -708,7 +724,7 @@ if __name__ == '__main__':
 	# compress_fly = True
 	# for (experiment_parent_name,cluster_id,task_type,compress_fly) in exps:
 	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
-	do_make_class_samples_smaller(exp)
+	do_analyse_feature_layer(exp, 1000, testing = False)
 	# do_everything(exp, do_encode_data = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'bin', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'dis', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)

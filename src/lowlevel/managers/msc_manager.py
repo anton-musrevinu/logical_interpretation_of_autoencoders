@@ -125,4 +125,40 @@ class MSCManager(BaseManager):
 			tosave = list(rec.values())
 			save_example_image(tosave, path)
 
+	def decode_specific_file_anverage(self, file_to_decode, output_image_file = None):
+
+		sampled_data = create_dataset(self.opt, domain = 'fl_sample', type_of_data = file_to_decode.split('/')[-1], \
+			mydir = '/'.join(file_to_decode.split('/')[:-1]))
+
+		self.load_net_at_best_epoch()
+
+		average_images = []
+		for idx, data in enumerate(sampled_data):  # sample batch
+			rec = {}
+			for i in data.keys():
+				if not 'y' in i:
+					self.model.set_fl(data[i])
+					self.model.run_decoder()
+					rec[i] = self.model.rec_input.detach().cpu().float()
+
+			if len(rec.keys()) > 1:
+				raise Exception("Multiple fls are not supported yet")
+			i = list(rec.keys())[0]
+			images = rec[i]
+
+			for image in images:
+				image[:,0,:] = 0.5
+				image[:,-1,:] = 0.5
+				image[:,:,0] = 0.5
+				image[:,:,-1] = 0.5
+
+			average_images.append(torch.mean(images, dim = 0, keepdim = True))
+
+
+		if output_image_file == None:
+			path = file_to_decode.replace('.data', '.png')
+		else:
+			path = output_image_file
+
+		save_example_image(average_images, path)
 

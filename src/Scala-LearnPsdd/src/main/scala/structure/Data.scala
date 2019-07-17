@@ -59,22 +59,22 @@ object PartialAssignment {
     def apply(backend: Array[Map[Int,Boolean]], weights: Array[Double], vars: Array[Int]): Data = new Data(backend, weights, vars, BitSet(backend.indices:_*))
 
     def readFromFile(file: File): Data = {
-      val assignments = mutable.Map[String,Double]()
+      var assignments = Seq[(String,Double)]()
       Source.fromFile(file).getLines().withFilter(_.nonEmpty).foreach{ line =>
         val split = line.split("\\|")
         // println("split: " + split)
         val (as,w) = if (split.size==1) (split.head,1.0) else (split(1),split.head.toDouble)
         // println("as: " + as)
         // println("w: " + w)
-        assignments.put(as,w+assignments.getOrElse(as,0.0))
+        assignments = (as,w) +: assignments
       }
       val (b,weights) = assignments.toArray.unzip
-      val vars = mutable.SortedSet[Int]()
+      var vars = mutable.SortedSet[Int]()
       val backend = b.map(line => line.split(",").map{
         case (v) => scala.math.abs(v.toInt) -> !v.contains("-")
         }.toMap)
 
-      val counter = 0
+      var counter = 0
       for (line <- b){
         val vars_in_line = mutable.SortedSet[Int]()
         for (elem <- line.split(",")){
@@ -88,9 +88,10 @@ object PartialAssignment {
         }
         counter = counter + 1
       }
-      println("\nvariales found: " + vars)
-      println("backend size: " + backend.head.size)
-      // println("backend: " + backend)
+      println("[DATA] - variales found: " + vars)
+      println("[DATA] - backend size: " + backend.size)
+      // println("[DATA] - backend: " + backend)
+      // // println("backend: " + backend)
       // for (map <- backend){
       //   println(map)
       // }

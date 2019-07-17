@@ -1,4 +1,4 @@
-from .autoencoder import VarAutoencoder
+from .autoencoder import VarAutoencoder, VarEncoder, VarDecoder
 import torch
 import torch.nn as nn
 import functools
