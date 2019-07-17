@@ -74,10 +74,19 @@ object PartialAssignment {
         case (v) => scala.math.abs(v.toInt) -> !v.contains("-")
         }.toMap)
 
+      val counter = 0
       for (line <- b){
+        val vars_in_line = mutable.SortedSet[Int]()
         for (elem <- line.split(",")){
-          vars += scala.math.abs(elem.toInt)
+          vars_in_line += scala.math.abs(elem.toInt)
         }
+        if (counter == 0){
+          vars = vars_in_line
+        } else if (vars != vars_in_line) {
+          println("Vars in one line are not equal to the variables of another line -- they must be all defined for the same...")
+          throw new IllegalArgumentException
+        }
+        counter = counter + 1
       }
       println("\nvariales found: " + vars)
       println("backend size: " + backend.head.size)

@@ -41,7 +41,7 @@ class WMIManager(object):
 		self._computedIntervals = {}
 		self._result = WmiResult(name)
 
-		self.BIN_DIR = os.path.abspath('../src/wmisdd/bin')
+		self.BIN_DIR = os.path.abspath('../../src/wmisdd/bin')
 
 		if os.path.isdir(self._tmpDir):
 			rmtree(self._tmpDir)

@@ -49,6 +49,61 @@ def create_dataset_new(opt, domain, type_of_data, mydir = None, args_for_dataset
 	dataset = data_loader.load_data()
 	return dataset
 
+def create_transfer_dataset(opt, domainA, domainB, type_of_data,mydir = None, args_for_dataset = None):
+	data_loader = CustomTransferDatasetDataLoader(opt, domainA, domainB, type_of_data, mydir, args_for_dataset)
+	dataset = data_loader.load_data()
+	return dataset
+
+class CustomTransferDatasetDataLoader():
+	"""Wrapper class of Dataset class that performs multi-threaded data loading"""
+
+	def __init__(self, opt, domainA, domainB, type_of_data, mydir, args_for_dataset = None):
+		"""Initialize this class
+
+		Step 1: create a dataset instance given the name [dataset_mode]
+		Step 2: create a multi-threaded data loader.
+		"""
+		self.opt = opt
+		datasetA_class = find_dataset_using_name(domainA)
+		if args_for_dataset != None:
+			datasetA = dataset_class(opt, type_of_data, mydir, **args_for_dataset)
+		else:
+			datasetA = dataset_class(opt, type_of_data, mydir)
+		self.dataloader = torch.utils.data.DataLoader(
+			dataset,
+			batch_size=opt.batch_size,
+			shuffle=True,#not opt.allign_data,
+			num_workers=int(opt.num_threads))
+
+		asStr = '{}-{}'.format(domain, type_of_data)
+		self.dataset = dataset
+		self.str = 'dataset-{}-{}'.format(asStr, dataset)
+
+
+		print("[{} - {}] Id: {} , batch_size: {}, num_batches: {}".format(\
+			type(dataset).__name__,type_of_data,self.str,opt.batch_size,len(self)))
+
+	# def get_num_batches(self):
+	# 	return len(self.dataloader)
+
+	def __getitem__(self,index):
+		return self.dataset[index]
+
+	def load_data(self):
+		return self
+
+	def __len__(self):
+		"""Return the number of data in the dataset"""
+		return len(self.dataloader)
+
+	def __str__(self):
+		return self.str
+
+	def __iter__(self):
+		"""Return a batch of data"""
+		for i, data in enumerate(self.dataloader):
+				# print(i, data['inputs'].shape,data['targets'].shape, type(data))
+				yield data
 
 # def create_dataset(opt, type_of_data = 'train', mytype = None ):
 # 	"""Create a dataset given the option.

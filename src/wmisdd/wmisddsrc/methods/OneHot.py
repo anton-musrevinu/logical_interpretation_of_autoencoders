@@ -35,8 +35,8 @@ def create(nbvars, nbxvars):
 
 	return kb
 
-def create_all_contraints(total_num_vars, num_fl_vars, fl_categorical_dim):
-	y_vars = list(range(num_fl_vars * fl_categorical_dim + 1, total_num_vars + 1))
+def create_all_contraints(num_fl_vars, fl_categorical_dim):
+	# y_vars = list(range(num_fl_vars * fl_categorical_dim + 1, total_num_vars + 1))
 	kb_vars = []
 
 	for var in range(num_fl_vars):
@@ -45,8 +45,8 @@ def create_all_contraints(total_num_vars, num_fl_vars, fl_categorical_dim):
 		if var_range != []:
 			kb_vars.append(create_for_list(var_range))
 
-	if y_vars != []:
-		kb_vars.append(create_for_list(y_vars))
+	# if y_vars != []:
+	# 	kb_vars.append(create_for_list(y_vars))
 
 	return z3.And(kb_vars)
 

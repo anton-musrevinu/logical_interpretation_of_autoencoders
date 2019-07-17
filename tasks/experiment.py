@@ -1,7 +1,7 @@
 import os,sys
 sys.path.append('..')
 from src import learn_psdd_wrapper as learn_psdd_wrapper
-from src.lowlevel.util.psdd_interface import read_info_file, convert_onehot_to_binary, FlDomainInfo
+from src.lowlevel.util.psdd_interface import read_info_file,read_info_file_basic, convert_onehot_to_binary, FlDomainInfo
 from src.lowlevel.util.psdd_interface import write_fl_batch_to_file_new as write_fl_batch_to_file
 import numpy as np
 import shutil
@@ -83,6 +83,7 @@ class Experiment(object):
 		self.set_fl_info_after_enoding()
 
 		self.evaluation_dir_path = os.path.abspath(os.path.join(self.psdd_out_dir, './evaluation/'))
+		self.analysis_dir_path = os.path.abspath(os.path.join(self.psdd_out_dir, './analysis/'))
 
 		self.comb_func = CombinatorialFunction(self.task_type)
 
@@ -100,9 +101,9 @@ class Experiment(object):
 		return outstr
 
 	def set_fl_info_after_enoding(self):
-		fl_data_file = os.path.join(self.psdd_out_dir, './fl_data.info')
-		if os.path.exists(fl_data_file):
-			fl_info = read_info_file(fl_data_file.replace('.info', ''))
+		self.fl_data_file = os.path.join(self.psdd_out_dir, './fl_data.info')
+		if os.path.exists(self.fl_data_file):
+			fl_info = read_info_file(self.fl_data_file.replace('.info', ''))
 			self.fl_info = fl_info
 			if 'fly' in self.fl_info:
 				self.compress_fly = self.fl_info['fly'].bin_encoded
@@ -113,10 +114,10 @@ class Experiment(object):
 	def _get_encoded_data_dir(self):
 		encoded_data_dir = None
 		if os.path.exists(self.psdd_out_dir):
-			fl_data_file = os.path.join(self.psdd_out_dir, './fl_data.info')
-			if os.path.exists(fl_data_file):
+			self.fl_data_file = os.path.join(self.psdd_out_dir, './fl_data.info')
+			if os.path.exists(self.fl_data_file):
 				identifier = 'encoded_data_dir:'
-				with open(fl_data_file, 'r') as f:
+				with open(self.fl_data_file, 'r') as f:
 					for line in f:
 						if line.startswith(identifier):
 							relative_path = line.split(identifier)[-1].strip()
@@ -467,6 +468,49 @@ def do_make_class_samples_smaller(exp, image_size = 28, new_nb_rows = 3):
 				box = (0, rowtotake * (image_size + (padding * 2)), image.size[0], (new_nb_rows + rowtotake) * (image_size + (padding * 2)) + padding * 2)    
 				small_image = image.crop(box)
 				small_image.save(os.path.join(root, file.replace('.png','_small.png')))
+
+def do_analyse_feature_layer(exp, nbqueries):
+	for fl_name, fl_info in read_info_file_basic(exp.fl_info_file):
+		if fl_name != 'fly':
+			for i in range(fl_info.nb_vars):
+				for j in range(fl_info.var_cat_dim):
+					
+
+
+def _do_analyse_feature_layer_for_variable_assignment(exp, nbqueries, variable, assignment):
+	if not _check_if_dir_exists(exp.analysis_dir_path, raiseException = False):
+		os.mkdir(exp.analysis_dir_path)
+
+	#Create File including nbqueryis
+
+	query_name = 'fl_analysis_v{}_at_{}'.format(variable, assignment)
+	query_file = os.path.join(exp.analysis_dir_path, './{}.data'.format(query_name))
+
+	with open(query_file, 'w') as f:
+		for i in range(nbqueries):
+			f.write('{}{}\n'.format('' if assignment else '-', variable))
+
+	try:
+		train_data_path, valid_data_path, _ = exp.get_data_files(impossible_examples)
+	except Exception as e:
+		print('[SAMPLING] - END DUE: \tNeccesary data files could not be found')
+		return
+
+	for i in range(10):
+		try:
+			at_iteration = 'best-{}'.format(i)
+			print('trying at: {}'.format(at_iteration))
+			learn_psdd_wrapper.generative_query_missing(exp.psdd_out_dir, query_data_path, train_data_path, exp.fl_info_file, valid_data_path = valid_data_path, \
+				psdd_init_data_per = 0.1, at_iteration = at_iteration)
+			break
+		except Exception as e:
+			print('caught exception: {}'.format(e))
+			print(traceback.format_exc())
+			continue
+
+
+
+	
 
 # ==========================================================================================================================================================
 # ==========================================================================================================================================================

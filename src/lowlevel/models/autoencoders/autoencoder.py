@@ -190,6 +190,117 @@ class ConvAutoencoder(Autoencoder):
             except:
                 pass
 
+class VarGenerator(nn.Module):
+    def __init__(self, opt, buildModule = True):
+
+        super(VarGenerator, self).__init__()
+
+        self.num_channels = opt.num_channels
+        self.num_fc = 1
+        self.categorical_dim = opt.categorical_dim
+        self.fl_hidden_shape = (opt.batch_size, opt.feature_layer_size, opt.categorical_dim)
+        self.fl_flat_shape = (opt.batch_size, opt.feature_layer_size * opt.categorical_dim)
+        # print("self.fl_flat_shape",self.fl_flat_shape)
+        self.input_shape = (opt.batch_size, opt.input_nc, opt.image_height, opt.image_width)
+        self.feature_layer_size = opt.feature_layer_size
+        self.use_bias = opt.use_bias
+        self.opt = opt
+
+    def __str__(self):
+        old = super(VarGenerator, self).__str__()
+
+        self.num_params = 0
+        params_str = ''
+        for i,param in enumerate(list(self.parameters())):
+            params_str = params_str + \
+                        '\n\t param: {} - shape: {} - requires_grad: {}'.format(i,param.shape, param.requires_grad)
+            self.num_params += param.numel()
+
+        # name = 'MODEL CLASS: {}'.format(self.__class__.__name__)
+        add = '\n input shape: {}'.format(self.input_shape) + \
+              '\n feature layer shape: {}'.format(self.fl_flat_shape) + \
+              '\n feature layer shape: {}'.format(self.fl_hidden_shape) + \
+              '\n num fc: {}'.format(self.num_fc) + \
+              '\n feature num_channels: {}'.format(self.num_channels) + \
+              '\n use_bias {}'.format(self.use_bias) + \
+              '\n model params: nbtensors - {}, nbparams - {}'.format(len(list(self.parameters())), self.num_params)
+        add = add + params_str
+        return old + add
+
+
+    def build_module(self):
+
+        raise Exception('Not implemented Function: build_module')
+
+    def reset_parameters(self):
+        """
+        Re-initialize the network parameters.
+        """
+        for item in self.layer_dict.children():
+            try:
+                item.reset_parameters()
+            except:
+                pass
+
+class VarEncoder(VarGenerator):
+    def __init__(self,opt,buildModule = True):
+
+        super(VarGenerator, self).__init__(opt, buildModule)
+
+        if buildModule:
+            self.layer_dict = nn.ModuleDict()
+            self.build_module()
+
+    def encode(self,x):
+        out = x
+
+        for i in range(self.num_layers_encoder):
+            # print('{} - A : {}'.format(i,out.shape))
+            if i == self.num_layers_encoder - self.num_fc:
+                # if out.shape[-1] != 2:
+                #     out = F.adaptive_avg_pool2d(out, 2)  # apply adaptive pooling to make sure output of conv layers is always (2, 2) spacially (helps with comparisons).
+                out = out.view(self.conversion_layer_shape_after)
+            # print('{} - B : {}'.format(i,out.shape))
+            out = self.layer_dict['encode_{}'.format(i)](out)
+            out = self.layer_dict['encode_{}_activation'.format(i)](out)
+            # print('{} - C : {}'.format(i,out.shape))
+
+            if 'encode_{}_reduction'.format(i) in self.layer_dict:
+                out = self.layer_dict['encode_{}_reduction'.format(i)](out)
+
+        feature_layer_prob = out.view(self.fl_flat_shape)
+
+        return feature_layer_prob
+
+class VarDecoder(VarGenerator):
+    def __init__(self,opt,buildModule = True, shape_args = None):
+
+        super(VarGenerator, self).__init__(opt, buildModule)
+        self.conversion_layer_shape_before = shape_args[0]
+        self.conversion_layer_shape_after = shape_args[1]
+
+        if buildModule:
+            self.layer_dict = nn.ModuleDict()
+            self.build_module()
+
+
+    def decode(self,x):
+        out = x.view(self.fl_flat_shape)
+
+        for i in range(self.num_layers_decoder):
+            # print('{} - A : {}'.format(i,out.shape))
+            if i == self.num_fc:
+                out = out.view(self.conversion_layer_shape_before)
+            # print('{} - B : {}'.format(i,out.shape))
+            out = self.layer_dict['decode_{}'.format(i)](out)
+
+            out = self.layer_dict['decode_{}_activation'.format(i)](out)
+
+            if 'decode_{}_upsampling'.format(i) in self.layer_dict:
+                out = self.layer_dict['decode_{}_upsampling'.format(i)](out)
+
+        res = out.view(self.input_shape)
+        return res
 
 class VarAutoencoder(nn.Module):
 

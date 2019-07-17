@@ -97,9 +97,9 @@ def create_info_file(file_encoded_path, fl_info):
 		for fl_domain_info in fl_info:
 			f.write('{}\n'.format(fl_info[fl_domain_info]))
 
-def read_info_file(file_encoded_path):
+def read_info_file_basic(info_file):
 	domains = {}
-	with open(file_encoded_path + '.info', 'r') as f:
+	with open(info_file, 'r') as f:
 		for line_idx, line in enumerate(f):
 			if line_idx == 0 or len(line.strip().split(',')) < 5 or line.startswith('encoded_data_dir'):
 				continue
@@ -108,8 +108,10 @@ def read_info_file(file_encoded_path):
 			domains[fl_info.name] = fl_info
 
 	# print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(domains, '/'.join(file_encoded_path.split('/')[-3:])))
-	# print('[INFO] \t\t\t info file read succesfully')
-	return domains
+	# print('[INFO] \t\t\t info file read succesf
+
+def read_info_file(file_encoded_path):
+	return read_info_file(file_encoded_path + '.info')
 
 def recreate_fl_info_for_old_experiments(exeriment_dir):
 	exeriment_dir = os.path.abspath(exeriment_dir)
@@ -176,7 +178,7 @@ def decode_binary_to_onehot(binary_list, cat_dim):
 	value_as_onehot[value_as_int] = 1
 	return value_as_onehot
 
-def decode_binary_to_int( binary_list):
+def decode_binary_to_int(binary_list):
 	value_as_bin = ''.join(binary_list).replace('\n','')
 	value_as_int = int(value_as_bin,2)
 	# print(binary_list, value_as_bin, value_as_int)

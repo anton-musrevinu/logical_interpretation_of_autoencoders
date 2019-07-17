@@ -15,7 +15,7 @@
 #				
 #=============================================================================================================================================
 import os, platform, shutil
-from src.lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_for_old_experiments
+from src.lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_for_old_experiments, read_info_file_basic
 import functools
 
 #DEPENDENCIES and USER variables:
@@ -878,6 +878,96 @@ def generative_query_for_file(psdd_out_dir, query_data_path, train_data_path, va
 	
 	out_data_info_file = out_file + '.info'
 	shutil.copyfile(org_query_data_path + '.info', out_data_info_file)
+
+	write('Finished measureing classfication acc. File location: {}'.format(out_file), 'cmd-end')
+	return out_file
+
+def generative_query_missing(psdd_out_dir, query_data_path, train_data_path, fl_info_file, valid_data_path = None, out_file = None, \
+							psdd_init_data_per = .1, at_iteration = 'best-0'):
+	_check_if_file_exists(query_data_path)
+	_check_if_dir_exists(psdd_out_dir)
+
+	# if 'psdd_model' in psdd_out_dir:
+	# 	vtree_path, psdds, weights, at_iteration = get_old_file_names_and_check(psdd_out_dir, at_iteration)
+	# 	fl_info = recreate_fl_info_for_old_experiments(psdd_out_dir)
+	# else:
+	vtree_path, psdds, weights, at_iteration = get_file_names_and_check(psdd_out_dir, at_iteration)
+	fl_info =  read_info_file_basic(fl_info_file)
+
+	evaluationDir = os.path.abspath(os.path.join(psdd_out_dir, './evaluation/'))
+	if not _check_if_dir_exists(evaluationDir, raiseException = False):
+		os.mkdir(evaluationDir)
+
+	if out_file == None:
+		out_file = os.path.join(evaluationDir, './{}'.format(query_data_path.split('/')[-1].replace('.data', 'anwser.data')))
+		out_file = os.path.abspath(out_file)
+
+	write('creating query and init files for psdd with outfile: {} (y_condition: {})'.format(remove_home(out_file), y_condition))
+
+	if psdd_init_data_per != 1:
+		sample_data_path = train_data_path + '.sample'
+		stop_line_idx = psdd_init_data_per * sum(1 for line in open(train_data_path,'r'))
+		with open(sample_data_path, 'w') as f:
+			with open(train_data_path, 'r') as f2:
+				for line_idx, line in enumerate(f2):
+					f.write(line)
+					if line_idx > stop_line_idx:
+						break
+		train_data_path = sample_data_path
+
+		if valid_data_path != None:
+			sample_data_path = valid_data_path + '.sample'
+			stop_line_idx = psdd_init_data_per * sum(1 for line in open(valid_data_path,'r'))
+			with open(sample_data_path, 'w') as f:
+				with open(valid_data_path, 'r') as f2:
+					for line_idx, line in enumerate(f2):
+						f.write(line)
+						if line_idx > stop_line_idx:
+							break
+			valid_data_path = sample_data_path
+
+	# -v vtree
+	# -p list of psdds
+	# -a list of psdd weighs
+	# -d data for initializing the psdd
+	# -fly categorical dimention of the FLy --- the number of labels
+	# -flx categorical dimention of the FLx
+	# -o output file
+                     # // fl_names: Seq[String] = null,
+                     # // fl_nb_vars: Seq[Int]  = null,
+                     # // fl_var_cat_dim: Seq[Int] = null,
+                     # // fl_binary_encoded: Seq[Int] = null,
+                     # // fl_encoded_start_idx: Seq[Int] = null,
+                     # // fl_encoded_end_idx: Seq[Int] = null,
+                     # // fl_to_query: Seq[String] = null,
+
+    fl_names = str(list(fl_info.keys())).replace('[', '').replace(']','').replace(' ','')
+	cmd_str = 'java -jar ' + LEARNPSDD_CMD + ' query --mode generative_query_missing_bin ' + \
+			' --vtree {}'.format(vtree_path) + \
+			' --query {}'.format(query_data_path) + \
+			' --psdds {}'.format(list_to_cs_string(psdds)) + \
+			' --out {}'.format(out_file) + \
+			' --componentweights {}'.format(list_to_cs_string(weights)) + \
+			' --fl_names {}'.format(fl_names) + \
+			' --fl_nb_vars {}'.format(str([i.nb_vars for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
+			' --fl_var_cat_dim {}'.format(str([i.var_cat_dim for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
+			' --fl_binary_encoded {}'.format(str([i.bin_encoded for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
+			' --fl_encoded_start_idx {}'.format(str([i.encoded_start_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
+			' --fl_encoded_end_idx {}'.format(str([i.encoded_end_idx for i in  fl_info.values()]).replace('[', '').replace(']','').replace(' ','')) + \
+			' --fl_to_query {}'.format(fl_names) \
+			' -d {}'.format(train_data_path)
+	if valid_data_path != None:
+		cmd_str += ' -b {}'.format(valid_data_path)
+	
+	write(cmd_str,'cmd-start')
+	os.system(cmd_str)
+
+	out_file_info = out_file + '_generative_query_missing.info'
+	_check_if_file_exists(out_file_info)
+	_check_if_file_exists(out_file)
+
+	if os.path.getsize(out_file) == 0:
+		raise PsddQueryException('Exeption in query')
 
 	write('Finished measureing classfication acc. File location: {}'.format(out_file), 'cmd-end')
 	return out_file

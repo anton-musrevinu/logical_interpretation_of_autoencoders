@@ -34,7 +34,7 @@ class QueryManager:
 
 		return time.time() - testTime
 
-	def convert_to_sdd(self, hkbAsZ3, sdd_file = None, vtree_file = None, printModels = False, total_num_vars = None, precomputed_vtree = False, cnf_dir = None):
+	def enumerate_models(self, hkbAsZ3, sdd_file = None, vtree_file = None, printModels = False, total_num_vars = None, precomputed_vtree = False, cnf_dir = None, save_models_file = None):
 		# print(hkbAsZ3)
 		start_time = time.time()
 		wmiManager = WMIManager(self._propName, self._tmpDir, self._logger)
@@ -44,10 +44,23 @@ class QueryManager:
 
 		wmiManager.create_sdd(sdd_file = sdd_file ,vtree_file = vtree_file, total_num_vars = total_num_vars, precomputed_vtree = precomputed_vtree, cnf_dir = cnf_dir)
 		total_time = time.time() - start_time
-		if printModels:
-			wmiManager.query_sdd()
+		
+		wmiManager.query_sdd()
+		
+		count = 0
+		if not save_models_file is None:
+			with open(save_models_file, 'w') as f:
+				for model in wmiManager.get_models():
+					if printModels:
+						print('\t' + str(model[:total_num_vars]))
+					f.write(str(model[:total_num_vars]) + '\n')
+					count += 1
+		elif printModels:
 			for model in wmiManager.get_models():
 				print('\t' + str(model[:total_num_vars]))
+				count += 1
+
+		print('{} models have been found'.format(count))
 
 	def do_enumeration(self,vtree_file, sdd_file, total_num_vars):
 		wmiManager = WMIManager(self._propName, self._tmpDir, self._logger)

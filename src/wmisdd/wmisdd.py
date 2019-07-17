@@ -99,10 +99,12 @@ if args.mode == arg_mode_onehot:
 	if args.onehot_fl_size == -1:
 		raise argparse.ArgumentTypeError('number of xsize has be provided for mode {}'.format(arg_mode_onehot))
 
-	onehot_kb = OneHot.create_all_contraints(args.onehot_numvars, args.onehot_fl_size, args.onehot_fl_categorical_dim)
+	onehot_kb = OneHot.create_all_contraints(args.onehot_fl_size, args.onehot_fl_categorical_dim)
+	print(onehot_kb)
 	queryManager = QueryManager(query_name, tmpdir, args.interror, logger)
-	queryManager.convert_to_sdd(onehot_kb, args.onehot_out_sdd, args.onehot_out_vtree,\
-								 printModels = False, total_num_vars = args.onehot_numvars, precomputed_vtree = args.precomputed_vtree, cnf_dir = args.cnf_dir)
+	queryManager.enumerate_models(onehot_kb, args.onehot_out_sdd, args.onehot_out_vtree,\
+								 printModels = True, total_num_vars = args.onehot_numvars,\
+								 precomputed_vtree = args.precomputed_vtree, cnf_dir = args.cnf_dir,save_models_file = args.onehot_out_models)
 if args.mode == arg_mode_WME:
 	queryManager = QueryManager(query_name, tmpdir, args.interror, logger)
 	queryManager.do_enumeration(args.wme_in_vtree, args.wme_in_sdd, args.onehot_numvars)

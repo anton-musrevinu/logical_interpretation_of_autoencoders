@@ -190,7 +190,7 @@ class EnumerationManager:
 		else:
 			return indicator, execTime
 
-	def getModelEnumerate(self,algorithm = ALGORITHM_ME_PAR_DISK, timeout = DEF_TIMEOUT_ME, verbose = False, threads = 0):
+	def getModelEnumerate(self,algorithm = ALGORITHM_ME_RAM, timeout = DEF_TIMEOUT_ME, verbose = False, threads = 0):
 		if not (algorithm == EnumerationManager.ALGORITHM_ME_DISK or \
 				algorithm == EnumerationManager.ALGORITHM_ME_RAM or \
 				algorithm == EnumerationManager.ALGORITHM_ME_PURE or \

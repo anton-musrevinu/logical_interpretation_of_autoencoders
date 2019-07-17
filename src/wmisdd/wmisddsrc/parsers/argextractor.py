@@ -62,6 +62,7 @@ def get_args():
     parser.add_argument('--onehot_out_sdd', nargs="?", type=str, default=None, help='output path of the sdd file (not provided will write it to the tmp file)')
     parser.add_argument('--onehot_out_vtree', nargs="?", type=str, default=None, help='output path of the vtree file (not provided will write it to the tmp file)')
     parser.add_argument('--precomputed_vtree', type=str2bool, default = False)
+    parser.add_argument('--onehot_out_models', type=str, default = None, help='file location where all satisfing models should be saved')
 
     parser.add_argument('--keeptmpdir', nargs="?", type=str2bool, default=False, help='specify if the tmpdir should be deleted after the execution finished')
 
