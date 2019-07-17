@@ -84,6 +84,7 @@ class Experiment(object):
 
 		self.evaluation_dir_path = os.path.abspath(os.path.join(self.psdd_out_dir, './evaluation/'))
 		self.analysis_dir_path = os.path.abspath(os.path.join(self.psdd_out_dir, './analysis/'))
+		self.fl_visual_dir_path = os.path.abspath(os.path.join(self.psdd_out_dir, './fl_visual/'))
 
 		self.comb_func = CombinatorialFunction(self.task_type)
 
@@ -525,7 +526,68 @@ def _do_analyse_feature_layer_for_variable_assignment(exp, nbqueries, variable, 
 			continue
 
 
+def combine_fl_variables_images(exp):
+	if not os.path.exists(exp.analysis_dir_path):
+		raise Exception('Analysis directory could not be found')
 
+	files_for_var = {}
+	for root, _ , file_names in os.walk(exp.analysis_dir_path):
+		for file_name in file_names:
+			# print(file_name,file_name.startswith('fl_analysis_v'),file_name.endswith('.anwser.png'))
+			if file_name.startswith('fl_analysis_v') and file_name.endswith('.anwser.png'):
+				variable = int(file_name.split('_v')[1].split('_')[0])
+				assignment = int(file_name.split('_at_')[1].split('.')[0])
+
+				if not variable in files_for_var:
+					files_for_var[variable] = {}
+
+				files_for_var[variable][assignment] = os.path.join(root,file_name)
+
+
+	if not os.path.exists(exp.fl_visual_dir_path):
+		os.mkdir(exp.fl_visual_dir_path)
+
+	for variable, files in files_for_var.items():
+		if not len(files.values()) == 2:
+			continue
+
+		file_0, file_1 = files.values()
+		save_path = os.path.join(exp.fl_visual_dir_path, './fl_visual_v{}'.format(variable))
+		_combine_biary_variables_images(file_0, file_1, save_path)
+
+
+				
+
+def _combine_biary_variables_images(file_0, file_1, save_path):
+	images_0 = Image.open(file_0)
+	images_1 = Image.open(file_1)
+
+	assert images_0.size == images_1.size
+
+	array_0 = np.mean(np.array(images_0), axis = 2)
+	array_1 = np.mean(np.array(images_1), axis = 2)
+
+	print(array_0.shape)
+
+	diff_method_a = lambda array_0, array_1: ((array_0 - array_1) + 1)/2
+	diff_method_b = lambda array_0, array_1: np.absolute(array_0 - array_1)
+	diff_method_c = lambda array_0, array_1: np.maximum((array_0 - array_1), np.zeros(array_0.shape))
+	diff_method_d = lambda array_0, array_1: (array_0 - array_1)**2
+
+	methods = {'a': diff_method_a, 'b': diff_method_b, 'c': diff_method_c, 'd': diff_method_d}
+
+	for name, mehtod in methods.items():
+		diff_array_x = mehtod(array_0, array_1)
+		diff_array_x_rev = mehtod(array_1, array_0)
+		# print(name, diff_array_x.shape)
+
+		diff_image_x = Image.fromarray(np.uint8(diff_array_x * 255), 'L')
+		diff_image_x_rev = Image.fromarray(np.uint8(diff_array_x_rev * 255), 'L')
+
+		diff_image_x.save('{}_{}.png'.format(save_path, name))
+		diff_image_x_rev.save('{}_{}_rev.png'.format(save_path, name))
+
+	print('combined the images of variable: {}'.format(save_path.split('_v')[-1]))
 	
 
 # ==========================================================================================================================================================
@@ -716,7 +778,7 @@ if __name__ == '__main__':
 	#exps = [#('ex_7_mnist_32_2', 'james10', 'g7land', False),\
 			#('ex_7_mnist_32_2', 'james09', 'g4land', False),\
 	# exps = [('ex_7_mnist_32_2', 'james01', 'bland', True),\
-	(experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_7_mnist_32_2', 'james01', 'classification', True)
+	(experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_9_fashion_32_2', 'james03', 'classification', False)
 	# experiment_parent_name = 'ex_7_mnist_32_2'
 	# cluster_id = 'james06'
 	# task_type = 'plus-ring-10'
@@ -724,6 +786,7 @@ if __name__ == '__main__':
 	# compress_fly = True
 	# for (experiment_parent_name,cluster_id,task_type,compress_fly) in exps:
 	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
+	# combine_fl_variables_images(exp)
 	do_analyse_feature_layer(exp, 1000, testing = False)
 	# do_everything(exp, do_encode_data = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'bin', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
