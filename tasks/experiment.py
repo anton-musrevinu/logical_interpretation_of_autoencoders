@@ -543,9 +543,11 @@ def combine_fl_variables_images(exp):
 
 				files_for_var[variable][assignment] = os.path.join(root,file_name)
 
+	if os.path.exists(exp.fl_visual_dir_path):
+		shutil.rmtree(exp.fl_visual_dir_path)
+	os.mkdir(exp.fl_visual_dir_path)
 
-	if not os.path.exists(exp.fl_visual_dir_path):
-		os.mkdir(exp.fl_visual_dir_path)
+	files_created = {}
 
 	for variable, files in files_for_var.items():
 		if not len(files.values()) == 2:
@@ -553,10 +555,37 @@ def combine_fl_variables_images(exp):
 
 		file_0, file_1 = files.values()
 		save_path = os.path.join(exp.fl_visual_dir_path, './fl_visual_v{}'.format(variable))
-		_combine_biary_variables_images(file_0, file_1, save_path)
+		files_created_for_var = _combine_biary_variables_images(file_0, file_1, save_path)
+		for name, file in files_created_for_var.items():
+			if name not in files_created:
+				files_created[name] = []
+			files_created[name].append(file)
+
+	for name, files_to_combine in files_created.items():
+		_combine_difference_images(files_to_combine, name, exp.fl_visual_dir_path)
 
 
-				
+def _combine_difference_images(image_files, method, save_dir):
+	padding = 2
+
+	images_to_combine = []
+	for image_file in image_files:
+		images_to_combine.append(Image.open(image_file))
+
+	line_height = images_to_combine[0].size[1]
+
+	total_height = len(images_to_combine) * (line_height) + (len(images_to_combine) - 1) * padding + padding * 2
+	total_width = images_to_combine[0].size[0] + padding * 2
+
+	new_im = Image.new('L',(total_width, total_height))
+
+	y_offset = padding
+	for im in images_to_combine:
+	  new_im.paste(im, (padding,y_offset))
+	  y_offset += im.size[1] + padding
+
+	save_path = os.path.join(save_dir, './fl_visual_all_{}.png'.format(method))
+	new_im.save(save_path)
 
 def _combine_biary_variables_images(file_0, file_1, save_path):
 	images_0 = Image.open(file_0)
@@ -569,25 +598,41 @@ def _combine_biary_variables_images(file_0, file_1, save_path):
 
 	print(array_0.shape)
 
-	diff_method_a = lambda array_0, array_1: ((array_0 - array_1) + 1)/2
-	diff_method_b = lambda array_0, array_1: np.absolute(array_0 - array_1)
-	diff_method_c = lambda array_0, array_1: np.maximum((array_0 - array_1), np.zeros(array_0.shape))
-	diff_method_d = lambda array_0, array_1: (array_0 - array_1)**2
+	diff_method_a = (lambda array_0, array_1: ((array_0 - array_1) + 1)/2, 								True )
+	diff_method_b = (lambda array_0, array_1: np.absolute(array_0 - array_1), 							False)
+	diff_method_c = (lambda array_0, array_1: np.maximum((array_0 - array_1), np.zeros(array_0.shape)), True )
+	diff_method_d = (lambda array_0, array_1: (array_0 - array_1)**2, 									False)
 
 	methods = {'a': diff_method_a, 'b': diff_method_b, 'c': diff_method_c, 'd': diff_method_d}
+	files_created = {}
+	padding_between_images = 4
 
-	for name, mehtod in methods.items():
+	for name, (mehtod, do_reverse) in methods.items():
 		diff_array_x = mehtod(array_0, array_1)
-		diff_array_x_rev = mehtod(array_1, array_0)
-		# print(name, diff_array_x.shape)
+		# diff_image_x = Image.fromarray(np.uint8(diff_array_x * 255), 'L')
+		# diff_image_x_path = '{}_{}.png'.format(save_path, name)
 
-		diff_image_x = Image.fromarray(np.uint8(diff_array_x * 255), 'L')
-		diff_image_x_rev = Image.fromarray(np.uint8(diff_array_x_rev * 255), 'L')
+		if do_reverse:
+			diff_array_x_rev = mehtod(array_1, array_0)
+			# diff_image_x_rev = Image.fromarray(np.uint8(diff_array_x_rev * 255), 'L')
+			# diff_image_x_rev_path = '{}_{}_rev.png'.format(save_path, name)
+			# diff_image_x_rev.save(diff_image_x_rev_path)
+			small_diff_array_x = (diff_array_x[:,:int(diff_array_x.shape[1]/2)] +  diff_array_x[:,int(diff_array_x.shape[1]/2):]) / 2 
+			small_diff_array_x_rev = (diff_array_x_rev[:,:int(diff_array_x_rev.shape[1]/2)] + diff_array_x_rev[:,int(diff_array_x_rev.shape[1]/2):]) /2
 
-		diff_image_x.save('{}_{}.png'.format(save_path, name))
-		diff_image_x_rev.save('{}_{}_rev.png'.format(save_path, name))
+			buffer_array = np.concatenate((np.zeros((diff_array_x.shape[0], 2)),np.ones((diff_array_x.shape[0], padding_between_images)), np.zeros((diff_array_x.shape[0], 2))), axis = 1)
+
+			resulting_array = np.concatenate((small_diff_array_x, buffer_array, small_diff_array_x_rev), axis = 1)
+		else:
+			resulting_array = diff_array_x
+
+		resulting_image = Image.fromarray(np.uint8(resulting_array * 255), 'L')
+		resulting_image_path = '{}_{}.png'.format(save_path, name)
+		resulting_image.save(resulting_image_path)
+		files_created[name] = resulting_image_path
 
 	print('combined the images of variable: {}'.format(save_path.split('_v')[-1]))
+	return files_created
 	
 
 # ==========================================================================================================================================================
@@ -775,19 +820,19 @@ if __name__ == '__main__':
 	# decode_all_possible(display_exp = True)
 	# evaluate_all_missing(display_exp = True)
 	# sample_all_missing(display_exp = False, only_first = False, types_of_query = ['dis'])
-	#exps = [#('ex_7_mnist_32_2', 'james10', 'g7land', False),\
-			#('ex_7_mnist_32_2', 'james09', 'g4land', False),\
+	exps = [('ex_7_mnist_32_2', 'student_compute', 'classification', False),\
+			('ex_9_fashion_32_2', 'james03', 'classification', False)]
 	# exps = [('ex_7_mnist_32_2', 'james01', 'bland', True),\
-	(experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_9_fashion_32_2', 'james03', 'classification', False)
+	# (experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_9_fashion_32_2', 'james03', 'classification', False)
 	# experiment_parent_name = 'ex_7_mnist_32_2'
 	# cluster_id = 'james06'
 	# task_type = 'plus-ring-10'
 	data_per = 1
 	# compress_fly = True
-	# for (experiment_parent_name,cluster_id,task_type,compress_fly) in exps:
-	exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
-	# combine_fl_variables_images(exp)
-	do_analyse_feature_layer(exp, 1000, testing = False)
+	for (experiment_parent_name,cluster_id,task_type,compress_fly) in exps:
+		exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
+		combine_fl_variables_images(exp)
+	# do_analyse_feature_layer(exp, 1000, testing = False)
 	# do_everything(exp, do_encode_data = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'bin', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'dis', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)
