@@ -1,5 +1,5 @@
 import csv
-import os
+import os, sys
 
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
@@ -7,7 +7,9 @@ plt.style.use('ggplot')
 import numpy as np
 from scipy.interpolate import griddata
 
-from plots.make_results_file import gather_only_var_results, gather_results, get_task_type_hiracy
+from make_results_file import gather_only_var_results, gather_results, get_task_type_hiracy
+
+sys.path.append('../../experiment/')
 from experiment import Experiment
 
 

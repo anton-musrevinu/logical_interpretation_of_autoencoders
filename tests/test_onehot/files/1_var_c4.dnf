@@ -1,6 +1,0 @@
-c this the Abstacted SMT Formalu in DNF (DEMACS)
-p cnf 4 4
- 1 -2 -3 -4 0
--1  2 -3 -3 0
--1 -2  3 -4 0
--1 -2 -3  4 0

@@ -693,7 +693,58 @@ object Main {
     help("help") text ("prints this usage text\n")
   }
 
-  val queryParser = new scopt.OptionParser[Config](query) {
+  val querybaiscParser = new scopt.OptionParser[Config](querybasic) {
+    override def showUsageOnError = true
+
+    head("Query psdds") //HERE
+
+    opt[File]('d', "trainData").
+      required().
+      valueName ("<file>").
+      action { (x, c) => c.copy(train = x) }
+
+    opt[File]('b', "validData").
+      valueName ("<file>").
+      action { (x, c) => c.copy(valid = x) }
+
+    opt[File]('q', "query").
+      optional().
+      valueName ("<file>").
+      action { (x, c) => c.copy(query = x) }
+
+    opt[File]('v', "vtree").
+      required().
+      valueName ("<file>").
+      action { (x, c) => c.copy(vtree = x) }
+
+    opt[String]('o', "out").
+      optional().
+      valueName("<path>").
+      action( (x, c) => c.copy(out = x) )
+
+    opt[Seq[Double]]('a', "componentweights").
+      required().
+      valueName("<double>,<double>,...").
+      action( (x,c) => c.copy(componentweights = x) )
+
+    opt[Seq[File]]('p', "psdds").
+      required().
+      valueName ("<file>,<file>,...").
+      action( (x,c) => c.copy(psdds = x))
+
+    checkConfig { c =>
+      if (c.train==null) failure("train data is required")
+      if (c.vtree==null) failure("vtree is required")
+      if (c.psdd==null) failure("psdd is required")
+      if (c.out==null) failure("output path is required")
+      if (c.componentweights==null) failure("output path is required")
+      success
+    }
+
+    help("help") text ("prints this usage text\n")
+    }
+
+  val queryflParser = new scopt.OptionParser[Config](queryfl) {
     override def showUsageOnError = true
 
     head("Query an assembly of psdds") //HERE
@@ -1143,7 +1194,76 @@ object Main {
 
         }
 
-        case `query` =>queryParser.parse(args.drop(1), Config()) match {
+        case `querybaisc` => querybaiscParser.parse(args.drop(1), Config()) match {
+          case None =>
+          case Some(config) =>
+
+            val sddMgr = new SddManager(Vtree.read(config.vtree.getPath))
+            sddMgr.useAutoGcMin(false)
+
+            val pw = new PrintWriter(new File(config.out + ".info"))
+
+            print("Prepare psdd manager...")
+            val vtree = VtreeNode.read(config.vtree)
+            pw.write("reading vtree from: " + config.vtree + "\n")
+            println("reading vtree from: " + config.vtree)
+            val psddMgr = new PsddManager(sddMgr, true)
+            println(" done!")
+
+            print("Read data...")
+            val trainData = Data.readFromFile(config.train)
+            val validData = if (config.valid == null) trainData.empty else Data.readFromFile(config.valid)
+            val testData = trainData.empty
+            val data = new DataSets(trainData, validData, testData)
+            println(" done!")
+
+            println("Read Psdds from "+config.psdds+"...")
+            val numComponents = config.psdds.size
+            val psdds = Seq.tabulate(numComponents)(n => psddMgr.readPsdd(config.psdds(n), vtree, data))
+            val componentweights = config.componentweights
+            println("Psdd components given")
+            for (i <- 0 to numComponents - 1){
+              println("PSDD: " + i + " cw: " + componentweights(i) + "\n\tfile: " + config.psdds(i))
+              pw.write("PSDD: " + i + " cw: " + componentweights(i) + "\n\tfile: " + config.psdds(i) + "\n")
+            }
+            println(" done!")
+
+            println()
+
+            print("Read Assignment...")
+            val queries = PartialAssignment.readFromFile(config.query)
+            val nb_queries_total = (queries.backend.length)
+            val one_hundreth_of_total_queries = if (nb_queries_total > 100) (nb_queries_total/100).toInt else 1
+            println("nb_queries_total: " + nb_queries_total)
+            println("one_hundreth_of_total_queries: " + one_hundreth_of_total_queries)
+            println(" done!")
+
+            val pw_result = new PrintWriter(new File(config.out))
+
+            println("Starting to query PSDD!")
+            pw.write("Starting to query PSDD!\n")
+            for ( i <- 0 to nb_queries_total -1) {
+              var query = queries.backend(i)
+              var prob:BigDecimal = Seq.tabulate(numComponents)(x => PsddQueries.bigDecimalProb(psdds(x), query) * componentweights(x)).sum
+
+              pw_result.write(prob.toString + "\n")
+
+              if ((i) % one_hundreth_of_total_queries == 0 && i != 0){
+                var current_percent = BigDecimal((i/nb_queries_total.toDouble) * 100).setScale(0, BigDecimal.RoundingMode.CEILING)
+
+                var outputString = "computed :" + current_percent + "% (" + i + ") \tof all queries \n"
+                print(outputString)
+                pw.write(outputString)
+              }
+            }
+            pw_result.close
+
+            println("Finished quering psdd")
+            pw.write("Finished quering psdd!\n")
+            pw.close
+      }
+
+        case `queryfl` => queryflParser.parse(args.drop(1), Config()) match {
           case None =>
           case Some(config) =>
 
