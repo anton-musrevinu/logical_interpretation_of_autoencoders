@@ -1,0 +1,10 @@
+conda create --name msc python=3.6
+
+conda activate msc
+
+conda install pytorch torchvision -c pytorch
+# MacOS Binaries dont support CUDA, install from source if CUDA is needed
+
+pip install tqdm
+pip install matplotlib
+pip install scipy

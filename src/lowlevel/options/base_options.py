@@ -10,6 +10,11 @@ import time
 from . import str2bool
 import importlib
 
+ROOT_LOWLEVEL_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), './../'))
+ROOTDIR = os.path.abspath(os.path.join(ROOT_LOWLEVEL_DIR, './../..'))
+
+DEFAULT_DATAST_DIR = os.path.abspath(os.path.join(ROOTDIR, './datasets'))
+DEFAULT_OUTPUT_DIR = os.path.abspath(os.path.join(ROOTDIR, './output'))
 
 class BaseOptions():
     """This class defines options used during both training and test time.
@@ -24,12 +29,12 @@ class BaseOptions():
     def initialize(self, parser):
         """Define the common options that are used in both training and test."""
         # basic parameters
-        parser.add_argument('--dataroot', default='./../../datasets/', help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
+        parser.add_argument('--dataroot', default=DEFAULT_DATAST_DIR, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
         parser.add_argument('--gpu_ids', type=str, default='-1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 
         parser.add_argument('--experiment_name', type=str, default='test', help='everything is saved here')
         parser.add_argument('--testing', type=str2bool, default=False, help='reduce epoch and batch size for testing')
-        parser.add_argument('--output_dir', type=str, default='./../../output', help='everything is saved here')     
+        parser.add_argument('--output_dir', type=str, default=DEFAULT_OUTPUT_DIR, help='everything is saved here')     
         # model parameters
 
        # additional parameters
@@ -142,8 +147,6 @@ class BaseOptions():
         # if isLoading:
         # print('\n\nis loading is true: {}'.format(dict_options))
         opt_spec, _ = parser.parse_known_args(dict_options)
-        # else:
-        #     opt_spec, _ = parser_phase_sepcific.parse_known_args()
 
 
         # print('\n\nso far so good')
@@ -265,7 +268,7 @@ class BaseOptions():
                 print('replaceing existing tree: {}'.format(new_experiment_folder))
                 shutil.rmtree(new_experiment_folder)
                 time.sleep(2)
-            os.mkdir(new_experiment_folder)
+            os.makedirs(new_experiment_folder)
         else:
             print('A network is being loaded')
 

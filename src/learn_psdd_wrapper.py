@@ -14,9 +14,15 @@
 #				enjoy
 #				
 #=============================================================================================================================================
-import os, platform, shutil
-from src.lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_for_old_experiments, read_info_file_basic
+import os,sys , platform, shutil
+SRCDIR = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(SRCDIR)
+ROOTDIR = os.path.abspath(os.path.join(SRCDIR, './..'))
+
+from lowlevel.util.psdd_interface import read_info_file, recreate_fl_info_for_old_experiments, read_info_file_basic
 import functools
+
+
 
 #DEPENDENCIES and USER variables:
 
@@ -24,7 +30,7 @@ import functools
 #
 # - Scala-PlearnPsdd 	(STARAI-UCLA software)  -   Link: https://github.com/YitaoLiang/Scala-LearnPsdd
 # 													The root location of the source directory should be specified (relative to home, or abs) in the following variable
-LEARNPSDD_ROOT_DIR_USER = './code/msc/src/Scala-LearnPsdd/'
+LEARNPSDD_REALTIVE_PATH = './Scala-LearnPsdd/'
 RECOMPILE_PSDD_SOURCE = False
 # -------------------------------------------------------------------------------------------------------------------------
 #
@@ -35,11 +41,11 @@ GRAPHVIZ_INSTALLED = True
 #
 # - SDDLIB BINARY       (STAR-UCLA software)    -   Link: http://reasoning.cs.ucla.edu/sdd/
 #
-SDD_LIB_DIR_USER = './code/msc/src/sddlib/bin/'
+SDD_LIB_RELATIVE_PATH = './sddlib/bin/'
 #
 # - Updated Source version of LearnPSDD (STAR-UCLA Software) - Link:
 #
-LEARNPSDD_PAPER_ROOT_DIR_USER = './code/msc/src/learnPSDD/'
+LEARNPSDD_PAPER_RELATIVE_PATH = './learnPSDD/'
 USE_LEARN_PSDD_PAPER = True
 RECOMPILE_PSDD_PAPER_SOURCE = False
 #
@@ -51,6 +57,8 @@ def write(message, level = 'info'):
 	out_string = '[{}]'.format(level.upper())
 	message_start_idx = 20
 	out_string += ' ' * (message_start_idx - len(out_string))
+	if level == 'files':
+		message = remove_home(message)
 	out_string += '- {}'.format(message)
 	if level == 'error':
 		print(out_string)
@@ -106,15 +114,14 @@ def _add_learn_psdd_lib_to_path(learnpsdd_lib):
 		write('variable PATH updated to: {}'.format(os.environ['PATH']), 'init')
 
 def remove_home(file_path):
-	ret = file_path.replace(os.environ['HOME'], '')
-	ret = ret.replace('/code/msc/output/experiments/','')
+	ret = file_path.replace(ROOTDIR + '/', '')
 	return ret
 
 #============================================================================================================================
 #======================================  INIT (executed when module is loaded ===============================================
 #============================================================================================================================
 
-LEARNPSDD_ROOT_DIR = os.path.abspath(os.path.join(os.environ['HOME'],LEARNPSDD_ROOT_DIR_USER))
+LEARNPSDD_ROOT_DIR = os.path.abspath(os.path.join(SRCDIR,LEARNPSDD_REALTIVE_PATH))
 write('LEARNPSDD_ROOT_DIR \t{}'.format(LEARNPSDD_ROOT_DIR),'init')
 _check_if_dir_exists(LEARNPSDD_ROOT_DIR)
 if RECOMPILE_PSDD_SOURCE:
@@ -125,7 +132,7 @@ _check_if_file_exists(LEARNPSDD_CMD)
 _check_if_dir_exists(LEARNPSDD_LIB)
 _add_learn_psdd_lib_to_path(LEARNPSDD_LIB)
 
-SDDLIB_BIN = os.path.abspath(os.path.join(os.environ['HOME'],SDD_LIB_DIR_USER))
+SDDLIB_BIN = os.path.abspath(os.path.join(SRCDIR,SDD_LIB_RELATIVE_PATH))
 write('SDDLIB_BIN \t{}'.format(SDDLIB_BIN),'init')
 _check_if_dir_exists(SDDLIB_BIN)
 if 'Linux' in platform.system():
@@ -137,7 +144,7 @@ write('SDDLIB_CMD \t{}'.format(SDDLIB_CMD),'init')
 _check_if_file_exists(SDDLIB_CMD)
 
 if USE_LEARN_PSDD_PAPER:
-	LEARNPSDD_PAPER_ROOT_DIR = os.path.abspath(os.path.join(os.environ['HOME'],LEARNPSDD_PAPER_ROOT_DIR_USER))
+	LEARNPSDD_PAPER_ROOT_DIR = os.path.abspath(os.path.join(SRCDIR,LEARNPSDD_PAPER_RELATIVE_PATH))
 	write('LEARNPSDD_PAPER_ROOT_DIR \t{}'.format(LEARNPSDD_PAPER_ROOT_DIR),'init')
 	_check_if_dir_exists(LEARNPSDD_PAPER_ROOT_DIR)
 	if RECOMPILE_PSDD_PAPER_SOURCE:
@@ -1068,7 +1075,7 @@ def learn_psdd(psdd_out_dir, train_data_path,
 # ============================================================================================================================
 
 def test_functions():
-	experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/ex_1_fl16_c2'))
+	experiment_dir_path = os.path.abspath(os.path.join(ROOTDIR,'./output/experiments/ex_1_fl16_c2'))
 	# test_data_path = os.path.join(experiment_dir_path, 'encoded_data/mnist-encoded-test.data')
 	valid_data_path = os.path.join(experiment_dir_path, './encoded_data/mnist-encoded-valid.data')
 	train_data_path = os.path.join(experiment_dir_path, './encoded_data/mnist-encoded-train.data')

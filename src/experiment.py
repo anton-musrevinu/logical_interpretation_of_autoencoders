@@ -1,6 +1,7 @@
 import os,sys
 SRCDIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(SRCDIR)
+ROOTDIR = os.path.abspath(os.path.join(SRCDIR, './..'))
 
 import learn_psdd_wrapper
 from lowlevel.util.psdd_interface import read_info_file,read_info_file_basic, convert_onehot_to_binary, FlDomainInfo
@@ -63,7 +64,7 @@ class Experiment(object):
 		self.data_per = data_per
 		self.fl_info = None
 
-		self.experiment_dir_path = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/{}'.format(self.experiment_parent_name)))
+		self.experiment_dir_path = os.path.abspath(os.path.join(ROOTDIR,'./output/experiments/{}'.format(self.experiment_parent_name)))
 		self.type_of_data = None
 		if '_emnist_' in self.experiment_parent_name:
 			self.type_of_data = 'emnist'
@@ -78,7 +79,7 @@ class Experiment(object):
 			self.type_of_data = 'symbolic'
 			self.has_encoder = False
 			if not os.path.exists(self.experiment_dir_path):
-				os.mkdir(self.experiment_dir_path)
+				os.makedirs(self.experiment_dir_path, exist_ok = True)
 		else:
 			raise Exception('type of data could not be recognized: {}'.format(self))
 
@@ -691,7 +692,7 @@ def _combine_biary_variables_images(file_0, file_1, save_path):
 # ============================================================================================================================
 
 def decode_all_possible(display_exp = False):
-	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
+	base_dir = os.path.abspath(os.path.join(ROOTDIR,'./output/experiments/'))
 
 	toclassify = []
 	for root, dir_names, file_names in os.walk(base_dir):
@@ -725,7 +726,7 @@ def decode_all_possible(display_exp = False):
 		# break
 
 def evaluate_all_missing(display_exp = False):
-	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
+	base_dir = os.path.abspath(os.path.join(ROOTDIR,'./output/experiments/'))
 
 	toclassify = []
 	for root, dir_names, file_names in os.walk(base_dir):
@@ -775,7 +776,7 @@ def evaluate_all_missing(display_exp = False):
 		# break
 
 def sample_all_missing(display_exp = False, only_first = False, types_of_query = ['dis', 'bin']):
-	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
+	base_dir = os.path.abspath(os.path.join(ROOTDIR,'./output/experiments/'))
 
 	toclassify = []
 	for root, dir_names, file_names in os.walk(base_dir):
@@ -836,7 +837,7 @@ def sample_all_missing(display_exp = False, only_first = False, types_of_query =
 			return
 
 def make_learning_graphs_missing():
-	base_dir = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
+	base_dir = os.path.abspath(os.path.join(ROOTDIR,'./output/experiments/'))
 
 	tograph = []
 	for root, dir_names, file_names in os.walk(base_dir):
