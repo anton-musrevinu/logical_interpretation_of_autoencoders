@@ -77,15 +77,10 @@ These scipt files are run using the python interpreter such that one shoudl navi
 | path 											 | discription																								 		|
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------		|
 |./datasets/                                     | This is the directory holding datasets used for the experiments (MNIST, FASHION, EMNIST)                  		|
-|
 |./documentation/                                | This is the directory holding the written thesis                                                          		|
-|
 |./output/                                       | This directory holds most output that are created running the various parts of the program, where. only summery and .csv files are at the root of this directory. 						|
-|
 |./output/experiments/                           | This directory contains the output of the individual experiments each within its own subfolder            		|
-|
 |./output/experiments/`experimentName`/          | This directory contains all models and files related to **one** encoder-decoder mapping, that is mutiple psdd experiments can be contained withing this folder, if they all use one AE. 	|
-|
 | ~/`experimentName`/opt.txt                     | This file stores all the parameters used for training the (neural network) AE                             		|
 | ~/`experimentName`/VAEManager/                 | This folder holds all models and summery images for the AE of this experiment - `experimentName`          		|
 | ~/`experimentName`/VAEManager/saved_models/    | This folder holds the best models (based on the validation error) of the AE stored in the pytorch format  		|
@@ -97,7 +92,6 @@ These scipt files are run using the python interpreter such that one shoudl navi
 | ~/`experimentName`/psdd_search_`cluster_id`_`task_id`/fl_data.info 			| This file contains the feature layer encoding information for this task and experiment in the form of a csv file 											|
 | ~/`experimentName`/psdd_search_`cluster_id`_`task_id`/evaluation/ 			| This folder contains the evaluation output files for this experiment task such as classification acc, and sampled images 									|
 | ~/`experimentName`/psdd_search_`cluster_id`_`task_id`/fl_visual/ 				| This folder contains the evaluation output files for the feature layer analysis 	|
-|
 |./src/											| This folder contains the source files for the individual subprograms|
 |./src/experiment.py							| This file contains the methods and classed used to run and evaluate experiments and handle data. As such is also contains wrapper functions for subprograms.								|
 |./src/learn_psdd_wrapper.py					| This file contains the wrapper function for the two learnPSDD scala source codes 									|
@@ -106,11 +100,9 @@ These scipt files are run using the python interpreter such that one shoudl navi
 |./src/Scala-learnPSDD/ 						| This folder contains the the **scala** source for the evaluating and testing a given PSDD. This source is was cloned and adapted from the github repository: https://github.com/YitaoLiang/Scala-LearnPsdd. Within this source the conditional sampling algorithm is implemented in scala.										|
 |./src/Scala-learnPSDD/ 						| This folder contains the the **scala** source for the evaluating and testing a given PSDD as well as learning a vtree from data. This source is was cloned and adapted from the github repository: https://github.com/YitaoLiang/Scala-LearnPsdd. Within this source the conditional sampling algorithm is implemented in scala.	|
 |./src/sddlib/ 									| This folder contains the the **binary** files of the sddlib package from: http://reasoning.cs.ucla.edu/sdd/. We use these binaries to compile a given set of constraints to an sdd 		|
-|
 |./tasks/ 										| This folder contains the shell or python files used to execute individual task for a set of hyper parameters 		|
 |./tasks/highlevel_cpu/ 						| This folder contains the python files used to execute psdd learning and evaluation. Here parameters as well as the dataset used can be specified in the file. Furthermore the files also specify if a task should be learned, evaluated or analyzed. These should be executed on a cluster optimized for cpu computations			|
 |./tasks/highlevel_cpu/ 						| This folder contains the shell files used to execute AE learning. Here parameters as well as the dataset used can be specified in the file. These should be executed on a cluster running slurm that is contains at least 2 cuda GPUs																								|
-|./tasks/plots/ 								| This folder contains python files for creating individual plots for visualizing and comparing experiments.																																																						|
-|
-|./intallation.txt 									| commands to set up the enviroment and install the necesarry dependencies 																										| 
+|./tasks/plots/ 								| This folder contains python files for creating individual plots for visualizing and comparing experiments.		|
+|./intallation.txt 								| commands to set up the enviroment and install the necesarry dependencies 											| 
 |./README.md 									| This file 																										|

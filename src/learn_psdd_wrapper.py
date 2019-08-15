@@ -98,11 +98,11 @@ def _recompile_source(compile_dir):
 def _add_learn_psdd_lib_to_path(learnpsdd_lib):
 	# os.environ['LD_LIBRARY_PATH'] = ''
 	if 'LD_LIBRARY_PATH' not in os.environ:
-		os.environ['LD_LIBRARY_PATH'] = learnpsdd_lib# + os.pathsep + SDD_LIB_DIR
+		os.environ['LD_LIBRARY_PATH'] = learnpsdd_lib + '/'# + os.pathsep + SDD_LIB_DIR
 		write('variable LD_LIBRARY_PATH created and set to: {}'.format(os.environ['LD_LIBRARY_PATH']), 'init')
 	
 	if not learnpsdd_lib in os.environ['LD_LIBRARY_PATH']:
-		os.environ['LD_LIBRARY_PATH'] += os.pathsep + learnpsdd_lib
+		os.environ['LD_LIBRARY_PATH'] += os.pathsep + learnpsdd_lib + '/'
 		write('variable LD_LIBRARY_PATH updated to: {}'.format(os.environ['LD_LIBRARY_PATH']), 'init')
 	
 	# if not SDD_LIB_DIR in os.environ['LD_LIBRARY_PATH']:
@@ -127,10 +127,11 @@ _check_if_dir_exists(LEARNPSDD_ROOT_DIR)
 if RECOMPILE_PSDD_SOURCE:
 	_recompile_source(LEARNPSDD_ROOT_DIR)
 LEARNPSDD_CMD = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR,'./target/scala-2.11/psdd.jar'))
-LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR, './lib/')) + '/'
+LEARNPSDD_LIB = os.path.abspath(os.path.join(LEARNPSDD_ROOT_DIR, './lib'))
 _check_if_file_exists(LEARNPSDD_CMD)
 _check_if_dir_exists(LEARNPSDD_LIB)
-_add_learn_psdd_lib_to_path(LEARNPSDD_LIB)
+if not USE_LEARN_PSDD_PAPER:
+	_add_learn_psdd_lib_to_path(LEARNPSDD_LIB)
 
 SDDLIB_BIN = os.path.abspath(os.path.join(SRCDIR,SDD_LIB_RELATIVE_PATH))
 write('SDDLIB_BIN \t{}'.format(SDDLIB_BIN),'init')
@@ -145,6 +146,8 @@ _check_if_file_exists(SDDLIB_CMD)
 
 if USE_LEARN_PSDD_PAPER:
 	LEARNPSDD_PAPER_ROOT_DIR = os.path.abspath(os.path.join(SRCDIR,LEARNPSDD_PAPER_RELATIVE_PATH))
+	LEARNPSDD_PAPER_LIB = os.path.abspath(os.path.join(LEARNPSDD_PAPER_ROOT_DIR, './lib'))
+	_add_learn_psdd_lib_to_path(LEARNPSDD_PAPER_LIB)
 	write('LEARNPSDD_PAPER_ROOT_DIR \t{}'.format(LEARNPSDD_PAPER_ROOT_DIR),'init')
 	_check_if_dir_exists(LEARNPSDD_PAPER_ROOT_DIR)
 	if RECOMPILE_PSDD_PAPER_SOURCE:
