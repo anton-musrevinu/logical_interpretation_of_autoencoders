@@ -2,9 +2,10 @@ conda create --name msc python=3.6
 
 conda activate msc
 
-conda install pytorch torchvision -c pytorch
-# MacOS Binaries dont support CUDA, install from source if CUDA is needed
+conda install pytorch torchvision cudatoolkit=9.2 -c pytorch
 
-pip install tqdm
-pip install matplotlib
-pip install scipy
+pip install tqdm; pip install matplotlib ;pip install scipy
+
+export PATH="$PATH:/path/to/miniconda3/bin"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/path/to/msc/src/learnPSDD/lib/"
+export PATH="$PATH:/path/to/msc/src/learnPSDD/lib"

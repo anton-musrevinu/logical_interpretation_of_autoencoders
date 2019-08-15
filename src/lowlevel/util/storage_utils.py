@@ -19,7 +19,7 @@ def load_from_stats_pkl_file(experiment_log_filepath, filename):
 
     return stats
 
-def clean_model_dir(model_save_dir,best_validation_model_idxs):
+def clean_model_dir(model_save_dir, best_validation_model_idxs):
     for (dirpath, dirnames, filenames) in os.walk(model_save_dir):
             for file in filenames:
                 model_idx_as_str = file.split('_')[0]

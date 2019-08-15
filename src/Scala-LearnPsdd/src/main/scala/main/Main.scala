@@ -23,7 +23,8 @@ object Main {
   val paramSearch = "paramSearch"
   val scratch = "scratch"
   val check = "check"
-  val query = "query"
+  val querybasic = "querybasic"
+  val queryfl = "queryfl"
 
 //  structure learning strategies
   val bottomUp = "BU"
@@ -32,7 +33,7 @@ object Main {
   val learnMethods = Array(bottomUp, topDown, search)
 
 
-  val commands = Array(learnMethods.map(learnPsdd+" "+_).mkString(" ","|",""), sdd2psdd, parameterLearning, learnVtree, paramSearch, check, query)
+  val commands = Array(learnMethods.map(learnPsdd+" "+_).mkString(" ","|",""), sdd2psdd, parameterLearning, learnVtree, paramSearch, check, querybasic, queryfl)
 
 //datastets
   val dataSets = Array("train","valid","test")
@@ -693,7 +694,7 @@ object Main {
     help("help") text ("prints this usage text\n")
   }
 
-  val querybaiscParser = new scopt.OptionParser[Config](querybasic) {
+  val querybasicParser = new scopt.OptionParser[Config](querybasic) {
     override def showUsageOnError = true
 
     head("Query psdds") //HERE
@@ -1194,7 +1195,7 @@ object Main {
 
         }
 
-        case `querybaisc` => querybaiscParser.parse(args.drop(1), Config()) match {
+        case `querybasic` => querybasicParser.parse(args.drop(1), Config()) match {
           case None =>
           case Some(config) =>
 
@@ -1287,7 +1288,7 @@ object Main {
             val data = new DataSets(trainData, validData, testData)
             println(" done!")
 
-            println("Read Psdds from "+config.psdds+"...")
+            // println("Read Psdds from "+config.psdds+"...")
             val numComponents = config.psdds.size
             val psdds = Seq.tabulate(numComponents)(n => psddMgr.readPsdd(config.psdds(n), vtree, data))
             val componentweights = config.componentweights

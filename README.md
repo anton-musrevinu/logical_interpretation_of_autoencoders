@@ -6,7 +6,7 @@ Roughly speaking the presented program consists of 2 subprograms namely:
 - **Phase one**: the lowlevel feature learning part, done by autoencoders (implemented in PyTorch)
 - **Phase two**: the highlevel feature learning part as well as evaluation, done by PSDDs (implemented in scala/python)
 
-## Dependencies for using the python implementation:
+## Dependencies for using the python implementation (ONLY LINUX supported):
 - Python >= 3.5 (https://www.python.org/)
 -- numpy(http://www.numpy.org/)
 -- scipy (https://www.scipy.org/)
@@ -51,23 +51,25 @@ Further information is found in the option parser files located at: `./src/lowle
 
 When it comes to the experiments we conducted on the mentioned datasets, please navigate to the directory `./tasks/lowlevel_gpu/` for example execution commands. The files in this directory are slurm scripts allocating 2 GPUs with 32GB memory before learning a convolutional-variational-autoencoder with 32 latent boolean (categorical dimention 2) variables (FL). Such a file is present for each of the 3 datasets used (MNIST, FASHION, EMNIST).
 As such the scipts are executed using the _sbatch_ command on any cluster running slurm.
-> e.g. navigate to `./tasks/lowlevel_gpu/` and run `sbatch trainAE_mnist_slurm.sh`
+> example (can be run on cpu): navigate to `./tasks/lowlevel_gpu/` and run `chmod 755 ./trainAE_mnist_example.sh`  then `./trainAE_mnist_example.sh`
+> full version navigate to `./tasks/lowlevel_gpu/` and run `sbatch trainAE_mnist_slurm.sh`
 
 
 ### Phase two: PSDD learning and evaluation (CPU) 
 
-The code base for this part of the experiments can be found in two seperate locations: `./src/learnPSDD/` for learning and `./src/Scala-LearnPSDD/` for evalutation. Each of those programs has to be compiled if the target does not exists yet which is done by navigating to the corresponding directory and executing the command:
+The code base for this part of the experiments can be found in two seperate locations: `./src/learnPSDD/` for learning and `./src/Scala-LearnPSDD/` for evalutation. Each of those programs has to be compiled if the target does not exists yet, which is done by navigating to the corresponding directory and executing the command:
 > `sbt assembly`
 
- One the source is build a _target_ directory is created containing executable _.jar_ files. Each of the programs is the run by  executing:
- > `java -jar ./target/scala-2.11/psdd.jar -h` 
+ Once the source is build a _target_ directory is created containing executable _.jar_ files. Each of the programs is then run by executing the cmd below from the corresponding directory:
+ > `java -jar ./target/scala-2.11/psdd.jar -h`
 
- with the optional _-h_ for inforation on arguments in the corresponding directory. However in order to mitigate this process we created a well documented python wrapper that handles building and execution of the scala programs located at `./src/learn_psdd_wrapper.py`. Here we would ask the user to change the relative locations to the subprograms from the home directory on _lines 27, 38,42_ for the wrapper to work properly. Moreover within the first lines of this files the user should also specify if the program _graphviz_ is installed on the machine for (optional) visualization perposed.
+ with the optional _-h_ for inforation on arguments in the corresponding directory. However in order to mitigate this process we created a well documented python wrapper that handles building and execution of the scala programs located at `./src/learn_psdd_wrapper.py`. Within the first lines of this file the user should specify if the program _graphviz_ is installed on the machine for (optional) visualization perposed.
 
 Now when it comes to handle experimetns within this phase yet another file wraps the privously mentioned wrapper such that the experiment flow is easier to manage. This files can be found at: `./src/experiment.py`. Within this files methonds and classed are defined that handle hyperparameters as well as the learning and evaluation of a given experiment, such that this file wrapps the _learn_psdd_wrapper_ **as well as** the _./src/lowlevel/main.py_. This makes it possible to seamlessly generated samples from the PSDD before decoding them using the NN with one command. 
 To illustrate this the `./src/experiment.py` is used by the scripts we used for running experiments located in the folder: `./tasks/highlevel_cpu/`. Within these scipts a experiment is created where the _experiment_parent_name_ has to correspond to the a previously run lowlevel AE experiment such that the pretrained NNs can be used to encode and ecode the data. This is illustrated with the examples present in the directory. Furthermore we see that in the scripts we can specify what parts of the experiment we want to run, such as training, evaluation, analysis or all of them. Finally it shoud be mentined at this point, that we can reference the same AE in multiple differnt _Phase two_ tasks such as a classification task and a blxor task. This again is illustrated with the files present in the directory.
 These scipt files are run using the python interpreter such that one shoudl navigate to the directory before running a command like:
-> e.g. python train_eval_mnist.py
+> example: navigate to `./tasks/highlevel_cpu/` and run `python train_eval_mnist_example.py` (about 10 min)
+> example: navigate to `./tasks/highlevel_cpu/` and run `python train_eval_mnist.py` (about 2 days)
 
 
 
@@ -110,4 +112,5 @@ These scipt files are run using the python interpreter such that one shoudl navi
 |./tasks/highlevel_cpu/ 						| This folder contains the shell files used to execute AE learning. Here parameters as well as the dataset used can be specified in the file. These should be executed on a cluster running slurm that is contains at least 2 cuda GPUs																								|
 |./tasks/plots/ 								| This folder contains python files for creating individual plots for visualizing and comparing experiments.																																																						|
 |
-|./README.md 									| This file 																										|   
+|./intallation.txt 									| commands to set up the enviroment and install the necesarry dependencies 																										| 
+|./README.md 									| This file 																										|

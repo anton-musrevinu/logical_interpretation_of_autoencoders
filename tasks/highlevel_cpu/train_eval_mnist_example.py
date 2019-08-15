@@ -13,7 +13,7 @@ compress_fly = False
 
 exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly)
 
-do_everything(exp)
+do_everything(exp, testing = True)
 # Same as:
 # do_psdd_training(exp)
 # encode_data(exp)

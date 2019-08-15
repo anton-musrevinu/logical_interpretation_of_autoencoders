@@ -316,7 +316,7 @@ def gather_results(data):
 
 	return expResults
 
-def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', ):
+def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', all_information = False):
 	print('\nRetrieving experiments\n')
 	expResults = gather_results(data)
 	data_type = 'emnist' if 'emnist' in data else 'mnist' if 'mnist' in data else 'fashion'
@@ -324,6 +324,8 @@ def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', ):
 		my_outfile = OUTFILE_all.replace('mnist', data_type)
 	else:
 		my_outfile = OUTFILE_all
+	if all_information:
+		my_outfile += '__all_information__'
 	print(data_type)
 	for exp in expResults:
 		print(exp)
@@ -334,9 +336,13 @@ def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', ):
 	with open(my_outfile.replace('_all_', '_{}_'.format(task_type_of_intersest)), 'w') as f:
 		print(f)
 		if task_type_of_intersest == 'classification':
-			f.write('dataset, $|FL^A|$, $|FL^A_i|$, VAE-MSE, best ll, vtree method, compressed y, class acc\n')
+			head = 'dataset, $|FL^A|$, $|FL^A_i|$, VAE-MSE, best ll, vtree method, compressed y, class acc'
 		else:
-			f.write('dataset, $|FL^{A,B}|$, $|FL^{A,B}_i|$, VAE-MSE, task type, best ll, vtree method, class acc\n')
+			head = 'dataset, $|FL^{A,B}|$, $|FL^{A,B}_i|$, VAE-MSE, task type, best ll, vtree method, class acc'
+
+		if all_information:
+			head += ',cluster_id'
+		f.write(head + '\n')
 
 		for exp in expResultsSorted:
 			for task_type in exp.exp_psdds:
@@ -351,6 +357,8 @@ def make_mnist_resutls_file_full(task_type_of_intersest, data = 'ex_7_mnist', ):
 						line += ', \t{}'.format(task_type)
 					line += ',\t{:.2},\t{},\t{:.4}'.format(psdd_exp.best_ll[cluster_id], \
 							psdd_exp.vtree_method[cluster_id], max(psdd_exp.classification_acc[cluster_id]))
+					if all_information:
+						line += ',\t{}'.format(cluster_id)
 					f.write(line + '\n')
 	
 def read_mnist_result_file(file):
@@ -378,10 +386,9 @@ def read_mnist_result_file(file):
 
 if __name__ == '__main__':
 	# make_var_resutls_file()
-	# make_var_resutls_file(data = 'ex_1_')
-	# make_mnist_resutls_file_full('classification')
-	# make_mnist_resutls_file_full('classification', data = 'ex_6_emnist')
-	# make_mnist_resutls_file_full('classification', data = 'ex_9_fashion')
-	# make_mnist_resutls_file_full('noisy')
-	make_mnist_resutls_file_full('compositional')
-	make_mnist_resutls_file_full('compositional', data = 'ex_9_fashion')
+	make_mnist_resutls_file_full('classification', data = 'ex_7_mnist')
+	make_mnist_resutls_file_full('classification', data = 'ex_6_emnist')
+	make_mnist_resutls_file_full('classification', data = 'ex_9_fashion')
+	make_mnist_resutls_file_full('noisy',          data = 'ex_7_mnist')
+	make_mnist_resutls_file_full('compositional',  data = 'ex_7_mnist')
+	make_mnist_resutls_file_full('compositional',  data = 'ex_9_fashion')

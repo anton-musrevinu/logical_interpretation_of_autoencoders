@@ -52,7 +52,7 @@ def make_example_dataset(percent = 0.001):
 		np.savez('./mnist-example-{}.npz'.format(i), inputs = inputs_example, targets = labels_example)
 
 if __name__ == '__main__':
-	# download_split_fashion()
+	download_split_fashion()
 	make_example_dataset()
 
 

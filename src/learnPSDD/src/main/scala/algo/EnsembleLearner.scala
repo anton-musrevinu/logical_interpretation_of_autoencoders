@@ -56,8 +56,8 @@ abstract class EnsembleLearner(datasetPath: String, vtreeFile: String) {
   def learn(): Unit = {}  //implement by concerete ensemble learner class
 }
 
-class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends EnsembleLearner(datasetPath,vtreeFile){
-  val iterationTimeForEM = configRead.getInt("EM.iterationTimeForEM")
+class EM(datasetPath: String, vtreeFile: String, numLearners:Int, iterationTimeForEMValue:Int) extends EnsembleLearner(datasetPath,vtreeFile){
+  val iterationTimeForEM = iterationTimeForEMValue
   val iteratorNumberForParameterChange = configRead.getInt("EM.iteratorNumberForParameterChange")
   val iteratorNumberForStructureChange = configRead.getInt("EM.iteratorNumberForStructureChange")
   val hybridChangeFrequency = configRead.getInt("EM.hybridChangeFrequency")
@@ -248,7 +248,7 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
 }
 
 
-class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearners:Int, initpsdd: String) extends EM(datasetPath, vtreeFile, numLearners){
+class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearners:Int, iterationTimeForEMValue: Int, initpsdd: String) extends EM(datasetPath, vtreeFile, numLearners, iterationTimeForEMValue){
   val dataSetOutputDir =  outputdir
   val lambdaWeight = configRead.getDouble("EM.SoftEM.lambdaWeight")
   val psdd_constraints = (initpsdd != "")

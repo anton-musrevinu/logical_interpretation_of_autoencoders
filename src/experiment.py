@@ -269,7 +269,7 @@ def encode_data(exp, testing = False):
 		create_symbolic_dataset_for_task(exp)
 	else:
 		if testing:
-			os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --limit_conversion 300 --compress_fly {} --task_type {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type))
+			os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --limit_conversion 300 --compress_fly {} --task_type {} --data_per {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type, exp.data_per))
 		else:
 			os.system('python {} --phase encode --experiment_name {} --encoded_data_dir {} --compress_fly {} --task_type {} --data_per {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, exp.encoded_data_dir, exp.compress_fly, exp.task_type, exp.data_per))
 
@@ -282,6 +282,7 @@ def decode_data(exp, file_to_decode):
 	# Decode generated FL (PSDD) to images using the previously learned autoencoder NN
 
 	cmd = 'python {} --phase decode --experiment_name {} --file_to_decode {}'.format(LOWLEVEL_CMD, exp.experiment_parent_name, file_to_decode)
+	cmd = cmd + ' --fl_info_file {}'.format(exp.fl_data_file)
 	print('executing: {}'.format(cmd))
 	os.system(cmd)
 
@@ -308,13 +309,15 @@ def do_decode_class_samples(exp, display_exp = False):
 					files_to_decode.append(os.path.join(root, i))
 			if 'generated' in i and i.endswith('.data') and os.path.getsize(os.path.join(root, i)) == 0:
 				to_remove.append(os.path.join(root, i))
+			if i.endswith('.info'):
+				to_remove.append(os.path.join(root, i))
 				# info_file = os.path.join(root, i + '.info')
 				# if not os.path.exists(info_file):
 				# 	original_info_file = os.path.join(root, i.split('-')[0] + '.data.info')
 				# 	shutil.copyfile(original_info_file, info_file)
 
-	# for file in to_remove:
-	# 	print(file)
+	for file in to_remove:
+		os.remove(file)
 
 	for file in files_to_decode:
 		if display_exp:
@@ -344,7 +347,7 @@ def do_psdd_training(exp, testing = False, do_encode_data = True, num_compent_le
 	# 	y_constraints = os.path.join(experiment_dir_path, './y_constraints.cnf')
 
 	learn_psdd_wrapper.learn_psdd(exp.psdd_out_dir, train_data_path, valid_data_path = valid_data_path,\
-				replace_existing = True, vtree_method = vtree_method, num_compent_learners = num_compent_learners, constraints_cnf_file = y_constraints)
+				replace_existing = True, vtree_method = vtree_method, num_compent_learners = num_compent_learners, constraints_cnf_file = y_constraints, testing = testing)
 
 	exp.set_fl_info_after_enoding()
 
@@ -378,15 +381,17 @@ def do_classification_evaluation(exp, testing = False, fl_to_query = 'fly'):
 			print('caught exception: {}'.format(e))
 			continue
 
-def do_generative_query(exp, nbqueries = 100, type_of_query = 'bin'):
+def do_generative_query(exp, nbqueries = 100, type_of_query = 'bin', testing = False):
 	# Perform a generative query for a given taks and type_of_query such that the quiers are generated from the corresponding test dataset
 	# A PSDD as well as the autoencoder is assumed to be already trained for the given type of data
 	# Finally the resulting answeres to the querys are decoded into images
+	if testing:
+		nbqueries = 10
 
-	print('[DOINGIN GENERATIVE QUERY WITH ARGS: {}, --  {}'.format(exp, type_of_query))
+	print('[DOINGIN GENERATIVE QUERY] WITH ARGS: {}, --  {}'.format(exp, type_of_query))
 	
 	if exp.task_type == 'classification' or 'noisy' in exp.task_type:
-		do_generative_query_for_labels(exp, type_of_query = type_of_query)
+		do_generative_query_for_labels(exp, type_of_query = type_of_query, nbqueries = nbqueries)
 	elif exp.task_type == 'succ':
 		do_generative_query_on_test(exp, type_of_query = type_of_query, nbqueries = nbqueries, fl_to_query = ['fla'])
 		do_generative_query_on_test(exp, type_of_query = type_of_query, nbqueries = nbqueries, fl_to_query = ['flb'])
@@ -526,7 +531,9 @@ def do_make_class_samples_smaller(exp, image_size = 28, new_nb_rows = 3):
 				small_image = image.crop(box)
 				small_image.save(os.path.join(root, file.replace('.png','_small.png')))
 
-def do_analyse_feature_layer(exp, nbqueries, testing = False):
+def do_analyse_feature_layer(exp, nbqueries = 1000, testing = False):
+	if testing:
+		nbqueries = 10
 	for fl_name, fl_info in read_info_file_basic(exp.fl_data_file).items():
 		if fl_name == 'fly':
 			continue
@@ -538,8 +545,6 @@ def do_analyse_feature_layer(exp, nbqueries, testing = False):
 			variable = fl_info.encoded_start_idx + i + 1
 			for assignment in range(fl_info.var_cat_dim):
 				_do_analyse_feature_layer_for_variable_assignment(exp,nbqueries, variable, assignment, testing = testing)
-			if testing:
-				raise Exception("test break point")
 
 	combine_fl_variables_images(exp)
 
@@ -594,9 +599,9 @@ def combine_fl_variables_images(exp):
 
 				files_for_var[variable][assignment] = os.path.join(root,file_name)
 
-	if os.path.exists(exp.fl_visual_dir_path):
-		shutil.rmtree(exp.fl_visual_dir_path)
-	os.mkdir(exp.fl_visual_dir_path)
+	# if os.path.exists(exp.fl_visual_dir_path):
+	# 	shutil.rmtree(exp.fl_visual_dir_path)
+	# os.mkdir(exp.fl_visual_dir_path)
 
 	files_created = {}
 
@@ -855,7 +860,6 @@ def do_everything(exp, vtree_method = 'miBlossom', num_compent_learners = 10, ty
 	
 	#encode the data for and learn the (ensemby psdd)
 	do_psdd_training(exp, do_encode_data = do_encode_data, num_compent_learners = num_compent_learners , vtree_method = vtree_method, testing = testing)
-
 	#record classification acc on held out test set
 	if exp.type_of_data == 'symbolic':
 		for fl_name in exp.fl_info.keys():
@@ -864,10 +868,9 @@ def do_everything(exp, vtree_method = 'miBlossom', num_compent_learners = 10, ty
 		do_classification_evaluation(exp, testing = testing)
 
 		#Generate class samples and decode them to png
-		# do_generative_query(exp, testing = testing, type_of_query = 'bin')
-		do_generative_query(exp, testing = testing, type_of_query = 'dis')
+		do_generative_query(exp, type_of_query = 'dis', testing = testing)
 
-		do_analyse_feature_layer(exp, 1000)
+		do_analyse_feature_layer(exp, testing = testing)
 	
 
 if __name__ == '__main__':

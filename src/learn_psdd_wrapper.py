@@ -264,11 +264,15 @@ def create_sample_file_absolute(original_file_path, num_of_lines_to_copy, sample
 					break
 	return sample_file_path
 
-def create_sample_file_percent(original_file_path, percent_of_lines_to_copy, sample_file_path):
+def create_sample_file_percent(original_file_path, percent_of_lines_to_copy, sample_file_path = None):
 	if percent_of_lines_to_copy == 1:
 		return original_file_path
 
-	num_of_lines_to_copy = percent_of_lines_to_copy * sum(1 for line in open(original_file_path,'r'))
+	num_of_lines_in_org_file = sum(1 for line in open(original_file_path,'r'))
+	if num_of_lines_in_org_file <= 100:
+		return original_file_path
+
+	num_of_lines_to_copy = percent_of_lines_to_copy * num_of_lines_in_org_file
 	return create_sample_file_absolute(original_file_path, num_of_lines_to_copy, sample_file_path)
 
 #============================================================================================================================
@@ -697,9 +701,11 @@ class PsddQueryException(Exception):
 def learn_ensembly_psdd2_from_data(train_data_path, vtree_path, out_psdd_file, \
 		 out_learnpsdd_tmp_dir = './.out_ensemblylearnpsdd_tmp_dir/', psdd_input_path = None, num_compent_learners = 5,valid_data_path = None, \
 		 test_data_path = None, smoothing = 'l-1', structureChangeIt = 3, parameterLearningIt = 1, scorer = 'dll/ds', maxIt = 'max', \
-		 save_freq = 'best-3'):
+		 save_freq = 'best-3', testing = False):
 
 	# Method for running the psdd code from the paper with (updated source)
+	ITERATIONTIMEFOREM_DEFAULT = 259200
+	ITERATIONTIMEFOREM_TESTING = 100
 
 	_check_if_file_exists(train_data_path)
 	_check_if_file_exists(valid_data_path)
@@ -729,7 +735,12 @@ def learn_ensembly_psdd2_from_data(train_data_path, vtree_path, out_psdd_file, \
 
 	cmd_str = 'java -jar {} SoftEM {} {} {} {} '.format(\
 		LEARNPSDD_PAPER_CMD, train_data_path.replace('train.data',''), vtree_path, out_learnpsdd_tmp_dir + '/', num_compent_learners)
-	
+
+	if not testing:
+		cmd_str += '{} '.format(ITERATIONTIMEFOREM_DEFAULT)
+	else:
+		cmd_str += '{} '.format(ITERATIONTIMEFOREM_TESTING)
+
 	if psdd_input_path != None:
 		cmd_str += '{}'.format(psdd_input_path)
 
@@ -792,10 +803,10 @@ def measure_classification_accuracy_on_file(psdd_out_dir, query_data_path, train
 	write(cmd_str,'cmd-start')
 	os.system(cmd_str)
 
-	out_file = out_file + '.info'
+	out_file = out_file + '_classify.info'
 	
 	if not _check_if_file_exists(out_file, raiseException = False) or os.path.getsize(out_file) == 0:
-		raise PsddQueryException('Exeption in query')
+		raise PsddQueryException('Exeption measure_classification_accuracy_on_file')
 
 	write('Finished measureing classfication acc. File location: {}'.format(out_file), 'cmd-end')
 
@@ -980,7 +991,7 @@ def generative_query_missing(psdd_out_dir, query_data_path, train_data_path, fl_
 
 def learn_psdd(psdd_out_dir, train_data_path, 
 		valid_data_path = None, test_data_path = None, replace_existing = False, vtree_method = 'miBlossom', \
-		num_compent_learners = 1, constraints_cnf_file = None, keep_generated_files = True, convert_to_pdf = True):
+		num_compent_learners = 1, constraints_cnf_file = None, keep_generated_files = True, convert_to_pdf = True, testing = False):
 	# For ease of use, I have create one function that takes care of almost all subpart when it comes to psdd learning
 	# It learnes a vtree from data, compiles constraints to sdd/psdd if present, and learnes a psdd with the vtree and constaints (if present)
 	# Arguments:
@@ -1056,12 +1067,12 @@ def learn_psdd(psdd_out_dir, train_data_path,
 	elif num_compent_learners == 1:
 		learn_psdd_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir = out_learnpsdd_tmp_dir, valid_data_path = valid_data_path, \
 			test_data_path = test_data_path, psdd_input_path = constraints_psdd_file, keep_generated_files = keep_generated_files, convert_to_pdf = convert_to_pdf,\
-			num_compent_learners = num_compent_learners)
+			num_compent_learners = num_compent_learners, testing = testing)
 	else:
 		# raise Exception('Ensemply learning is not working')
 		learn_ensembly_psdd2_from_data(train_data_path, out_vtree_file, out_psdd_file, out_learnpsdd_tmp_dir = out_learnpsdd_tmp_dir ,\
 				psdd_input_path = constraints_psdd_file, num_compent_learners = num_compent_learners, valid_data_path = valid_data_path, \
-				test_data_path = test_data_path)
+				test_data_path = test_data_path, testing = testing)
 
 	#Remove tmp files
 	if not keep_generated_files and constraints_cnf_file != None:
