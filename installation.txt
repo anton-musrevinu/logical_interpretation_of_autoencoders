@@ -1,0 +1,7 @@
+conda create --name msc python=3.6
+
+conda activate msc
+
+conda install pytorch torchvision cudatoolkit=9.2 -c pytorch
+
+pip install tqdm; pip install matplotlib ;pip install scipy

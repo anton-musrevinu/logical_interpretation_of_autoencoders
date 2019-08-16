@@ -1,0 +1,11 @@
+dataset, $|FL^{A,B}|$, $|FL^{A,B}_i|$, VAE-MSE, task type, best ll, vtree method, class acc
+mnist,	32,	2,	0.0214, 	g7land,	-3.2e+01,	miBlossom,	0.8592
+mnist,	32,	2,	0.0214, 	g7land,	-3.4e+01,	miGreedyBU,	0.8284
+mnist,	32,	2,	0.0214, 	plus,	-3.5e+01,	miBlossom,	0.0922
+mnist,	32,	2,	0.0214, 	plus,	-3.6e+01,	miGreedyBU,	0.0992
+mnist,	32,	2,	0.0214, 	g4land,	-3.4e+01,	miGreedyBU,	0.6528
+mnist,	32,	2,	0.0214, 	g4land,	-3.2e+01,	miBlossom,	0.707
+mnist,	32,	2,	0.0214, 	plus-ring-10,	-3.5e+01,	miBlossom,	0.1404
+mnist,	32,	2,	0.0214, 	blxor,	-2.5e+01,	miBlossom,	0.994
+mnist,	32,	2,	0.0214, 	bland,	-2.5e+01,	miBlossom,	0.978
+mnist,	32,	2,	0.0214, 	blor,	-2.6e+01,	miBlossom,	0.966

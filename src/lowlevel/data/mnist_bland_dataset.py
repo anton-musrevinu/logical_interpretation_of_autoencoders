@@ -4,12 +4,14 @@ import numpy as np
 import random
 
 class MNISTBLANDDataset(MNISTDataset):
-	def __init__(self, opt, type_of_data, mydir = None):
+	def __init__(self, opt, type_of_data, mydir = None, additional_constraint_on_data = True, relational_func = lambda a,b: a and b):
 		MNISTDataset.__init__(self, opt, type_of_data, mydir)
+		self.additional_constraint_on_data = additional_constraint_on_data
+		self.relational_func = relational_func
 
-		self.allign_data_for_func()
+		self.allign_data_for_func(additional_constraint_on_data, relational_func)
 
-	def allign_data_for_func(self, relational_func = lambda a,b: a and b ,  add_y = False):
+	def allign_data_for_func(self, additional_constraint_on_data, relational_func, add_y = False):
 
 		possible_idxs = list(range(len(self.inputs)))
 		domain_a = []
@@ -28,11 +30,13 @@ class MNISTBLANDDataset(MNISTDataset):
 
 			if a_label == 1 or a_label == 0:
 				if len(domain_a) <= len(domain_b):
-					domain_a.append(a_idx)
-					last_label = a_label
+					if additional_constraint_on_data(a_label, 'domain_a'):
+						domain_a.append(a_idx)
+						last_label = a_label
 				else:
-					domain_b.append(a_idx)
-					y_label.append(relational_func(last_label, a_label))
+					if additional_constraint_on_data(a_label, 'domain_b'):
+						domain_b.append(a_idx)
+						y_label.append(relational_func(last_label, a_label))
 
 
 		self.num_data_points = int(len(y_label) / self.batch_size) * self.batch_size

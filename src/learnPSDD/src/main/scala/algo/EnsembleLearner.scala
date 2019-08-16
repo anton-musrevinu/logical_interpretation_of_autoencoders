@@ -56,8 +56,8 @@ abstract class EnsembleLearner(datasetPath: String, vtreeFile: String) {
   def learn(): Unit = {}  //implement by concerete ensemble learner class
 }
 
-class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends EnsembleLearner(datasetPath,vtreeFile){
-  val iterationTimeForEM = configRead.getInt("EM.iterationTimeForEM")
+class EM(datasetPath: String, vtreeFile: String, numLearners:Int, iterationTimeForEMValue:Int) extends EnsembleLearner(datasetPath,vtreeFile){
+  val iterationTimeForEM = iterationTimeForEMValue
   val iteratorNumberForParameterChange = configRead.getInt("EM.iteratorNumberForParameterChange")
   val iteratorNumberForStructureChange = configRead.getInt("EM.iteratorNumberForStructureChange")
   val hybridChangeFrequency = configRead.getInt("EM.hybridChangeFrequency")
@@ -117,8 +117,12 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
             //Find element to delete if bestKiterations map already equals k in size
             var iteration_to_del = -1
             var worstLl = Double.PositiveInfinity
+            //Retrieve the model iteration wich has the LOWEST (neg) logLikelihood
             bestKiterations.keys.foreach{i =>
-              if (bestKiterations(i) < worstLl) iteration_to_del = i
+              if (bestKiterations(i) < worstLl){
+               iteration_to_del = i
+               worstLl = bestKiterations(i)
+             }
             }
             
             //Delete found element from map
@@ -244,7 +248,7 @@ class EM(datasetPath: String, vtreeFile: String, numLearners:Int) extends Ensemb
 }
 
 
-class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearners:Int, initpsdd: String) extends EM(datasetPath, vtreeFile, numLearners){
+class SoftEM(datasetPath: String, vtreeFile: String, outputdir: String ,numLearners:Int, iterationTimeForEMValue: Int, initpsdd: String) extends EM(datasetPath, vtreeFile, numLearners, iterationTimeForEMValue){
   val dataSetOutputDir =  outputdir
   val lambdaWeight = configRead.getDouble("EM.SoftEM.lambdaWeight")
   val psdd_constraints = (initpsdd != "")

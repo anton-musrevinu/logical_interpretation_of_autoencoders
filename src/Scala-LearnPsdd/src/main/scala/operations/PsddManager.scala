@@ -1166,9 +1166,9 @@ class PsddManager(sddManager: SddManager, var cache: Boolean) {
     }
 
     val root = nodes(rootId.toInt)
-    println("finished reading psdd")
-    println("root: " + root)
-    println("cacheBefore : " + cacheBefore)
+    // println("finished reading psdd")
+    // println("root: " + root)
+    // println("cacheBefore : " + cacheBefore)
     distributeData(root, data)
 
     cache = cacheBefore

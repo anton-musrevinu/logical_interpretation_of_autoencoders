@@ -17,6 +17,12 @@ class FlDomainInfo(object):
 	def get_values_as_str_list(self):
 		return '{},{},{},{},{}'.format(self.nb_vars, self.var_cat_dim, self.bin_encoded, self.encoded_start_idx, self.encoded_end_idx)
 
+	def get_empty_example(self):
+		if self.bin_encoded:
+			return np.zeros((self.nb_vars, self.var_cat_dim))
+		else:
+			return np.zeros(self.encoded_end_idx - self.encoded_start_idx)
+
 def write_fl_batch_to_file(file_encoded_path, flx_categorical, fly_onehot, batch_idx, compress_fly = True):
 	flx_binary = encode_flx_to_binary_batch(flx_categorical)
 	if compress_fly:
@@ -48,13 +54,23 @@ def write_fl_batch_to_file(file_encoded_path, flx_categorical, fly_onehot, batch
 
 def write_fl_batch_to_file_new(file_encoded_path, fls_data, fl_info, batch_idx):
 	fls_encoded = []
-	for idx, fl_domain in enumerate(fls_data):
+	for idx, fl_domain in fls_data.items():
 		if fl_info[idx].bin_encoded and fl_info[idx].name == 'fly':
 			fls_encoded.append(encode_onehot_to_binary_batch(fl_domain))
-		elif fl_info[idx].bin_encoded:
+		elif fl_info[idx].bin_encoded and not fl_info[idx].name == 'fly':
 			fls_encoded.append(encode_flx_to_binary_batch(fl_domain))
-		else:
+		elif fl_info[idx].name == 'fly':
 			fls_encoded.append(fl_domain)
+		else:
+			columns = []
+			#iterate over the individual variables
+			for i in range(fl_domain.shape[1]):
+				column = fl_domain[:,i,:]
+				columns.append(column)
+
+			fl_domain = np.concatenate(columns, axis = 1)
+			fls_encoded.append(fl_domain)
+		# print(fls_encoded[-1])
 
 	fl_all = np.concatenate(fls_encoded, axis = 1)
 
@@ -79,17 +95,24 @@ def create_info_file(file_encoded_path, fl_info):
 	with open(file_encoded_path + '.info', 'w') as f:
 		f.write('domain name; nb_vars, var_cat_dim, binary_encoded,encoded_start_idx,encoded_end_idx\n')
 		for fl_domain_info in fl_info:
-			f.write('{}\n'.format(fl_domain_info))
+			f.write('{}\n'.format(fl_info[fl_domain_info]))
 
-def read_info_file(file_encoded_path):
+def read_info_file_basic(info_file):
 	domains = {}
-	with open(file_encoded_path + '.info', 'r') as f:
+	with open(info_file, 'r') as f:
 		for line_idx, line in enumerate(f):
-			if line_idx == 0:
+			if line_idx == 0 or len(line.strip().split(',')) < 5 or line.startswith('encoded_data_dir'):
 				continue
+			# print(line, line.replace('\n','').split(','))
 			fl_info = FlDomainInfo(*line.split(','))
 			domains[fl_info.name] = fl_info
 	return domains
+
+	# print('[INFO] \t\t\t- fl_info read {} from file: {}'.format(domains, '/'.join(file_encoded_path.split('/')[-3:])))
+	# print('[INFO] \t\t\t info file read succesf
+
+def read_info_file(file_encoded_path):
+	return read_info_file_basic(file_encoded_path + '.info')
 
 def recreate_fl_info_for_old_experiments(exeriment_dir):
 	exeriment_dir = os.path.abspath(exeriment_dir)
@@ -118,6 +141,7 @@ def encode_flx_to_binary_batch(flx_categorical):
 	flx_binary_size = int(np.ceil(np.log2(flx_categorical.shape[2])))
 	vec_func = np.vectorize(convert_onehot_to_binary,otypes=[np.ndarray], signature = '(m),()->(t)')
 	columns = []
+	#iterate over the individual variables
 	for i in range(flx_categorical.shape[1]):
 		column = flx_categorical[:,i,:]
 		column_as_bin = vec_func(column, flx_binary_size)
@@ -155,7 +179,7 @@ def decode_binary_to_onehot(binary_list, cat_dim):
 	value_as_onehot[value_as_int] = 1
 	return value_as_onehot
 
-def decode_binary_to_int( binary_list):
+def decode_binary_to_int(binary_list):
 	value_as_bin = ''.join(binary_list).replace('\n','')
 	value_as_int = int(value_as_bin,2)
 	# print(binary_list, value_as_bin, value_as_int)

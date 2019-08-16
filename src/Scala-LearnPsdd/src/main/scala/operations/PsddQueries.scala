@@ -167,6 +167,16 @@ object PsddQueries {
     spire.math.pow(BigDecimal.decimal(math.E),BigDecimal.decimal(logProbability))
   }
 
+  def bigDecimalCoditionalProb(psdds: Seq[PsddNode], componentweights: Seq[Double], evidence: Map[Int, Boolean], query: Map[Int, Boolean]):BigDecimal = {
+    val numComponents = componentweights.length
+    val prob_num:BigDecimal = Seq.tabulate(numComponents)(x => bigDecimalProb(psdds(x), (evidence ++ query)) * componentweights(x)).sum
+    val prob_div:BigDecimal = Seq.tabulate(numComponents)(x => bigDecimalProb(psdds(x), evidence) * componentweights(x)).sum
+    // println("prob_num " + prob_num + ", values: " + (evidence ++ query))
+    // println("prob_div " + prob_div + ", values: " + evidence)
+    val conditionalprob:BigDecimal = prob_num/prob_div
+    return conditionalprob 
+  }
+
 
   def setContextsAsBaggage(root: PsddNode): Unit = {
     val nodes = parentsBeforeChildren(root)

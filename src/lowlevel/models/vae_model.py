@@ -47,10 +47,15 @@ class VAEModel(BaseModel):
         #     parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
         #     parser.add_argument('--lambda_identity', type=float, default=0.5, help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
 
-        parser.add_argument('--categorical_dim', nargs="?",type=int, default=4)
+        
         parser.add_argument('--beta_kld', nargs="?",type=float, default=.7)
         parser.add_argument('--hard', nargs="?",type=str2bool, default=True)
         parser.add_argument('--loss_type',type=str, default='bce')
+        parser.add_argument('--num_channels', nargs="?",type=int, default=64)
+        parser.add_argument('--use_bias', nargs="?",type=str2bool, default=True)
+
+        parser.add_argument('--ae_model_type', type=str, default='vanilla') #Other option is 'resnet'
+
         return parser
 
     def __init__(self, opt):
@@ -74,7 +79,10 @@ class VAEModel(BaseModel):
         # define networks (both Generators and discriminators)
         # The naming is different from those used in the paper.
         # Code (vs. paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
-        self.netAE = networks.define_AE(opt)
+        if self.opt.ae_model_type == 'vanilla':
+            self.netAE = networks.define_AE(opt)
+        else:
+            self.netAE = networks.define_resNetAE(opt)
 
         if self.isTrain:
             # define loss functions
@@ -82,7 +90,7 @@ class VAEModel(BaseModel):
             # self.criterionBCE = torch.nn.BCELoss().to(self.device)
             self.criterionBCE = lambda x, y: F.binary_cross_entropy(x, y, size_average=False) / x.shape[0]
             self.criterionMSE = torch.nn.MSELoss().to(self.device)
-            self.criterionGumbell = Gumbell_kld(opt.beta_kld,opt.categorical_dim, self.netAE.fl_flat_shape).to(self.device)
+            self.criterionGumbell = networks.Gumbell_kld(opt.beta_kld,opt.categorical_dim, self.netAE.fl_flat_shape).to(self.device)
             self.optimizer = torch.optim.Adam(self.netAE.parameters(), lr=opt.lr, amsgrad=False, weight_decay=opt.weight_decay_coefficient)#, lr=opt.lr)
             # self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer)
@@ -177,7 +185,7 @@ class VAEModel(BaseModel):
             #Returns feature_layer_prob as tesor BSxFLSxCD
 
         hard = not training or self.opt.hard
-        self.feature_layer = gumbel_softmax(self.feature_layer_prob, 
+        self.feature_layer = networks.gumbel_softmax(self.feature_layer_prob, 
                         device=self.device, hard = hard, temperature = self.annealing_temp)
 
     def run_decoder(self):
@@ -206,75 +214,3 @@ class VAEModel(BaseModel):
             self.loss = (self.loss_BCE + self.loss_KLD)
         elif self.opt.loss_type == 'mse':
             self.loss = (self.loss_MSE + self.loss_KLD)
-
-
-class Gumbell_kld(torch.nn.Module):
-
-    def __init__(self, beta, categorical_dim, fl_flat_shape):
-
-        super(Gumbell_kld, self).__init__()
-        self.beta = beta
-        self.eps = torch.tensor(1e-20)
-        self.fl_flat_shape = fl_flat_shape
-        self.categorical_dim = categorical_dim
-
-    def __call__(self, feature_layer_prob):
-        # print('feature_layer_prob.shape',feature_layer_prob.shape)
-        categorical_shape = feature_layer_prob.shape
-        softmax = torch.nn.Softmax(dim=-1)
-
-        qy = softmax(feature_layer_prob).view(self.fl_flat_shape)
-        # print('qy.shape',qy.shape)
-
-        # kl1 = qy * torch.log(qy + self.eps)
-        # kl2 = qy * torch.log(1.0/self.categorical_dim  + self.eps)
-
-        # kld_loss_term = torch.sum(torch.sum(kl1 - kl2, 2), 1)
-
-        # q_y = logistic_fl.view(self.fl_flat_shape)
-        # qy = F.softmax(q_y, dim=-1).view(self.fl_flat_shape)
-        # # print(logistic_fl.shape, qy.shape)
-        log_ratio = torch.log(qy * self.categorical_dim + self.eps)
-        kld_loss_term = torch.sum((qy * log_ratio).view(categorical_shape), dim=-1).mean()
-
-        kld_loss = self.beta * kld_loss_term
-        # print(kld_loss)
-        return kld_loss
-
-def sample_gumbel(shape, device, eps=1e-20):
-    U = torch.rand(shape).to(device)
-    return -torch.log(-torch.log(U + eps) + eps)
-
-
-def gumbel_softmax_sample(logits, temperature, device):
-    y = logits + sample_gumbel(logits.size(),device)
-    softmax = torch.nn.Softmax(dim=-1)
-    return softmax(y/temperature)
-
-def gumbel_softmax(logits , device, temperature = 1, hard=False):
-    """
-    ST-gumple-softmax
-    input: [batch_size, num_variables, categorical_dim]
-    return: flatten --> [batch_size, n_class] an one-hot vector
-    """
-    fl_hidden_shape = logits.shape
-        #shape[0] = batchsize
-        #shape[1] = fl_size
-        #shape[2] = categorical dim
-
-
-    # q_y = logits.view(categorical_shape)
-    # print('logits.shape',logits.shape)
-    y = gumbel_softmax_sample(logits, temperature, device)
-
-    if not hard:
-        return y
-
-    shape = y.size()
-    _, ind = y.max(dim=-1)
-    y_hard = torch.zeros_like(y).view(-1, shape[-1])
-    y_hard.scatter_(1, ind.view(-1, 1), 1)
-    y_hard = y_hard.view(*shape)
-    # Set gradients w.r.t. y_hard gradients w.r.t. y
-    y_hard = (y_hard - y).detach() + y
-    return y_hard

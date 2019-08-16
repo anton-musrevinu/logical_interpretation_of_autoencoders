@@ -1,0 +1,5 @@
+task, possible-[y=0], possible-[y=1],possible, impossible, classification-acc
+g7land,0.3583,0.1953,0.5536,0.4464, 0.8592
+g4land,0.1996,0.2473,0.4469,0.5531,0.707
+bland,0.1582,0.5872,0.7453,0.2547,0.978
+blor,0.209,0.576,0.785,0.215,0.966

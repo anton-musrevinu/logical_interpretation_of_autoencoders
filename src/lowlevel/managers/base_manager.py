@@ -133,7 +133,6 @@ class BaseManager():
 
 		self.get_best_model_values_from_summery()
 
-
 	def setup_training(self):
 
 		if self.opt.epoch_count == 1:
@@ -177,7 +176,13 @@ class BaseManager():
 			self.model.load_networks(self.opt.epoch_count)
 			self.experiment_training_summary = self.experiment_training_summary.replace('training_summery', 'summary_training_cont_{}'.format(self.opt.epoch_count))
 
-
+	def load_net_at_best_epoch(self):
+		key = 'valid_{}'.format(self.opt.for_error.upper())
+		if not key in self.best_val_model_idx:
+			raise Exception('The network does not hold information for the provided error: {} (key: {})'.format(for_error, key))
+		epoch_idx = self.best_val_model_idx[key]
+		self.model.load_networks(epoch_idx)
+		self.model.annealing_temp = self.annealing_temp_min
 	### ----------------------------------------------------------------------------------------------------------
 	### --------------------------------               TRAINING        -----------------------------------------
 	### ----------------------------------------------------------------------------------------------------------
@@ -229,6 +234,7 @@ class BaseManager():
 		:param y: The targets for the model. A numpy array of shape batch_size, num_classes
 		:return: the loss and accuracy for this batch
 		"""
+		self.model.eval()
 		self.model.set_input(data)
 		results_comp,predicted_idxs, real_idxs = self.model.compute_network()
 

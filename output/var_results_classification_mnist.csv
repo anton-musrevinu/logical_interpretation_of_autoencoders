@@ -1,0 +1,15 @@
+dataset, $|FL^A|$, $|FL^A_i|$, VAE-MSE, best ll, vtree method, compressed y, class acc
+mnist,	16,	4,	0.0168,	-2e+01,	miBlossom,	False,	0.8217
+mnist,	16,	4,	0.0168,	-1.9e+01,	miBlossom,	True,	0.8408
+mnist,	16,	4,	0.0168,	-2e+01,	miGreedyBU,	True,	0.8515
+mnist,	16,	4,	0.0168,	-1.9e+01,	miMetis,	True,	0.8449
+mnist,	20,	2,	0.0285,	-9.2,	miBlossom,	True,	0.8225
+mnist,	20,	4,	0.0146,	-2.4e+01,	miBlossom,	True,	0.8605
+mnist,	24,	4,	0.0137,	-2.9e+01,	miBlossom,	True,	0.8713
+mnist,	28,	2,	0.0219,	-1.4e+01,	miGreedyBU,	True,	0.8911
+mnist,	32,	2,	0.0214,	-1.5e+01,	miBlossom,	True,	0.8932
+mnist,	32,	2,	0.0214,	-1.6e+01,	miGreedyBU,	False,	0.8955
+mnist,	32,	4,	0.0113,	-3.9e+01,	miBlossom,	True,	0.8251
+mnist,	40,	2,	0.0176,	-2e+01,	miBlossom,	False,	0.8687
+mnist,	40,	2,	0.0176,	-2.1e+01,	miGreedyBU,	False,	0.8345
+mnist,	48,	2,	0.0167,	-2.5e+01,	miGreedyBU,	True,	0.8434

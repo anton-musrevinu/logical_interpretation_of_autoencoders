@@ -1,5 +1,5 @@
 from data.base_dataset import BaseDataset
-from util.psdd_interface import decode_binary_to_onehot, decode_binary_to_int,read_info_file
+from util.psdd_interface import decode_binary_to_onehot, decode_binary_to_int,read_info_file,read_info_file_basic
 import os.path
 import numpy as np
 import torch
@@ -21,17 +21,26 @@ class FLSAMPLEDataset(BaseDataset):
 		self.data_file = os.path.join(mydir, '{}'.format(type_of_data))
 		self.type_of_data = type_of_data
 
-		domains = read_info_file(self.data_file)
+		if opt.fl_info_file is not None:
+			domains = read_info_file_basic(opt.fl_info_file)
+		else:
+			domains = read_info_file(self.data_file)
 
 		self.num_classes = opt.num_classes
 
 		fl_data = {}
+		self.example_prob = []
 
 		# print('original fl_flat size {} and binary fl size {}'.format(self.model.netAE.fl_flat_shape[1],new_fl_size))
 
 		with open(self.data_file, 'r') as f:
 			for line in f:
-				line = line.split(',')
+				if len(line.split(';')) == 2:
+					line_prob = float(line.split(';')[1])
+					line = line.split(';')[0].split(',')
+				else:
+					line = line.split(',')
+					line_prob = -1
 				# print(line)
 
 				for fl_name, fl_part in domains.items():
@@ -48,7 +57,15 @@ class FLSAMPLEDataset(BaseDataset):
 					if not fl_name in fl_data:
 						fl_data[fl_name] = []
 					fl_data[fl_name].append(flx_elem)
+				self.example_prob.append(line_prob)
 
+		tmp_fl_name = domains.keys()[0] if fl_name == None else fl_name
+		cuccent_size = len(fl_data[tmp_fl_name])
+		if cuccent_size < self.batch_size:
+			for i in range(cuccent_size, self.batch_size):
+				for fl_name, fl_part in domains.items():
+					flx_elem = fl_part.get_empty_example()
+					fl_data[fl_name].append(flx_elem)
 
 		self.fl_images_names = []
 		self.fl_numeric_names = []

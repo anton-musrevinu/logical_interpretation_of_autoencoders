@@ -47,8 +47,10 @@ class EMNISTDataset(BaseDataset):
 		# print(np.max(self.inputs), np.min(self.inputs))
 
 		# print(np.min(self.inputs), np.max(self.inputs))
+		multi = opt.data_per if opt.phase == 'encode' else 1
+		total_num_data_points = self.inputs.shape[0] * multi
 
-		self.num_data_points = int(self.inputs.shape[0] / self.batch_size) * self.batch_size
+		self.num_data_points = int(total_num_data_points / self.batch_size) * self.batch_size
 		if opt.num_batches != -1:# and trim_data:
 			self.num_data_points = min(opt.num_batches * self.batch_size,self.num_data_points)
 

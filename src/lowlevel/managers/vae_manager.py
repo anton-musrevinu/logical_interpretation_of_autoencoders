@@ -1,5 +1,5 @@
 
-from .base_manager import BaseManager
+from .msc_manager import MSCManager
 from options import str2bool
 from models import create_model
 import torch
@@ -10,22 +10,15 @@ from data import create_dataset_new as create_dataset
 from util.psdd_interface import write_fl_batch_to_file,write_fl_batch_to_file_new, FlDomainInfo
 import tqdm
 
-class VAEManager(BaseManager):
+class VAEManager(MSCManager):
 
 	def __init__(self,opt):
-
-
-		self.train_data = create_dataset(opt, opt.dataset, 'train')
-		self.val_data = create_dataset(opt, opt.dataset, 'valid')
-
 
 		self.annealing_temp = 1
 		self.annealing_temp_min = .5
 		self.annealing_rate = 0.00003
 
-		BaseManager.__init__(self,opt)
-
-		self.experiment_saved_data = os.path.join(self.manager_dir, "../encoded_data")
+		MSCManager.__init__(self,opt)
 
 	@staticmethod
 	def modify_commandline_options(parser, is_train=True):
@@ -39,32 +32,9 @@ class VAEManager(BaseManager):
 			the modified parser.
 		"""
 
-		# parser.add_argument('--model_type', nargs="?", type=str, default='vae', help='Type of Autoencoder used: [base,lin, vae]')
-		parser.add_argument('--feature_layer_size', nargs="?",type=int, default=64)
-		parser.add_argument('--use_bias', nargs="?",type=str2bool, default=True)
-		parser.add_argument('--num_channels', nargs="?",type=int, default=64)
-		#                     help='Experiment name - to be used for building the experiment folder')
-		# parser.add_argument('--replace_existing', nargs="?",type=self.str2bool, default=False,
-		#                     help='Specify if an exerpiment directory with the same name should be overwritten or not')
-		# parser.add_argument('--load', nargs="?", type=str, default="None",
-		#                         help='Experiment folder to loads')
+		parser = MSCManager.modify_commandline_options(parser, is_train = is_train)
 
 		return parser
-
-	def _save_example_batch(self,epoch_idx):
-		# print(self.model.feature_layer.shape)
-
-		fl_as_img = self.model.get_fl_as_img()
-
-		# print(fl_as_img.shape, self.model.input.shape, self.model.rec_input.shape)
-
-		save_stuff = [self.model.input, fl_as_img, self.model.rec_input]
-		row = map(lambda img_batch: img_batch.cpu().float(), save_stuff)
-		row_np = torch.cat(list(row), 3)[:21]
-		path = os.path.join(self.experiment_logs, 'transfer_example_epoch_{}.png'.format(epoch_idx))
-		# print(row_np.shape, row_np.max(), row_np.min())
-		save_example_image(row_np,path, nrow = 3)
-
 
 	def record_additional_info(self,epoch_idx):
 		if epoch_idx % self.opt.save_epoch_freq == 0:
@@ -109,23 +79,42 @@ class VAEManager(BaseManager):
 		elif task_type == 'bland':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_bland-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func'   : lambda a,b: a and b, \
+									'domain_constraints': lambda label: label == 0 or label == 1}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'blor':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_blor-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func'   : lambda a,b: a or b, \
+									'domain_constraints': lambda label: label == 0 or label == 1}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
+		elif task_type == 'blxor':
+			for type_of_data in ['train', 'valid', 'test']:
+				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_blxor-encoded-{}.data'.format(self.opt.dataset, type_of_data))
+				args_for_dataset = {'relational_func':    lambda a,b: a != b, \
+									'domain_constraints': lambda label: label == 0 or label == 1}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'g4land':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_g4and-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func': lambda a,b: (a > 4) and (b > 4)}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'g7land':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_g7and-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion)
+				args_for_dataset = {'relational_func': lambda a,b: (a > 7) and (b > 7)}
+				self.encode_logic_dataset(file_encoded_path,task_type,  type_of_data, self.opt.limit_conversion, args_for_dataset)
 		elif task_type == 'plus':
 			for type_of_data in ['train', 'valid', 'test']:
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_plus-encoded-{}.data'.format(self.opt.dataset, type_of_data))
-				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion, y_classes = 19)
+				args_for_dataset = {'relational_func': lambda a,b: a + b}
+				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion, y_classes = 19, args_for_dataset = args_for_dataset)
+		elif task_type.startswith('plus-ring-'):
+			ring = int(task_type.split('-')[2])
+			for type_of_data in ['train', 'valid', 'test']:
+				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}_plus-ring-{}-encoded-{}.data'.format(self.opt.dataset,ring, type_of_data))
+				args_for_dataset = {'relational_func': lambda x,y: (x + y) % ring}
+				self.encode_logic_dataset(file_encoded_path,task_type, type_of_data, self.opt.limit_conversion, y_classes = ring, args_for_dataset = args_for_dataset)
 		elif task_type.startswith('noisy-'):
 			noisiness = int(task_type.split('-')[1])
 			args_for_dataset = {'noisiness': noisiness}
@@ -146,88 +135,8 @@ class VAEManager(BaseManager):
 		else:
 			raise Exception('unknown task_type: {}'.format(task_type))
 
-
-	def encode_specific_file(self, file_encoded_path, type_of_data = 'train', limit_conversion = -1, compress_fly = True):
-		#Create specified dataset
-		dataset_to_encode = create_dataset(self.opt, self.opt.dataset, type_of_data = type_of_data)
-
-		# Set up network with the screenshot from the best performing batch
-		self.load_net_at_best_epoch()
-
-		# cat_dim = self.opt.categorical_dim
-		# fl_cat_size = self.opt.feature_layer_size
-		flx_compressed_var_length = int(np.ceil(np.log2(self.opt.categorical_dim)))
-		flx_compressed_size = flx_compressed_var_length * self.opt.feature_layer_size
-		if compress_fly:
-			fly_size = int(np.ceil(np.log2(dataset_to_encode.dataset.num_classes)))
-		else:
-			fly_size = dataset_to_encode.dataset.num_classes
-
-		stored_elements = 0
-		total_wrt_batch = len(dataset_to_encode)
-
-		if limit_conversion != -1:
-			total_wrt_batch = min(total_wrt_batch, int(np.ceil(limit_conversion/self.opt.batch_size)))
-
-		with tqdm.tqdm(total=total_wrt_batch) as pbar:
-			for batch_idx, data in enumerate(dataset_to_encode):  # sample batch
-
-				self.model.set_input(data)
-				self.model.run_encoder()
-
-				# print(data['targets'].shape, self.model.feature_layer.shape)
-
-				flx_categorical = self.model.feature_layer.detach().numpy() #.view(self.model.feature_layer.shape[0], -1)
-				fly_onehot = data['targets'].detach().numpy()
-				fl_encoded_size = write_fl_batch_to_file(file_encoded_path, flx_categorical, fly_onehot, batch_idx, compress_fly = compress_fly)
-				pbar.update(1)
-
-				stored_elements += self.opt.batch_size
-				if limit_conversion != -1 and stored_elements >= limit_conversion:
-					break
-
-		print('[ENCODE]\t finished converting dataset: {} - size: ({},{}) \n\t\t to file: {}'.format(dataset_to_encode, stored_elements, fl_encoded_size,file_encoded_path))
-		return True
-
-	def decode_specific_file(self, file_to_decode, output_image_file = None):
-
-		sampled_data = create_dataset(self.opt, domain = 'fl_sample', type_of_data = file_to_decode.split('/')[-1], \
-			mydir = '/'.join(file_to_decode.split('/')[:-1]))
-
-		generated_fls = file_to_decode.split('/')[-1].split('generated_')[1].split('-')[0].split('_')
-		print('generated fls: {}'.format(generated_fls))
-		self.load_net_at_best_epoch()
-
-		for idx, data in enumerate(sampled_data):  # sample batch
-			rec = {}
-			for i in data.keys():
-				if not 'y' in i:
-					self.model.set_fl(data[i])
-					self.model.run_decoder()
-					rec[i] = self.model.rec_input.detach().cpu().float()
-
-			if output_image_file == None:
-				path = file_to_decode.replace('.data', 'b{}.png'.format(idx))
-			else:
-				path = output_image_file
-
-			for i in generated_fls:
-				for image in rec[i]:
-					image[:,0,:] = 0.5
-					image[:,-1,:] = 0.5
-					image[:,:,0] = 0.5
-					image[:,:,-1] = 0.5
-
-			tosave = list(rec.values())
-			save_example_image(tosave, path)
-
-	def load_net_at_best_epoch(self):
-		key = 'valid_{}'.format(self.opt.for_error.upper())
-		if not key in self.best_val_model_idx:
-			raise Exception('The network does not hold information for the provided error: {} (key: {})'.format(for_error, key))
-		epoch_idx = self.best_val_model_idx[key]
-		self.model.load_networks(epoch_idx)
-		self.model.annealing_temp = self.annealing_temp_min
+	def make_class_examples(self):
+		pass
 
 	def encode_successor_dataset(self, file_encoded_path, type_of_data = 'train', limit_conversion = -1):
 		dataset_to_encode = create_dataset(self.opt, self.opt.dataset + '_succ', type_of_data = type_of_data)
@@ -239,7 +148,7 @@ class VAEManager(BaseManager):
 
 		fla_info = FlDomainInfo('fla', self.opt.feature_layer_size, self.opt.categorical_dim, True, 0, flx_compressed_size)
 		flb_info = FlDomainInfo('flb', self.opt.feature_layer_size, self.opt.categorical_dim, True, flx_compressed_size, flx_compressed_size * 2)
-		fl_info = [fla_info, flb_info]
+		fl_info = {'fla':fla_info, 'flb':flb_info}
 
 		stored_elements = 0
 		total_wrt_batch = len(dataset_to_encode)
@@ -263,7 +172,7 @@ class VAEManager(BaseManager):
 				flb = self.model.feature_layer.detach().numpy() #.view(self.model.feature_layer.shape[0], -1)
 				# fly_onehot = data['targets'].detach().numpy()
 
-				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, [fla, flb], fl_info, batch_idx)
+				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, {'fla':fla, 'flb':flb}, fl_info, batch_idx)
 				pbar.update(1)
 
 				stored_elements += self.opt.batch_size
@@ -273,10 +182,10 @@ class VAEManager(BaseManager):
 		print('[ENCODE]\t finished converting dataset: {} - size: ({},{}) \n\t\t to file: {}'.format(dataset_to_encode, stored_elements, fl_encoded_size, file_encoded_path))
 		return True
 
-	def encode_logic_dataset(self, file_encoded_path, task_type, type_of_data = 'train', limit_conversion = -1, y_classes = 2):
-		dataset_to_encode = create_dataset(self.opt, self.opt.dataset + '_' + task_type, type_of_data = type_of_data)
+	def encode_logic_dataset(self, file_encoded_path, task_type, type_of_data = 'train', limit_conversion = -1, y_classes = 2, args_for_dataset = {}):
+		args_for_dataset['y_classes'] = y_classes
+		dataset_to_encode = create_dataset(self.opt, self.opt.dataset + '_logic', type_of_data = type_of_data, args_for_dataset = args_for_dataset)
 		self.encode_3_part_dataset(file_encoded_path, dataset_to_encode, limit_conversion, y_classes)
-
 
 	def encode_2_part_dataset(self, file_encoded_path, dataset_to_encode,limit_conversion, y_classes, compress_fly = True):
 		self.load_net_at_best_epoch()
@@ -292,7 +201,7 @@ class VAEManager(BaseManager):
 
 		fla_info = FlDomainInfo('fla', self.opt.feature_layer_size, self.opt.categorical_dim, True, 0, flx_compressed_size)
 		fly_info = FlDomainInfo('fly', 1, y_classes, compress_fly, flx_compressed_size, flx_compressed_size + fly_compressed_size)
-		fl_info = [fla_info, fly_info]
+		fl_info = {'fla':fla_info, 'fly':fly_info}
 
 		stored_elements = 0
 		total_wrt_batch = len(dataset_to_encode)
@@ -309,7 +218,7 @@ class VAEManager(BaseManager):
 				# fly_onehot = data['targets'].detach().numpy()
 				fly = data['targets'].detach().numpy()
 
-				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, [fla, fly], fl_info, batch_idx)
+				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, {'fla':fla, 'fly':fly}, fl_info, batch_idx)
 				pbar.update(1)
 
 				stored_elements += self.opt.batch_size
@@ -319,19 +228,21 @@ class VAEManager(BaseManager):
 		print('[ENCODE]\t finished converting dataset: {} - size: ({},{}) \n\t\t to file: {}'.format(dataset_to_encode, stored_elements, fl_encoded_size, file_encoded_path))
 		return True
 
-
-	def encode_3_part_dataset(self, file_encoded_path, dataset_to_encode,limit_conversion, y_classes):
+	def encode_3_part_dataset(self, file_encoded_path, dataset_to_encode, limit_conversion, y_classes):
 		self.load_net_at_best_epoch()
 
 		flx_compressed_var_length = int(np.ceil(np.log2(self.opt.categorical_dim)))
 		flx_compressed_size = flx_compressed_var_length * self.opt.feature_layer_size
 
-		fly_compressed_var_length = int(np.ceil(np.log2(y_classes)))
+		if self.opt.compress_fly:
+			fly_compressed_var_length = int(np.ceil(np.log2(y_classes)))
+		else:
+			fly_compressed_var_length = y_classes
 
 		fla_info = FlDomainInfo('fla', self.opt.feature_layer_size, self.opt.categorical_dim, True, 0, flx_compressed_size)
 		flb_info = FlDomainInfo('flb', self.opt.feature_layer_size, self.opt.categorical_dim, True, flx_compressed_size, flx_compressed_size * 2)
-		fly_info = FlDomainInfo('fly', 1, y_classes, True, flx_compressed_size * 2, flx_compressed_size * 2 + fly_compressed_var_length)
-		fl_info = [fla_info, flb_info, fly_info]
+		fly_info = FlDomainInfo('fly', 1, y_classes, self.opt.compress_fly, flx_compressed_size * 2, flx_compressed_size * 2 + fly_compressed_var_length)
+		fl_info = {'fla':fla_info,'flb': flb_info, 'fly':fly_info}
 
 		stored_elements = 0
 		total_wrt_batch = len(dataset_to_encode)
@@ -356,7 +267,7 @@ class VAEManager(BaseManager):
 				flb = self.model.feature_layer.detach().numpy() #.view(self.model.feature_layer.shape[0], -1)
 				# fly_onehot = data['targets'].detach().numpy()
 
-				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, [fla, flb, fly], fl_info, batch_idx)
+				fl_encoded_size = write_fl_batch_to_file_new(file_encoded_path, {'fla':fla, 'flb':flb, 'fly':fly}, fl_info, batch_idx)
 				pbar.update(1)
 
 				stored_elements += self.opt.batch_size
@@ -365,3 +276,51 @@ class VAEManager(BaseManager):
 
 		print('[ENCODE]\t finished converting dataset: {} - size: ({},{}) \n\t\t to file: {}'.format(dataset_to_encode, stored_elements, fl_encoded_size, file_encoded_path))
 		return True
+
+
+
+			# def encode_specific_file(self, file_encoded_path, type_of_data = 'train', limit_conversion = -1, compress_fly = True):
+	
+
+
+	# 	#Create specified dataset
+	# 	dataset_to_encode = create_dataset(self.opt, self.opt.dataset, type_of_data = type_of_data)
+
+	# 	# Set up network with the screenshot from the best performing batch
+	# 	self.load_net_at_best_epoch()
+
+	# 	# cat_dim = self.opt.categorical_dim
+	# 	# fl_cat_size = self.opt.feature_layer_size
+	# 	flx_compressed_var_length = int(np.ceil(np.log2(self.opt.categorical_dim)))
+	# 	flx_compressed_size = flx_compressed_var_length * self.opt.feature_layer_size
+	# 	if compress_fly:
+	# 		fly_size = int(np.ceil(np.log2(dataset_to_encode.dataset.num_classes)))
+	# 	else:
+	# 		fly_size = dataset_to_encode.dataset.num_classes
+
+	# 	stored_elements = 0
+	# 	total_wrt_batch = len(dataset_to_encode)
+
+	# 	if limit_conversion != -1:
+	# 		total_wrt_batch = min(total_wrt_batch, int(np.ceil(limit_conversion/self.opt.batch_size)))
+
+	# 	with tqdm.tqdm(total=total_wrt_batch) as pbar:
+	# 		for batch_idx, data in enumerate(dataset_to_encode):  # sample batch
+
+	# 			self.model.set_input(data)
+	# 			self.model.run_encoder()
+
+	# 			# print(data['targets'].shape, self.model.feature_layer.shape)
+
+	# 			flx_categorical = self.model.feature_layer.detach().numpy() #.view(self.model.feature_layer.shape[0], -1)
+	# 			fly_onehot = data['targets'].detach().numpy()
+	# 			fl_encoded_size = write_fl_batch_to_file(file_encoded_path, flx_categorical, fly_onehot, batch_idx, compress_fly = compress_fly)
+	# 			pbar.update(1)
+
+	# 			stored_elements += self.opt.batch_size
+	# 			if limit_conversion != -1 and stored_elements >= limit_conversion:
+	# 				break
+
+	# 	print('[ENCODE]\t finished converting dataset: {} - size: ({},{}) \n\t\t to file: {}'.format(dataset_to_encode, stored_elements, fl_encoded_size,file_encoded_path))
+	# 	return True
+
