@@ -20,7 +20,8 @@ def phase_train_options(parser):
     parser.add_argument('--norm', type=str, default='batch', help='instance normalization or batch normalization [instance | batch | none]')
     parser.add_argument('--init_type', type=str, default='xavier', help='network initialization [normal | xavier | kaiming | orthogonal]')
     parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
-    parser.add_argument('--no_dropout', type=str2bool, default=True, help='no dropout for the generator')
+    parser.add_argument('--use_dropout_encoder', type=str2bool, default=True, help='no dropout for the generator')
+    parser.add_argument('--use_dropout_decoder', type=str2bool, default=True, help='no dropout for the generator')
 
     parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
 

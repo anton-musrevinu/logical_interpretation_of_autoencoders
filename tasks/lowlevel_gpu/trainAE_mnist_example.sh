@@ -1,1 +1,1 @@
-python ../../src/lowlevel/main.py --phase train --experiment_name exp_mnist_test --dataset mnist_example --gpu_ids -1 --feature_layer_size 32 --categorical_dim 2 --num_epochs 50 --batch_size 10 --ae_model_type vanilla --no_dropout False
+python ../../src/lowlevel/main.py --phase train --experiment_name exp_mnist_test --dataset mnist_example --gpu_ids -1 --feature_layer_size 32 --categorical_dim 2 --num_epochs 50 --batch_size 10 --ae_model_type vanilla

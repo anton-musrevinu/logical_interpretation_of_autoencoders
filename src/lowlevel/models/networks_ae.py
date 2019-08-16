@@ -5,7 +5,11 @@ import torch
 def define_AE(opt):
 
 	net = None
-	net = VarConvAutoEncoder(opt)
+
+	norm_layer = get_norm_layer(norm_type=opt.norm)
+	
+	net = VarConvAutoEncoder(opt, norm_layer = norm_layer)
+
 
 	if len(opt.gpu_ids) > 0:
 		assert(torch.cuda.is_available())

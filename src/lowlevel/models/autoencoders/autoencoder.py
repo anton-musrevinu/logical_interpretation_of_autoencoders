@@ -2,6 +2,7 @@ import torch.nn as nn
 import numpy as np
 import torch
 import torch.nn.functional as F
+import functools
 # from ..distributions.gumbel import gumbel_softmax
 
 class Autoencoder(nn.Module):
@@ -304,7 +305,7 @@ class VarDecoder(VarGenerator):
 
 class VarAutoencoder(nn.Module):
 
-    def __init__(self, opt, buildModule = True):
+    def __init__(self, opt, buildModule = True, norm_layer = None):
 
         super(VarAutoencoder, self).__init__()
 
@@ -316,8 +317,15 @@ class VarAutoencoder(nn.Module):
         # print("self.fl_flat_shape",self.fl_flat_shape)
         self.input_shape = (opt.batch_size, opt.input_nc, opt.image_height, opt.image_width)
         self.feature_layer_size = opt.feature_layer_size
-        self.use_bias = opt.use_bias
         self.opt = opt
+        self.norm_layer = norm_layer
+        self.use_dropout_encoder = opt.use_dropout_encoder
+        self.use_dropout_decoder = opt.use_dropout_decoder
+
+        if type(self.norm_layer) == functools.partial:  # no need to use bias as BatchNorm2d has affine parameters
+            self.use_bias = norm_layer.func != nn.BatchNorm2d
+        else:
+            self.use_bias = norm_layer != nn.BatchNorm2d
 
         if buildModule:
             self.layer_dict = nn.ModuleDict()
@@ -361,7 +369,18 @@ class VarAutoencoder(nn.Module):
                 out = out.view(self.conversion_layer_shape_after)
             # print('{} - B : {}'.format(i,out.shape))
             out = self.layer_dict['encode_{}'.format(i)](out)
+
+            if 'encode_{}_norm'.format(i) in self.layer_dict:
+                out = self.layer_dict['encode_{}_norm'.format(i)](out)
+
             out = self.layer_dict['encode_{}_activation'.format(i)](out)
+
+            if 'decode_{}_dropout'.format(i) in self.layer_dict:
+                # print('- dropout is computed [training: {}]'.format(self.training))
+                # zero_count_before = torch.numel(out[0]) - torch.nonzero(out[0]).size(0)
+                out = self.layer_dict['decode_{}_dropout'.format(i)](out)
+                # zero_count_after = torch.numel(out[0]) - torch.nonzero(out[0]).size(0)
+                # print(zero_count_after - zero_count_before, self.training)
             # print('{} - C : {}'.format(i,out.shape))
 
             if 'encode_{}_reduction'.format(i) in self.layer_dict:
@@ -381,7 +400,17 @@ class VarAutoencoder(nn.Module):
             # print('{} - B : {}'.format(i,out.shape))
             out = self.layer_dict['decode_{}'.format(i)](out)
 
+            if 'decode_{}_norm'.format(i) in self.layer_dict:
+                out = self.layer_dict['decode_{}_norm'.format(i)](out)
+
             out = self.layer_dict['decode_{}_activation'.format(i)](out)
+
+            if 'decode_{}_dropout'.format(i) in self.layer_dict:
+                # print('- dropout is computed [training: {}]'.format(self.training))
+                # zero_count_before = torch.numel(out[0]) - torch.nonzero(out[0]).size(0)
+                out = self.layer_dict['decode_{}_dropout'.format(i)](out)
+                # zero_count_after = torch.numel(out[0]) - torch.nonzero(out[0]).size(0)
+                # print(zero_count_after - zero_count_before, self.training)
 
             if 'decode_{}_upsampling'.format(i) in self.layer_dict:
                 out = self.layer_dict['decode_{}_upsampling'.format(i)](out)
