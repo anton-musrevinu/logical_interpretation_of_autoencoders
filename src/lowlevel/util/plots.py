@@ -6,33 +6,35 @@ import os
 import sys
 
 def plot_stats_in_graph(total_losses, expirimentDir):
+    try:
+        # total_losses = read_expiriment_data(expirimentDir)
+        
+        # Plot the change in the validation and training set error over training.
+        fig_1 = plt.figure(figsize=(8, 4))
+        ax_1 = fig_1.add_subplot(111)
+        print(total_losses.keys())
+        for k in total_losses.keys():
+            if "train" in k:
+                t = ax_1.plot(np.arange(len(total_losses[k])), total_losses[k], label=k)
+        ax_1.legend(loc=0)
+        ax_1.set_xlabel('Epoch number')
+        
+        
+        fig_2 = plt.figure(figsize=(8, 4))
+        ax_2 = fig_2.add_subplot(111)
+        for k in total_losses.keys():
+            if "valid" in k:
+                t = ax_2.plot(np.arange(len(total_losses[k])), total_losses[k], label=k)
+        ax_2.legend(loc=0)
+        ax_2.set_xlabel('Epoch number')
 
-    # total_losses = read_expiriment_data(expirimentDir)
-    
-    # Plot the change in the validation and training set error over training.
-    fig_1 = plt.figure(figsize=(8, 4))
-    ax_1 = fig_1.add_subplot(111)
-    print(total_losses.keys())
-    for k in total_losses.keys():
-        if "train" in k:
-            t = ax_1.plot(np.arange(len(total_losses[k])), total_losses[k], label=k)
-    ax_1.legend(loc=0)
-    ax_1.set_xlabel('Epoch number')
-    
-    
-    fig_2 = plt.figure(figsize=(8, 4))
-    ax_2 = fig_2.add_subplot(111)
-    for k in total_losses.keys():
-        if "valid" in k:
-            t = ax_2.plot(np.arange(len(total_losses[k])), total_losses[k], label=k)
-    ax_2.legend(loc=0)
-    ax_2.set_xlabel('Epoch number')
-
-    # plt.show()
-    fig_1.savefig('{}/training_loss.pdf'.format(expirimentDir))
-    fig_2.savefig('{}/training_acc.pdf'.format(expirimentDir))
-    plt.close(fig_1)
-    plt.close(fig_2)
+        # plt.show()
+        fig_1.savefig('{}/training_loss.pdf'.format(expirimentDir))
+        fig_2.savefig('{}/training_acc.pdf'.format(expirimentDir))
+        plt.close(fig_1)
+        plt.close(fig_2)
+    except Exception as e:
+        print('Exception was cought: {}'.format(e))
 
 def plot_stats_in_one_graph(expirimentDir):
 
