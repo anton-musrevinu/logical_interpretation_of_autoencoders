@@ -145,8 +145,8 @@ class CustomDatasetDataLoader():
 		self.dataloader = torch.utils.data.DataLoader(
 			dataset,
 			batch_size=opt.batch_size,
-			shuffle=False,#not opt.allign_data,
-			num_workers=1)#int(opt.num_threads))
+			shuffle=True,#not opt.allign_data,
+			num_workers=int(opt.num_threads))
 
 		asStr = '{}-{}'.format(domain, type_of_data)
 		# self.dataset = dataset

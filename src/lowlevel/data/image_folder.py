@@ -77,7 +77,7 @@ class ImageDataset(BaseDataset):
 class ImageFolder(data.Dataset):
 
     def __init__(self, root, num_classes, transform=None, testing_data = False, loader = default_loader):
-        imgs = make_dataset(root, 20 if testing_data else -1)
+        imgs = make_dataset(root, 20 if testing_data else float("inf"))
         if len(imgs) == 0:
             raise(RuntimeError("Found 0 images in: " + root + "\n"
                                "Supported image extensions are: " +
