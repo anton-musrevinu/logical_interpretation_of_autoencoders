@@ -54,7 +54,7 @@ class BaseOptions():
         parser.add_argument('--image_height', type = int)
 
         # dataset parameters
-        parser.add_argument('--dataset', type=str, default='mnist', help='chooses dataset to use')
+        parser.add_argument('--dataset', type=str, default='sln', help='chooses dataset to use')
         parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
         parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
         parser.add_argument('--num_batches', type=int, default=-1)
@@ -172,6 +172,7 @@ class BaseOptions():
         # print('so far so good - last')
 
         options = parser.parse_args()
+        # print(options)
 
         # print('so far so good - last last')
         # print('\n\n\n',options)

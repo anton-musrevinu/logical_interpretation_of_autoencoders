@@ -54,11 +54,18 @@ class MSCManager(BaseManager):
 		# print(fl_as_img.shape, self.model.input.shape, self.model.rec_input.shape)
 
 		save_stuff = [self.model.input, fl_as_img, self.model.rec_input]
-		row = map(lambda img_batch: img_batch.cpu().float(), save_stuff)
-		row_np = torch.cat(list(row), 3)[:21]
+		row = list(map(lambda img_batch: img_batch.cpu().float().detach(), save_stuff))
+		# print(row[0].shape, row[1].shape)
+		if row[0].shape[1] == 3:
+			t = np.repeat(row[1], 3, axis=1)
+			# print(t.shape)
+			# print(t[0])
+			row[1] = t
+		# row_np = torch.cat(row, 3)[:21]
+		# print("row_np",row_np.shape)
 		path = os.path.join(self.experiment_logs, 'transfer_example_epoch_{}.png'.format(epoch_idx))
 		# print(row_np.shape, row_np.max(), row_np.min())
-		save_example_image(row_np,path, nrow = 3)
+		save_example_image(row,path, nrow = 3)
 
 	def create_impossible_test_set(self, task_type):
 		#Create a dataset for the 'land' tasks, where fly is one and the one image given is 0 (impossible)
