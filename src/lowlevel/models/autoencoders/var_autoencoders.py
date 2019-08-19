@@ -338,7 +338,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['encode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_encoder:
-			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before reduction: '.format(layer_idx), out.shape)
@@ -366,7 +366,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 
 
 		if self.use_dropout_encoder:
-			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before reduction: '.format(layer_idx), out.shape)
@@ -394,7 +394,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 
 
 		if self.use_dropout_encoder:
-			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before reduction: '.format(layer_idx), out.shape)
@@ -429,7 +429,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 
 
 		if self.use_dropout_encoder:
-			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
 		# print('output l_{}: '.format(layer_idx), out.shape)
 		# print('------------------------------')
@@ -472,7 +472,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 		# print('output l_{}: '.format(layer_idx), out.shape)
 		# print('------------------------------')
@@ -492,7 +492,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 		# print('output l_{}: '.format(layer_idx), out.shape)
 		# print('------------------------------')
@@ -516,7 +516,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before upsampling: '.format(layer_idx), out.shape)
@@ -542,7 +542,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before upsampling: '.format(layer_idx), out.shape)
@@ -569,7 +569,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before upsampling: '.format(layer_idx), out.shape)
