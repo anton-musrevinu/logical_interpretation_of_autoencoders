@@ -709,7 +709,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		if self.use_dropout_encoder:
 			model += [nn.Dropout(0.75)]
 
-		model = [nn.Linear(in_features=output_nc * 2,  # add a linear layer
+		model += [nn.Linear(in_features=output_nc * 2,  # add a linear layer
 					out_features=output_nc,
 					bias=True)]
 		model += [nn.ReLU()]
@@ -731,7 +731,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 					bias=True)]
 		model += [nn.ReLU()]
 
-		model = [nn.Linear(in_features=input_nc * 2,  # add a linear layer
+		model += [nn.Linear(in_features=input_nc * 2,  # add a linear layer
 					out_features=self.conversion_layer_shape_after[1],
 					bias=True)]
 		model += [nn.ReLU()]
