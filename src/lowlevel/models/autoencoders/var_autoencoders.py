@@ -788,7 +788,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		print("tmp_out_shape (after apsampling): {}".format(tmp_out.shape))
 
 		# model += [nn.ReflectionPad2d(3)]
-		model += [nn.Conv2d(ngf, output_nc, kernel_size=6, padding=1)]
+		model += [nn.Conv2d(ngf, output_nc, kernel_size=5, padding=1)]
 		model += [nn.Sigmoid()]
 
 
