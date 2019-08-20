@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:2
-#SBATCH --time=24:00:00
+#SBATCH --time=96:00:00
 
 
 source activate mlp
