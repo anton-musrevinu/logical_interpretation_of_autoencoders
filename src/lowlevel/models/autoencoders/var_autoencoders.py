@@ -699,6 +699,8 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		print("conversion_layer_shape_after:", out.shape)
 		self.conversion_layer_shape_after = out.shape
 
+		print('output_nc',output_nc)
+
 		model = [nn.Linear(in_features=out.shape[1],  # add a linear layer
 					out_features=output_nc * 2,
 					bias=True)]
