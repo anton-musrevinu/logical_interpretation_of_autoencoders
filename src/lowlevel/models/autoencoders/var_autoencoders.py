@@ -626,7 +626,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 
 		print('building build_model_basic')
 
-		feature_layer = self.build_encoder(self.input_nc, self.output_nc, use_dropout = not self.opt.no_dropout)
+		feature_layer = self.build_encoder(self.input_nc, self.output_nc, use_dropout = self.use_dropout_encoder)
 
 		# ======================== FEATURE LAYER =================================
 
@@ -634,7 +634,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		print('----- feature layer : {}'.format(feature_layer.shape))
 		print('------------------------------')
 
-		self.build_decoder(feature_layer, self.output_nc, self.input_nc)
+		self.build_decoder(feature_layer, self.output_nc, self.input_nc, use_dropout = self.use_dropout_decoder)
 
 	def build_encoder(self,input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, padding_type='reflect'):
 
