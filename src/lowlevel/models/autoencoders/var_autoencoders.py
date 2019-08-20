@@ -611,7 +611,6 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		self.output_nc = self.fl_flat_shape[1]
 		self.ngf= opt.ngf
 		self.normType = opt.norm
-		self.use_dropout = opt.no_dropout
 		self.n_blocks = 2
 		self.padding_type = 'reflect'
 
