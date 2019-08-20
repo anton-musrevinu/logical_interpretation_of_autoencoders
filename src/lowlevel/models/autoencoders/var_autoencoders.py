@@ -696,6 +696,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		self.conversion_layer_shape_before = out.shape
 		print("encoder pre out shape: {}".format(out.shape))
 		out = out.view(out.shape[0], -1)
+		print("conversion_layer_shape_after:", out.shape)
 		self.conversion_layer_shape_after = out.shape
 
 		model = [nn.Linear(in_features=out.shape[1],  # add a linear layer
