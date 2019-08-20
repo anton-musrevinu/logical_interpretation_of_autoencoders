@@ -88,8 +88,8 @@ class VAEModel(BaseModel):
             # define loss functions
 
             # self.criterionBCE = torch.nn.BCELoss().to(self.device)
-            # self.criterionBCE = lambda x, y: F.binary_cross_entropy(x, y, size_average=False) / x.shape[0
-            self.criterionBCE = torch.nn.L1Loss().to(self.device)
+            self.criterionBCE = lambda x, y: F.binary_cross_entropy(x, y, size_average=False) / x.shape[0
+            # self.criterionBCE = torch.nn.L1Loss().to(self.device)
             # self.criterionBCE = torch.nn.BCEWithLogitsLoss().to(self.device)
             self.criterionMSE = torch.nn.MSELoss().to(self.device)
             self.criterionGumbell = networks.Gumbell_kld(opt.beta_kld,opt.categorical_dim, self.netAE.fl_flat_shape).to(self.device)
