@@ -717,7 +717,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 			use_bias = norm_layer == nn.InstanceNorm2d
 
 		model = [nn.Linear(in_features=feature_layer.shape[1],  # add a linear layer
-					out_features=2 * feature_layer.shape[1],
+					out_features=self.conversion_layer_shape_after[1],
 					bias=self.use_bias)]
 		model += [nn.ReLU()]
 
