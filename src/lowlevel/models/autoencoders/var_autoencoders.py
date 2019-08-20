@@ -700,8 +700,16 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		self.conversion_layer_shape_after = out.shape
 
 		model = [nn.Linear(in_features=out.shape[1],  # add a linear layer
+					out_features=output_nc * 2,
+					bias=True)]
+		model += [nn.ReLU()]
+
+		if self.use_dropout_encoder:
+			model += [nn.Dropout(0.75)]
+
+		model = [nn.Linear(in_features=output_nc * 2,  # add a linear layer
 					out_features=output_nc,
-					bias=self.use_bias)]
+					bias=True)]
 		model += [nn.ReLU()]
 
 		self.encoder_fcc = nn.Sequential(*model)
@@ -717,8 +725,13 @@ class VarResNetAutoEncoder(VarAutoencoder):
 			use_bias = norm_layer == nn.InstanceNorm2d
 
 		model = [nn.Linear(in_features=feature_layer.shape[1],  # add a linear layer
+					out_features=input_nc * 2,
+					bias=True)]
+		model += [nn.ReLU()]
+
+		model = [nn.Linear(in_features=input_nc * 2,  # add a linear layer
 					out_features=self.conversion_layer_shape_after[1],
-					bias=self.use_bias)]
+					bias=True)]
 		model += [nn.ReLU()]
 
 		self.decoder_fcc = nn.Sequential(*model)
