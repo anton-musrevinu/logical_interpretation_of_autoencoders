@@ -6,13 +6,19 @@ plt.style.use('ggplot')
 
 import numpy as np
 from scipy.interpolate import griddata
+import itertools
 
 from make_results_file import gather_only_var_results, gather_results, get_task_type_hiracy
 
-sys.path.append('../../experiment/')
+
+CURRENTDIR = os.path.dirname(os.path.realpath(__file__))
+ROOTDIR = os.path.abspath(os.path.join(CURRENTDIR, './../..'))
+SRCDIR = os.path.abspath(os.path.join(ROOTDIR, './src'))
+print(SRCDIR)
+sys.path.append(SRCDIR)
 from experiment import Experiment
 
-
+OUTDIR = os.path.abspath(os.path.join(ROOTDIR, './tasks/plots/out'))
 RELATIVE_OUTFILE = './code/msc/output/var_results_mnist.csv'
 file = os.path.abspath(os.path.join(os.environ['HOME'],RELATIVE_OUTFILE))
 
@@ -162,7 +168,7 @@ def make_vae_loss_graph_wrt_complexity(data = 'ex_7_mnist'):
 	print(x_axis)
 	print(y_axis)
 
-	fig_1 = plt.figure(figsize=(20, 8))
+	fig_1 = plt.figure(figsize=(16, 8))
 	ax = fig_1.add_subplot(111)
 	ax.plot(x_axis_best, y_axis_best)
 	ax.scatter(x_axis, y_axis, marker = 'o')
@@ -195,9 +201,9 @@ def make_acc_graph_wrt_complexity(data = 'ex_7_mnist', task_type_of_intersest = 
 			psdd_exp = exp.exp_psdds[task_type]
 			for cluster_id in psdd_exp.classification_acc.keys():
 				if exp.complexity_bin in complexity_map:
-					complexity_map[exp.complexity_bin][max(psdd_exp.classification_acc[cluster_id])] = [exp.flx_size, exp.flx_cat_dim, psdd_exp.vtree_method[cluster_id],psdd_exp.compressed_y[cluster_id]]
+					complexity_map[exp.complexity_bin][max(psdd_exp.classification_acc[cluster_id])] = [exp.flx_size, exp.flx_cat_dim, psdd_exp.vtree_method[cluster_id]]#,psdd_exp.compressed_y[cluster_id]]
 				else:
-					complexity_map[exp.complexity_bin] = {max(psdd_exp.classification_acc[cluster_id]): [exp.flx_size, exp.flx_cat_dim, psdd_exp.vtree_method[cluster_id],psdd_exp.compressed_y[cluster_id]]}
+					complexity_map[exp.complexity_bin] = {max(psdd_exp.classification_acc[cluster_id]): [exp.flx_size, exp.flx_cat_dim, psdd_exp.vtree_method[cluster_id]]}#,psdd_exp.compressed_y[cluster_id]]}
 
 	print(complexity_map)
 	x_axis = []
@@ -218,23 +224,28 @@ def make_acc_graph_wrt_complexity(data = 'ex_7_mnist', task_type_of_intersest = 
 	print(x_axis)
 	print(y_axis)
 
-	fig_1 = plt.figure(figsize=(10, 6))
+	fig_1 = plt.figure(figsize=(8, 4))
 	ax = fig_1.add_subplot(111)
 	ax.plot(x_axis_best, y_axis_best)
 	ax.scatter(x_axis, y_axis, marker = 'o')
 
-	offsetx = 1
-	offsety = 0.001
+	offsetx = 2
+	offsety = 0.005
 	for ii, v in enumerate(x_axis):
 		# for jj in complexity_map[v].values():
-		text = ax.text(v + offsetx, offsety + y_axis[ii], points[ii], ha="center", va="center", color="black")
+		t = list(itertools.combinations(y_axis, y_axis))
+		print(t)
+		min_diff =  min(map(lambda tub: abs(tub[0] - tub[1]) if tub[0] != tub[1] else float('inf'),list(itertools.combinations(y_axis, y_axis))))
+		print(min_diff)
+		if (min_diff > 0.005):
+			text = ax.text(v + offsetx, offsety + y_axis[ii], points[ii], ha="center", va="center", color="black")
 
 	# ax.grid(False)
 
 	ax.set_title("classification acc for whole model on data: {}".format(data_type))
 	ax.set_xlabel('#binary complexity of the feature layer (|model space| = 2^x)')
 	ax.set_ylabel('classification acc on held out test set')
-	fig_1.savefig('./plots/out/class_acc_{}_wrt_bin_complexity_annotated.pdf'.format(data_type))
+	fig_1.savefig(os.path.join(OUTDIR,'./class_acc_{}_wrt_bin_complexity_annotated.pdf'.format(data_type)))
 	plt.show()
 
 def make_acc_graph_wrt_ll(data = 'ex_7_mnist', task_type_of_intersest = 'classification'):
@@ -421,12 +432,12 @@ def plot_all_psdd_learning():
 		plot_psdd_learning(i)
 
 if __name__ == '__main__':
-	BLOODBORN_BASE = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
-	myexp = os.path.join(BLOODBORN_BASE, './ex_7_mnist_32_2/psdd_search_james01/')
-	exp = Experiment('ex_7_mnist_32_2', 'james01', 'classification')
-	plot_psdd_learning(exp)
+	# BLOODBORN_BASE = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/experiments/'))
+	# myexp = os.path.join(BLOODBORN_BASE, './ex_7_mnist_32_2/psdd_search_james01/')
+	# exp = Experiment('ex_7_mnist_32_2', 'james01', 'classification')
+	# plot_psdd_learning(exp)
 
-	# make_vae_loss_graph_wrt_complexity('ex_7_mnist')
+	make_acc_graph_wrt_complexity('ex_7_mnist')
 	# make_vae_loss_graph_wrt_complexity('ex_6_emnist')
 	# make_acc_graph_wrt_complexity('ex_7_mnist')
 	# make_acc_graph_wrt_ll('ex_7_mnist')

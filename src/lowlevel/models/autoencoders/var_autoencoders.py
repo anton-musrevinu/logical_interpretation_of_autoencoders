@@ -397,13 +397,13 @@ class VarConvAutoEncoder(VarAutoencoder):
 			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
 
-		# print('output l_{} before reduction: '.format(layer_idx), out.shape)
+		print('output l_{} before reduction: '.format(layer_idx), out.shape)
 
 		self.layer_dict['encode_{}_reduction'.format(layer_idx)] = nn.MaxPool2d(2, stride=1)
 		out = self.layer_dict['encode_{}_reduction'.format(layer_idx)](out)
 
-		# print('output l_{}: '.format(layer_idx), out.shape)
-		# print('------------------------------')
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
 
 
 		# #------------------------- encoder - layer 1 ----------------------------
@@ -415,14 +415,14 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = out.view(out.shape[0], -1)
 		self.conversion_layer_shape_after = out.shape
 
-		# print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
+		print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
 		self.layer_dict['encode_{}'.format(layer_idx)] = nn.Linear(in_features=out.shape[1],  # add a linear layer
 											out_features=self.feature_layer_size * self.categorical_dim * 2,
 											bias = self.use_bias)
 		out = self.layer_dict['encode_{}'.format(layer_idx)](out)
 
 		# self.layer_dict['encode_{}_norm'.format(layer_idx)] = self.norm_layer(self.feature_layer_size * self.categorical_dim * 2)
-		# out = self.layer_dict['encode_{}_norm'.format(layer_idx)](out)
+		out = self.layer_dict['encode_{}_norm'.format(layer_idx)](out)
 
 		self.layer_dict['encode_{}_activation'.format(layer_idx)] = nn.ReLU()
 		out = self.layer_dict['encode_{}_activation'.format(layer_idx)](out)
@@ -431,25 +431,25 @@ class VarConvAutoEncoder(VarAutoencoder):
 		if self.use_dropout_encoder:
 			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
-		# print('output l_{}: '.format(layer_idx), out.shape)
-		# print('------------------------------')
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
 
 
 		# #------------------------- encoder - layer 2 ----------------------------
 		layer_idx = layer_idx + 1
-		# print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
+		print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
 		self.layer_dict['encode_{}'.format(layer_idx)] = nn.Linear(in_features=out.shape[1],  # add a linear layer
 											out_features=self.feature_layer_size * self.categorical_dim,
 											bias = self.use_bias)
 		out = self.layer_dict['encode_{}'.format(layer_idx)](out)
 
-		# self.layer_dict['encode_{}_norm'.format(layer_idx)] = self.norm_layer(self.feature_layer_size * self.categorical_dim)
-		# out = self.layer_dict['encode_{}_norm'.format(layer_idx)](out)
+		self.layer_dict['encode_{}_norm'.format(layer_idx)] = self.norm_layer(self.feature_layer_size * self.categorical_dim)
+		out = self.layer_dict['encode_{}_norm'.format(layer_idx)](out)
 
 		self.layer_dict['encode_{}_activation'.format(layer_idx)] = nn.ReLU()
 		out = self.layer_dict['encode_{}_activation'.format(layer_idx)](out)
 
-		# print('output l_{}: '.format(layer_idx), out.shape)
+		print('output l_{}: '.format(layer_idx), out.shape)
 
 		self.num_layers_encoder = layer_idx + 1
 		return out
@@ -459,7 +459,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 
 		#------------------------- decoder - layer 0
 		layer_idx = layer_idx + 1
-		# print('input l_{}: '.format(layer_idx), feature_layer.shape)
+		print('input l_{}: '.format(layer_idx), feature_layer.shape)
 		self.layer_dict['decode_{}'.format(layer_idx)] = nn.Linear(in_features=feature_layer.shape[1],  # add a linear layer
 											out_features=self.feature_layer_size * self.categorical_dim * 2,
 											bias=self.use_bias)
@@ -474,12 +474,12 @@ class VarConvAutoEncoder(VarAutoencoder):
 		if self.use_dropout_decoder:
 			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
-		# print('output l_{}: '.format(layer_idx), out.shape)
-		# print('------------------------------')
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
 
 		#------------------------- decoder - layer 1
 		layer_idx = layer_idx + 1
-		# print('input l_{}: '.format(layer_idx), out.shape)
+		print('input l_{}: '.format(layer_idx), out.shape)
 		self.layer_dict['decode_{}'.format(layer_idx)] = nn.Linear(in_features=out.shape[1],  # add a linear layer
 											out_features=self.conversion_layer_shape_after[1],
 											bias=self.use_bias)
@@ -494,15 +494,15 @@ class VarConvAutoEncoder(VarAutoencoder):
 		if self.use_dropout_decoder:
 			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
-		# print('output l_{}: '.format(layer_idx), out.shape)
-		# print('------------------------------')
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
 
 		out = out.view(self.conversion_layer_shape_before)
 
 
 		#------------------------- decoder - layer 2 ----------------------------
 		layer_idx = layer_idx + 1
-		# print('input l_{}: '.format(layer_idx), out.shape)
+		print('input l_{}: '.format(layer_idx), out.shape)
 		self.layer_dict['decode_{}'.format(layer_idx)] = nn.ConvTranspose2d(in_channels = out.shape[1],
 										out_channels = int(self.num_channels),
 										kernel_size=3, stride=1,
@@ -519,7 +519,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 
-		# print('output l_{} before upsampling: '.format(layer_idx), out.shape)
+		print('output l_{} before upsampling: '.format(layer_idx), out.shape)
 
 		self.layer_dict['decode_{}_upsampling'.format(layer_idx)] = nn.UpsamplingBilinear2d(scale_factor=1)
 		out = self.layer_dict['decode_{}_upsampling'.format(layer_idx)](out)
