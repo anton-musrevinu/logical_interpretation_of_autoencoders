@@ -422,7 +422,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['encode_{}'.format(layer_idx)](out)
 
 		# self.layer_dict['encode_{}_norm'.format(layer_idx)] = self.norm_layer(self.feature_layer_size * self.categorical_dim * 2)
-		out = self.layer_dict['encode_{}_norm'.format(layer_idx)](out)
+		# out = self.layer_dict['encode_{}_norm'.format(layer_idx)](out)
 
 		self.layer_dict['encode_{}_activation'.format(layer_idx)] = nn.ReLU()
 		out = self.layer_dict['encode_{}_activation'.format(layer_idx)](out)
