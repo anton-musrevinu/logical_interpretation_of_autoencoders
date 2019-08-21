@@ -81,8 +81,10 @@ class VAEModel(BaseModel):
         # Code (vs. paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
         if self.opt.ae_model_type == 'vanilla':
             self.netAE = networks.define_AE(opt)
-        else:
+        elif self.opt.ae_model_type == 'resnet':
             self.netAE = networks.define_resNetAE(opt)
+        elif self.opt.ae_model_type == 'deep':
+            self.netAE = networks.define_AE(opt)
 
         if self.isTrain:
             # define loss functions
