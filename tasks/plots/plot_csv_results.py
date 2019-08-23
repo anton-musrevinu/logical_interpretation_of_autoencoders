@@ -221,7 +221,7 @@ def make_acc_graph_wrt_complexity(data = 'ex_7_mnist', task_type_of_intersest = 
 			y_axis.append(loss)
 			points.append(identifier)
 
-	print(x_axis)
+	print('x_axis',x_axis)
 	print(y_axis)
 
 	fig_1 = plt.figure(figsize=(8, 4))
@@ -230,15 +230,18 @@ def make_acc_graph_wrt_complexity(data = 'ex_7_mnist', task_type_of_intersest = 
 	ax.scatter(x_axis, y_axis, marker = 'o')
 
 	offsetx = 2
-	offsety = 0.005
+	offsety = 0.003
 	for ii, v in enumerate(x_axis):
 		# for jj in complexity_map[v].values():
-		t = list(itertools.combinations(y_axis, y_axis))
-		print(t)
-		min_diff =  min(map(lambda tub: abs(tub[0] - tub[1]) if tub[0] != tub[1] else float('inf'),list(itertools.combinations(y_axis, y_axis))))
+		# t = list(itertools.product(y_axis, y_axis))
+		# print(t)
+		similar_y_values = [y_axis[j] for j in [i for i, e in enumerate(x_axis) if e == v]]
+		min_diff =  min(map(lambda tub: abs(tub[0] - tub[1]) if tub[0] != tub[1] else float('inf'),list(itertools.product([y_axis[ii]], similar_y_values))))
 		print(min_diff)
-		if (min_diff > 0.005):
-			text = ax.text(v + offsetx, offsety + y_axis[ii], points[ii], ha="center", va="center", color="black")
+		if (min_diff < 0.005) and y_axis[ii] != max(similar_y_values):
+			continue
+
+		text = ax.text(v + offsetx, offsety + y_axis[ii], points[ii], ha="center", va="center", color="black")
 
 	# ax.grid(False)
 

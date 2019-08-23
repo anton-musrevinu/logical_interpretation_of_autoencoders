@@ -885,7 +885,7 @@ if __name__ == '__main__':
 	# exps = [('ex_7_mnist_32_2', 'student_compute', 'classification', False),\
 	# 		('ex_9_fashion_32_2', 'james03', 'classification', False)]
 	exps = [('ex_7_mnist_32_2', 'staff_compute', 'blxor', True),\
-			('ex_7_mnist_16_4', 'student_compute', 'succ', True)
+			('ex_7_mnist_16_4', 'student_compute', 'succ', True),\
 			# ('ex_7_mnist_16_4', 'staff_compute', 'blxor', True)
 			('ex_9_fashion_32_2', 'james08', 'blxor', False)]
 	# (experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_9_fashion_32_2', 'james03', 'classification', False)
