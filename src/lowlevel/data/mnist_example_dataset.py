@@ -22,9 +22,11 @@ class MNISTEXAMPLEDataset(BaseDataset):
 		By default, the number of channels for input image  is 1 (L) and
 		the nubmer of channels for output image is 2 (ab). The direction is from A to B
 		"""
+		old_value = parser.get_default(input_nc)
 		parser.add_argument('--num_classes', type=int, default=10)
 		parser.set_defaults(input_nc=1, batch_size=10, image_width = 28, image_height = 28)
-		parser.input_nc = 1
+		# parser.input_nc = 1
+		print('setting parser.input_nc from {} to {}'.format(old_value, parser.get_default(input_nc)))
 		return parser
 
 	def __init__(self, opt, type_of_data, mydir = None):
