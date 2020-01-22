@@ -70,7 +70,7 @@ class VAEManager(MSCManager):
 				file_encoded_path = os.path.join(self.opt.encoded_data_dir,'{}-encoded-{}.data'.format(self.opt.dataset, type_of_data))
 				dataset_to_encode = create_dataset(self.opt, self.opt.dataset, type_of_data = type_of_data)
 				
-				self.encode_2_part_dataset(file_encoded_path, dataset_to_encode, self.opt.limit_conversion, y_classes = dataset_to_encode.datasetz.num_classes,\
+				self.encode_2_part_dataset(file_encoded_path, dataset_to_encode, self.opt.limit_conversion, y_classes = dataset_to_encode.dataset.num_classes,\
 					compress_fly = self.opt.compress_fly)
 		elif task_type == 'successor':
 			for type_of_data in ['train', 'valid', 'test']:

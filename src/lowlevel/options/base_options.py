@@ -36,6 +36,7 @@ class BaseOptions():
         parser.add_argument('--testing', type=str2bool, default=False, help='reduce epoch and batch size for testing')
         parser.add_argument('--output_dir', type=str, default=DEFAULT_OUTPUT_DIR, help='everything is saved here')     
         # model parameters
+        parser.add_argument('--dataset', type=str, default='sln', help='chooses dataset to use')
 
        # additional parameters
         # parser.add_argument('--load_iter', type=int, default='0', help='which iteration to load? if load_iter > 0, the code will load models by iter_[load_iter]; otherwise, the code will load models by [epoch]')
@@ -54,7 +55,6 @@ class BaseOptions():
         parser.add_argument('--image_height', type = int)
 
         # dataset parameters
-        parser.add_argument('--dataset', type=str, default='sln', help='chooses dataset to use')
         parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
         parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
         parser.add_argument('--num_batches', type=int, default=-1)
@@ -104,11 +104,13 @@ class BaseOptions():
                         option_pair = line.strip().split(':')
                         option = option_pair[0]
                         value = option_pair[1].split('[')[0].strip()
-                        if not hasattr(opt, option):
+                        if not hasattr(opt, option) or option == 'dataset':
                             args_as_dic.append('--{}={}'.format(option,value))
 
         # print('\n\ndict without main',args_as_dic)
         for kk, vv in vars(opt).items():
+            if str(kk) == 'dataset':
+                continue
             args_as_dic.append('--{}={}'.format(kk,vv))
 
 
@@ -137,9 +139,12 @@ class BaseOptions():
         opt, _ = parser.parse_known_args()
         self.isTrain = opt.phase == 'train'
 
+        print('so far', opt)
         # print('str_options_from_file',str_options_from_file)
 
         dict_options, isLoading = self.get_all_specific_options_from_file(opt)
+
+        print('so far 2', dict_options)
 
         # parser_phase_sepcific = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser = self.load_base_option(parser)
