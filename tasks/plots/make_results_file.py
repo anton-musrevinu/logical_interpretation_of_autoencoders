@@ -322,13 +322,13 @@ def make_var_resutls_file(data = 'ex_7_mnist', sorte_by = lambda x: x.flx_size):
 			raise Exception('not all experiments found have been run on the same dataset, please specify the data attribute better')
 
 	data_type = first_dataset
-	if int(data.split('_')[1]) < 6:
-		outfile = OUTFILE_var_mnist.replace('mnist', '{}mnist'.format(data))
-	else:
-		outfile = OUTFILE_var_mnist.replace('mnist', data_type)
+	# if int(data.split('_')[1]) < 6:
+	# 	outfile = OUTFILE_var_mnist.replace('mnist', '{}mnist'.format(data))
+	# else:
+	outfile = OUTFILE_var_mnist.replace('mnist', data_type)
 
 	with open(outfile, 'w') as f:
-		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity\n')
+		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity, info\n')
 		for exp in expResultsSorted:
 			line = '{},\t{},\t{},\t{:.3},\t2^{{{}}}, \t{}'.format(data_type, exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin, exp.original_name)
 			f.write(line + '\n')
