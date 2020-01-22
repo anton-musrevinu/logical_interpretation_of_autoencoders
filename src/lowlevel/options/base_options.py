@@ -109,7 +109,7 @@ class BaseOptions():
 
         # print('\n\ndict without main',args_as_dic)
         for kk, vv in vars(opt).items():
-            if str(kk) == 'dataset':
+            if str(kk) == 'dataset' and opt.loading:
                 continue
             args_as_dic.append('--{}={}'.format(kk,vv))
 
@@ -139,12 +139,12 @@ class BaseOptions():
         opt, _ = parser.parse_known_args()
         self.isTrain = opt.phase == 'train'
 
-        print('so far', opt)
+        # print('so far', opt)
         # print('str_options_from_file',str_options_from_file)
 
         dict_options, isLoading = self.get_all_specific_options_from_file(opt)
 
-        print('so far 2', dict_options)
+        # print('so far 2', dict_options)
 
         # parser_phase_sepcific = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser = self.load_base_option(parser)
@@ -152,7 +152,7 @@ class BaseOptions():
         # if isLoading:
         # print('\n\nis loading is true: {}'.format(dict_options))
         opt_spec, _ = parser.parse_known_args(dict_options)
-
+        # print('so far 3', opt_spec)
 
         # print('\n\nso far so good')
 
@@ -166,7 +166,7 @@ class BaseOptions():
 
         # modify dataset-related parser options
         dataset_option_setter = data.get_option_setter(opt_spec.dataset)
-        print(dataset_option_setter)
+        # print(dataset_option_setter)
         parser = dataset_option_setter(parser, self.isTrain)
         # opt, _ = parser.parse_known_args()
 
