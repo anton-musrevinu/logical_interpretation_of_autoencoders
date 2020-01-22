@@ -189,6 +189,7 @@ class ExpResultFull(ExpResult):
 
 class ExpResultFullFile(ExpResultFull):
 	def __init__(self, dir):
+		self.original_name = dir.split('/')[-1]
 		flx_size, flx_cat_dim = read_opt_file(dir)
 		ExpResultFull.__init__(self, flx_size, flx_cat_dim)
 
@@ -329,7 +330,7 @@ def make_var_resutls_file(data = 'ex_7_mnist', sorte_by = lambda x: x.flx_size):
 	with open(outfile, 'w') as f:
 		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity\n')
 		for exp in expResultsSorted:
-			line = '{},\t{},\t{},\t{:.3},\t2^{{{}}}'.format(data_type, exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin)
+			line = '{},\t{},\t{},\t{:.3},\t2^{{{}}}, \t{}'.format(data_type, exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin, exp.original_name)
 			f.write(line + '\n')
 
 def gather_only_var_results(data):
@@ -343,7 +344,10 @@ def gather_only_var_results(data):
 	for exp_dir in experiment_dirs:
 		expResult = ExpResultFullFile(exp_dir)
 		expResult.add_dataset(exp_dir)
-		expResult.add_losses_from_dir(exp_dir)
+		try:
+			expResult.add_losses_from_dir(exp_dir)
+		except Exception as e:
+			continue
 		expResults.append(expResult)
 	return expResults
 
