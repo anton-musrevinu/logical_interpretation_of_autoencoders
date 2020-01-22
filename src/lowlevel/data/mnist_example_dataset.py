@@ -24,6 +24,7 @@ class MNISTEXAMPLEDataset(BaseDataset):
 		"""
 		parser.add_argument('--num_classes', type=int, default=10)
 		parser.set_defaults(input_nc=1, batch_size=10, image_width = 28, image_height = 28)
+		parser.input_nc = 1
 		return parser
 
 	def __init__(self, opt, type_of_data, mydir = None):
