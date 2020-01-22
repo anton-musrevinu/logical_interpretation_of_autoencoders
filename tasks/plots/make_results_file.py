@@ -67,7 +67,7 @@ class ExpResult(object):
 		self.complexity_num = flx_cat_dim ** flx_size
 		self.complexity_bin = int(np.ceil(np.log2(self.flx_cat_dim))) * self.flx_size
 
-	def add_dataset(self, dir)
+	def add_dataset(self, dir):
 		self.dataset = read_opt_file_for_key(dir, 'dataset')
 
 	def add_loss(self,loss):
