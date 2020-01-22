@@ -19,7 +19,7 @@ def read_opt_file(dir):
 		for line in f:
 			if not ':' in line:
 				continue
-			identifier = line.split(':')[0].repace(' ', '')
+			identifier = line.split(':')[0].replace(' ', '')
 			value = line.spit(':')[1]
 			if '[' in line:
 				value = value.split('[')[0].replace(' ', '')
@@ -39,7 +39,7 @@ def read_opt_file_for_key(dir, key):
 		for line in f:
 			if not ':' in line:
 				continue
-			identifier = line.split(':')[0].repace(' ', '')
+			identifier = line.split(':')[0].replace(' ', '')
 			value = line.spit(':')[1]
 			if '[' in line:
 				value = value.split('[')[0].replace(' ', '')
