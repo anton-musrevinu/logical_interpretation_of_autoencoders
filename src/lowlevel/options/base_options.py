@@ -161,6 +161,7 @@ class BaseOptions():
 
         # modify dataset-related parser options
         dataset_option_setter = data.get_option_setter(opt_spec.dataset)
+        print(dataset_option_setter)
         parser = dataset_option_setter(parser, self.isTrain)
         # opt, _ = parser.parse_known_args()
 
