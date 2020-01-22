@@ -89,12 +89,6 @@ class ExpResult(object):
 
 		# print('bin complexity: {} - loss found: {}'.format(self.complexity_bin,self.loss))
 
-class ExpResultFullFile(ExpResultFull):
-	def __init__(self, dir):
-		flx_size, flx_cat_dim = read_opt_file(dir)
-		ExpResultFull.__init__(self, flx_size, flx_cat_dim)
-
-
 class ExpResultFull(ExpResult):
 	def __init__(self, flx_size, flx_cat_dim):
 		ExpResult.__init__(self, flx_size, flx_cat_dim)
@@ -192,6 +186,11 @@ class ExpResultFull(ExpResult):
 	def add_all_possible_information_for_dir(self,dir):
 		self.add_losses_from_dir(dir)
 		self.add_psdd_exp(dir)
+
+class ExpResultFullFile(ExpResultFull):
+	def __init__(self, dir):
+		flx_size, flx_cat_dim = read_opt_file(dir)
+		ExpResultFull.__init__(self, flx_size, flx_cat_dim)
 
 class ExpPsdd(object):
 	def __init__(self, task_type):
