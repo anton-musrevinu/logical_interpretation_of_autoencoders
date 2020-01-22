@@ -435,10 +435,10 @@ def read_mnist_result_file(file):
 
 
 if __name__ == '__main__':
-	# make_var_resutls_file()
-	make_mnist_resutls_file_full('classification', data = 'ex_7_mnist')
-	make_mnist_resutls_file_full('classification', data = 'ex_6_emnist')
-	make_mnist_resutls_file_full('classification', data = 'ex_9_fashion')
-	make_mnist_resutls_file_full('noisy',          data = 'ex_7_mnist')
-	make_mnist_resutls_file_full('compositional',  data = 'ex_7_mnist')
-	make_mnist_resutls_file_full('compositional',  data = 'ex_9_fashion')
+	make_var_resutls_file(data = 'exp_sln')
+	# make_mnist_resutls_file_full('classification', data = 'ex_7_mnist')
+	# make_mnist_resutls_file_full('classification', data = 'ex_6_emnist')
+	# make_mnist_resutls_file_full('classification', data = 'ex_9_fashion')
+	# make_mnist_resutls_file_full('noisy',          data = 'ex_7_mnist')
+	# make_mnist_resutls_file_full('compositional',  data = 'ex_7_mnist')
+	# make_mnist_resutls_file_full('compositional',  data = 'ex_9_fashion')
