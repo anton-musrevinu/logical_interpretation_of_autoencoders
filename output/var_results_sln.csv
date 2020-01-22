@@ -1,0 +1,7 @@
+dataset, FL categorical size, categorical dimension, MSE, model space complexity, info
+sln,	32,	2,	0.0324,	2^{32}, 	exp_sln_encoder_only_32_deep
+sln,	32,	2,	0.0329,	2^{32}, 	exp_sln_encoder_oly
+sln,	48,	2,	0.0304,	2^{48}, 	exp_sln_encoder_only_48
+sln,	64,	2,	0.0272,	2^{64}, 	exp_sln_encoder_only_64
+sln,	64,	2,	0.0258,	2^{64}, 	exp_sln_encoder_only_64_deep
+sln,	128,	2,	0.0211,	2^{128}, 	exp_sln_encoder_only_128_deep

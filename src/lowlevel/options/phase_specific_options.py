@@ -48,6 +48,8 @@ def phase_encode_options(parser):
     parser.add_argument('--data_per', type=float,default=1, help='percentage of whole dataset to be converted')
     parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
     parser.add_argument('--norm', type=str, default='batch', help='instance normalization or batch normalization [instance | batch | none]')
+    parser.add_argument('--use_dropout_encoder', type=str2bool, default=True, help='no dropout for the generator')
+    parser.add_argument('--use_dropout_decoder', type=str2bool, default=True, help='no dropout for the generator')
     # parser.add_argument('--no_dropout', type=str2bool, default=True, help='no dropout for the generator')
     parser.add_argument('--dataset_to_encode', type = str, default=None)
     return parser
@@ -57,6 +59,7 @@ def phase_create_impossible_options(parser):
 
 def phase_decode_options(parser):
     parser.add_argument('--for_error', type=str, default='mse', help='picking the best model for the given error on the validation set')
+    parser.add_argument('--norm', type=str, default='batch', help='instance normalization or batch normalization [instance | batch | none]')
     parser.add_argument('--file_to_decode', type=str)
     parser.add_argument('--fl_info_file', type=str, default = None)
     return parser

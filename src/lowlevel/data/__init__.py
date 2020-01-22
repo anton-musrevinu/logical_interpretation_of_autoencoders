@@ -149,7 +149,7 @@ class CustomDatasetDataLoader():
 			num_workers=int(opt.num_threads))
 
 		asStr = '{}-{}'.format(domain, type_of_data)
-		# self.dataset = dataset
+		self.dataset = dataset
 		self.str = 'dataset-{}-{}'.format(asStr, dataset)
 
 		print("INIT: [{} - {}] Id: {} , batch_size: {}, len: {}".format(\
