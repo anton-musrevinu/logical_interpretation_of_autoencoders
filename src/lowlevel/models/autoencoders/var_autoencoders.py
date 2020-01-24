@@ -338,7 +338,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['encode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_encoder:
-			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before reduction: '.format(layer_idx), out.shape)
@@ -366,7 +366,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 
 
 		if self.use_dropout_encoder:
-			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before reduction: '.format(layer_idx), out.shape)
@@ -394,16 +394,16 @@ class VarConvAutoEncoder(VarAutoencoder):
 
 
 		if self.use_dropout_encoder:
-			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
 
-		# print('output l_{} before reduction: '.format(layer_idx), out.shape)
+		print('output l_{} before reduction: '.format(layer_idx), out.shape)
 
 		self.layer_dict['encode_{}_reduction'.format(layer_idx)] = nn.MaxPool2d(2, stride=1)
 		out = self.layer_dict['encode_{}_reduction'.format(layer_idx)](out)
 
-		# print('output l_{}: '.format(layer_idx), out.shape)
-		# print('------------------------------')
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
 
 
 		# #------------------------- encoder - layer 1 ----------------------------
@@ -415,7 +415,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = out.view(out.shape[0], -1)
 		self.conversion_layer_shape_after = out.shape
 
-		# print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
+		print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
 		self.layer_dict['encode_{}'.format(layer_idx)] = nn.Linear(in_features=out.shape[1],  # add a linear layer
 											out_features=self.feature_layer_size * self.categorical_dim * 2,
 											bias = self.use_bias)
@@ -429,27 +429,24 @@ class VarConvAutoEncoder(VarAutoencoder):
 
 
 		if self.use_dropout_encoder:
-			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
-		# print('output l_{}: '.format(layer_idx), out.shape)
-		# print('------------------------------')
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
 
 
 		# #------------------------- encoder - layer 2 ----------------------------
 		layer_idx = layer_idx + 1
-		# print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
+		print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
 		self.layer_dict['encode_{}'.format(layer_idx)] = nn.Linear(in_features=out.shape[1],  # add a linear layer
 											out_features=self.feature_layer_size * self.categorical_dim,
 											bias = self.use_bias)
 		out = self.layer_dict['encode_{}'.format(layer_idx)](out)
 
-		# self.layer_dict['encode_{}_norm'.format(layer_idx)] = self.norm_layer(self.feature_layer_size * self.categorical_dim)
-		# out = self.layer_dict['encode_{}_norm'.format(layer_idx)](out)
-
 		self.layer_dict['encode_{}_activation'.format(layer_idx)] = nn.ReLU()
 		out = self.layer_dict['encode_{}_activation'.format(layer_idx)](out)
 
-		# print('output l_{}: '.format(layer_idx), out.shape)
+		print('output l_{}: '.format(layer_idx), out.shape)
 
 		self.num_layers_encoder = layer_idx + 1
 		return out
@@ -459,7 +456,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 
 		#------------------------- decoder - layer 0
 		layer_idx = layer_idx + 1
-		# print('input l_{}: '.format(layer_idx), feature_layer.shape)
+		print('input l_{}: '.format(layer_idx), feature_layer.shape)
 		self.layer_dict['decode_{}'.format(layer_idx)] = nn.Linear(in_features=feature_layer.shape[1],  # add a linear layer
 											out_features=self.feature_layer_size * self.categorical_dim * 2,
 											bias=self.use_bias)
@@ -472,14 +469,14 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
-		# print('output l_{}: '.format(layer_idx), out.shape)
-		# print('------------------------------')
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
 
 		#------------------------- decoder - layer 1
 		layer_idx = layer_idx + 1
-		# print('input l_{}: '.format(layer_idx), out.shape)
+		print('input l_{}: '.format(layer_idx), out.shape)
 		self.layer_dict['decode_{}'.format(layer_idx)] = nn.Linear(in_features=out.shape[1],  # add a linear layer
 											out_features=self.conversion_layer_shape_after[1],
 											bias=self.use_bias)
@@ -492,17 +489,17 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
-		# print('output l_{}: '.format(layer_idx), out.shape)
-		# print('------------------------------')
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
 
 		out = out.view(self.conversion_layer_shape_before)
 
 
 		#------------------------- decoder - layer 2 ----------------------------
 		layer_idx = layer_idx + 1
-		# print('input l_{}: '.format(layer_idx), out.shape)
+		print('input l_{}: '.format(layer_idx), out.shape)
 		self.layer_dict['decode_{}'.format(layer_idx)] = nn.ConvTranspose2d(in_channels = out.shape[1],
 										out_channels = int(self.num_channels),
 										kernel_size=3, stride=1,
@@ -516,10 +513,10 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 
-		# print('output l_{} before upsampling: '.format(layer_idx), out.shape)
+		print('output l_{} before upsampling: '.format(layer_idx), out.shape)
 
 		self.layer_dict['decode_{}_upsampling'.format(layer_idx)] = nn.UpsamplingBilinear2d(scale_factor=1)
 		out = self.layer_dict['decode_{}_upsampling'.format(layer_idx)](out)
@@ -542,7 +539,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before upsampling: '.format(layer_idx), out.shape)
@@ -569,7 +566,7 @@ class VarConvAutoEncoder(VarAutoencoder):
 		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
 
 		if self.use_dropout_decoder:
-			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.5)
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
 			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
 
 		# print('output l_{} before upsampling: '.format(layer_idx), out.shape)
@@ -599,6 +596,219 @@ class VarConvAutoEncoder(VarAutoencoder):
 		self.num_layers_decoder = layer_idx + 1
 
 
+class VarConvAutoEncoder_Deep(VarAutoencoder):
+
+	def build_module(self):
+
+		self.num_fc = 2
+		print_info = True
+
+		print('building build_model_basic')
+
+		feature_layer = self.build_encoder(print_info)
+
+		# ======================== FEATURE LAYER =================================
+
+		print('------------------------------')
+		print('----- feature layer : {}'.format(feature_layer.shape))
+		print('------------------------------')
+
+		self.build_decoder(feature_layer, print_info)
+
+	def conv_block_down(self, out, layer_idx, print_info = False):
+		layer_idx = layer_idx + 1
+		if print_info:
+			print('input l_{}: {}'.format(layer_idx,out.shape))
+		self.layer_dict['encode_{}'.format(layer_idx)] = nn.Conv2d(in_channels = out.shape[1],
+										out_channels = int(self.num_channels),
+										kernel_size=3, stride=1,
+										padding=1, bias = self.use_bias)  # b, 16, 10, 10
+		out = self.layer_dict['encode_{}'.format(layer_idx)](out)  # use layer on inputs to get an output
+
+		self.layer_dict['encode_{}_norm'.format(layer_idx)] = self.norm_layer(int(self.num_channels))
+		out = self.layer_dict['encode_{}_norm'.format(layer_idx)](out)
+
+		self.layer_dict['encode_{}_activation'.format(layer_idx)] = nn.ReLU()
+		out = self.layer_dict['encode_{}_activation'.format(layer_idx)](out)
+
+		if self.use_dropout_encoder:
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
+			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
+
+		if print_info:
+			print('output l_{} before reduction: '.format(layer_idx), out.shape)
+
+		self.layer_dict['encode_{}_reduction'.format(layer_idx)] = nn.MaxPool2d(2, stride=2)
+		out = self.layer_dict['encode_{}_reduction'.format(layer_idx)](out)
+
+		if print_info:
+			print('output l_{}: '.format(layer_idx), out.shape)
+			print('------------------------------')
+
+		return out, layer_idx
+
+	def conv_block_up(self, out, layer_idx, print_info = False):
+		layer_idx = layer_idx + 1
+		if print_info:
+			print('input l_{}: '.format(layer_idx), out.shape)
+
+		self.layer_dict['decode_{}'.format(layer_idx)] = nn.ConvTranspose2d(in_channels = out.shape[1],
+										out_channels = int(self.num_channels),
+										kernel_size=3, stride=1,
+										padding=1, bias = self.use_bias)  # b, 16, 10, 10
+		out = self.layer_dict['decode_{}'.format(layer_idx)](out)  # use layer on inputs to get an output
+
+		self.layer_dict['decode_{}_norm'.format(layer_idx)] = self.norm_layer(int(self.num_channels))
+		out = self.layer_dict['decode_{}_norm'.format(layer_idx)](out)
+
+		self.layer_dict['decode_{}_activation'.format(layer_idx)] = nn.ReLU()
+		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
+
+		if self.use_dropout_decoder:
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
+			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
+
+		if print_info:
+			print('output l_{} before upsampling: '.format(layer_idx), out.shape)
+
+		self.layer_dict['decode_{}_upsampling'.format(layer_idx)] = nn.UpsamplingBilinear2d(scale_factor=2)
+		out = self.layer_dict['decode_{}_upsampling'.format(layer_idx)](out)
+
+		if print_info:
+			print('output l_{}: '.format(layer_idx), out.shape)
+			print('------------------------------')
+
+		return out, layer_idx
+
+	def fcc_bloc_down(self, out, out_features,layer_idx, is_last,  print_info = False):
+		layer_idx = layer_idx + 1
+		
+		if print_info:
+			print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
+		
+		self.layer_dict['encode_{}'.format(layer_idx)] = nn.Linear(in_features=out.shape[1],  # add a linear layer
+											out_features=out_features,
+											bias = self.use_bias)
+		out = self.layer_dict['encode_{}'.format(layer_idx)](out)
+
+		self.layer_dict['encode_{}_activation'.format(layer_idx)] = nn.ReLU()
+		out = self.layer_dict['encode_{}_activation'.format(layer_idx)](out)
+
+		if self.use_dropout_encoder and not is_last:
+			self.layer_dict['encode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
+			out = self.layer_dict['encode_{}_dropout'.format(layer_idx)](out)
+
+		if print_info:
+			print('output l_{}: '.format(layer_idx), out.shape)
+			print('------------------------------')
+
+		return out, layer_idx
+
+	def fcc_bloc_up(self, out, out_features,layer_idx, is_first,  print_info = False):
+		layer_idx = layer_idx + 1
+		
+		if print_info:
+			print('input l_{}: '.format(layer_idx), out.shape, out.shape, out.shape[1])
+		
+		self.layer_dict['decode_{}'.format(layer_idx)] = nn.Linear(in_features=out.shape[1],  # add a linear layer
+											out_features=out_features,
+											bias = self.use_bias)
+		out = self.layer_dict['decode_{}'.format(layer_idx)](out)
+
+		self.layer_dict['decode_{}_activation'.format(layer_idx)] = nn.ReLU()
+		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
+
+		if self.use_dropout_decoder and not is_first:
+			self.layer_dict['decode_{}_dropout'.format(layer_idx)] = nn.Dropout(0.75)
+			out = self.layer_dict['decode_{}_dropout'.format(layer_idx)](out)
+
+		if print_info:
+			print('output l_{}: '.format(layer_idx), out.shape)
+			print('------------------------------')
+
+		return out, layer_idx
+
+	def build_encoder(self, print_info = False):
+		out = torch.zeros((self.input_shape))
+		layer_idx = -1
+
+		#------------------------- encoder - layer 0 ----------------------------
+		out, layer_idx = self.conv_block_down(out, layer_idx, print_info)
+
+		#------------------------- encoder - layer 1 ----------------------------
+		out, layer_idx = self.conv_block_down(out, layer_idx, print_info)
+
+		#------------------------- encoder - layer 2 ----------------------------
+		out, layer_idx = self.conv_block_down(out, layer_idx, print_info)
+		
+		#------------------------- encoder - layer 3 ----------------------------
+		out, layer_idx = self.conv_block_down(out, layer_idx, print_info)
+
+
+		#------------------------- Conv -> FC shape conversion ------------------
+		self.conversion_layer_shape_before = out.shape
+		out = out.view(out.shape[0], -1)
+		self.conversion_layer_shape_after = out.shape
+
+
+
+		#-------------------------  FC layers ------------------
+		for i in range(self.num_fc):
+			out_features = (self.num_fc - i) * self.feature_layer_size * self.categorical_dim
+			out, layer_idx = self.fcc_bloc_down(out, out_features, layer_idx, i == self.num_fc - 1, print_info)
+
+		self.num_layers_encoder = layer_idx + 1
+		return out
+
+	def build_decoder(self,feature_layer, print_info):
+		layer_idx = -1
+		out = feature_layer
+
+		for i in range(self.num_fc):
+			out_features = (i + 2) * self.feature_layer_size * self.categorical_dim
+			if i == self.num_fc -1:
+				out_features = self.conversion_layer_shape_after[1]
+			out, layer_idx = self.fcc_bloc_up(out, out_features, layer_idx, i == 0, print_info)
+	 
+
+		#------------------------- Conv -> FC shape conversion ------------------
+		out = out.view(self.conversion_layer_shape_before)
+
+
+		#------------------------- decoder - layer 2 ----------------------------
+		out, layer_idx = self.conv_block_up(out, layer_idx, print_info)
+
+		#------------------------- decoder - layer 2 ----------------------------
+		out, layer_idx = self.conv_block_up(out, layer_idx, print_info)
+
+		#------------------------- decoder - layer 2 ----------------------------
+		out, layer_idx = self.conv_block_up(out, layer_idx, print_info)
+		
+		#------------------------- decoder - layer 2 ----------------------------
+		out, layer_idx = self.conv_block_up(out, layer_idx, print_info)
+
+		# #------------------------- decoder - layer 2 ----------------------------
+		# out, layer_idx = self.conv_block_up(out, layer_idx, print_info)
+
+
+		#------------------------- decoder - layer 6 ----------------------------
+		layer_idx = layer_idx + 1
+		print('input l_{}: '.format(layer_idx), out.shape)
+		self.layer_dict['decode_{}'.format(layer_idx)] = nn.ConvTranspose2d(in_channels = out.shape[1],
+										out_channels = self.input_shape[1],
+										kernel_size=3, stride=1,
+										padding=1, bias = self.use_bias)  # b, 16, 10, 10
+		out = self.layer_dict['decode_{}'.format(layer_idx)](out)  # use layer on inputs to get an output
+
+		self.layer_dict['decode_{}_norm'.format(layer_idx)] = self.norm_layer(self.input_shape[1])
+		out = self.layer_dict['decode_{}_norm'.format(layer_idx)](out)
+
+		self.layer_dict['decode_{}_activation'.format(layer_idx)] = nn.Sigmoid()
+		out = self.layer_dict['decode_{}_activation'.format(layer_idx)](out)
+		print('output l_{}: '.format(layer_idx), out.shape)
+		print('------------------------------')
+
+		self.num_layers_decoder = layer_idx + 1
 
 
 class VarResNetAutoEncoder(VarAutoencoder):
@@ -611,7 +821,6 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		self.output_nc = self.fl_flat_shape[1]
 		self.ngf= opt.ngf
 		self.normType = opt.norm
-		self.use_dropout = opt.no_dropout
 		self.n_blocks = 2
 		self.padding_type = 'reflect'
 
@@ -626,7 +835,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 
 		print('building build_model_basic')
 
-		feature_layer = self.build_encoder(self.input_nc, self.output_nc, use_dropout = not self.opt.no_dropout)
+		feature_layer = self.build_encoder(self.input_nc, self.output_nc, use_dropout = self.use_dropout_encoder)
 
 		# ======================== FEATURE LAYER =================================
 
@@ -634,7 +843,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		print('----- feature layer : {}'.format(feature_layer.shape))
 		print('------------------------------')
 
-		self.build_decoder(feature_layer, self.output_nc, self.input_nc)
+		self.build_decoder(feature_layer, self.output_nc, self.input_nc, use_dropout = self.use_dropout_decoder)
 
 	def build_encoder(self,input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, padding_type='reflect'):
 
@@ -697,11 +906,22 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		self.conversion_layer_shape_before = out.shape
 		print("encoder pre out shape: {}".format(out.shape))
 		out = out.view(out.shape[0], -1)
+		print("conversion_layer_shape_after:", out.shape)
 		self.conversion_layer_shape_after = out.shape
 
+		print('output_nc',output_nc)
+
 		model = [nn.Linear(in_features=out.shape[1],  # add a linear layer
+					out_features=output_nc * 2,
+					bias=True)]
+		model += [nn.ReLU()]
+
+		if self.use_dropout_encoder:
+			model += [nn.Dropout(0.75)]
+
+		model += [nn.Linear(in_features=output_nc * 2,  # add a linear layer
 					out_features=output_nc,
-					bias=self.use_bias)]
+					bias=True)]
 		model += [nn.ReLU()]
 
 		self.encoder_fcc = nn.Sequential(*model)
@@ -717,8 +937,13 @@ class VarResNetAutoEncoder(VarAutoencoder):
 			use_bias = norm_layer == nn.InstanceNorm2d
 
 		model = [nn.Linear(in_features=feature_layer.shape[1],  # add a linear layer
-					out_features=2 * feature_layer.shape[1],
-					bias=self.use_bias)]
+					out_features=input_nc * 2,
+					bias=True)]
+		model += [nn.ReLU()]
+
+		model += [nn.Linear(in_features=input_nc * 2,  # add a linear layer
+					out_features=self.conversion_layer_shape_after[1],
+					bias=True)]
 		model += [nn.ReLU()]
 
 		self.decoder_fcc = nn.Sequential(*model)
@@ -773,7 +998,7 @@ class VarResNetAutoEncoder(VarAutoencoder):
 		print("tmp_out_shape (after apsampling): {}".format(tmp_out.shape))
 
 		# model += [nn.ReflectionPad2d(3)]
-		model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=1)]
+		model += [nn.Conv2d(ngf, output_nc, kernel_size=3, padding=1)]
 		model += [nn.Sigmoid()]
 
 

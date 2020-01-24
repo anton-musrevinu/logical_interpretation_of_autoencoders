@@ -54,6 +54,7 @@ def get_examples_image_for_epoch(save_dir, epoch_idx, image_size = 28):
     columns = 3
     whole_image_w = (image.size[0] - (padding * 2) ) / columns
     # print(rows, image_size, epoch_idx, image, columns, whole_image_w)
+    # print("image_size",image_size)
     line_num = random.randint(0, rows - 1)
     # padding = int((image.size[0] - 6 * image_size) / 7)
     # padding = 2
@@ -95,7 +96,10 @@ def make_time_image(image_dir, image_size = 28):
     total_width = image_lines[0].size[0]
     # print(total_height, total_width, num_of_examples_to_show, len(image_lines))
 
-    new_im = Image.new('L',(total_width, total_height))
+    # print(image_lines[0].mode)
+    # if image_lines[0].getbands() == ('R', 'G', 'B'):
+    #     new_im = Image.new('L',(total_width, total_height))
+    new_im = Image.new(image_lines[0].mode,(total_width, total_height))
 
     y_offset = padding
     for im in image_lines:

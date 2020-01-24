@@ -12,6 +12,46 @@ OUTFILE_var_mnist = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/
 OUTFILE_var_emnist = os.path.abspath(os.path.join(os.environ['HOME'],'./code/msc/output/var_results_emnist.csv'))
 OUTFILE_all = os.path.abspath(os.path.join(os.environ['HOME'],RELATIVE_OUTFILE_all))
 
+def read_opt_file(dir):
+	flx_size = None
+	fl_cat_dim = None
+	with open(os.path.join(dir, './opt.txt')) as f:
+		for line in f:
+			if not ':' in line:
+				continue
+			identifier = line.split(':')[0].replace(' ', '')
+			value = line.split(':')[1]
+			if '[' in line:
+				value = value.split('[')[0].replace(' ', '')
+			else:
+				value = value.replace('\n', '').replace(' ', '')
+			if identifier == 'feature_layer_size':
+				flx_size = int(value)
+			elif identifier == 'categorical_dim':
+				fl_cat_dim = int(value)
+			else:
+				continue
+	return flx_size, fl_cat_dim
+
+def read_opt_file_for_key(dir, key):
+	return_value = None
+	with open(os.path.join(dir, './opt.txt')) as f:
+		for line in f:
+			if not ':' in line:
+				continue
+			identifier = line.split(':')[0].replace(' ', '')
+			value = line.split(':')[1]
+			if '[' in line:
+				value = value.split('[')[0].replace(' ', '')
+			else:
+				value = value.replace('\n', '').replace(' ', '')
+			if identifier == key:
+				return_value = value
+			else:
+				continue
+	return return_value
+
+
 def get_task_type_hiracy(task_type_of_intersest):
 	if task_type_of_intersest == 'classification':
 		return lambda x: x == 'classification'
@@ -26,6 +66,9 @@ class ExpResult(object):
 		self.flx_cat_dim = flx_cat_dim
 		self.complexity_num = flx_cat_dim ** flx_size
 		self.complexity_bin = int(np.ceil(np.log2(self.flx_cat_dim))) * self.flx_size
+
+	def add_dataset(self, dir):
+		self.dataset = read_opt_file_for_key(dir, 'dataset')
 
 	def add_loss(self,loss):
 		self.loss = loss
@@ -143,6 +186,12 @@ class ExpResultFull(ExpResult):
 	def add_all_possible_information_for_dir(self,dir):
 		self.add_losses_from_dir(dir)
 		self.add_psdd_exp(dir)
+
+class ExpResultFullFile(ExpResultFull):
+	def __init__(self, dir):
+		self.original_name = dir.split('/')[-1]
+		flx_size, flx_cat_dim = read_opt_file(dir)
+		ExpResultFull.__init__(self, flx_size, flx_cat_dim)
 
 class ExpPsdd(object):
 	def __init__(self, task_type):
@@ -265,17 +314,23 @@ def make_var_resutls_file(data = 'ex_7_mnist', sorte_by = lambda x: x.flx_size):
 	expResults = gather_only_var_results(data)
 
 	expResultsSorted = sorted(expResults, key=sorte_by, reverse=False)
+	if len(expResults) < 1:
+		return
+	first_dataset = expResults[0].dataset
+	for i in expResults:
+		if first_dataset != i.dataset:
+			raise Exception('not all experiments found have been run on the same dataset, please specify the data attribute better')
 
-	data_type = 'emnist' if 'emnist' in data else 'mnist'
-	if int(data.split('_')[1]) < 6:
-		outfile = OUTFILE_var_mnist.replace('mnist', '{}mnist'.format(data))
-	else:
-		outfile = OUTFILE_var_mnist if not 'emnist' in data else OUTFILE_var_emnist
+	data_type = first_dataset
+	# if int(data.split('_')[1]) < 6:
+	# 	outfile = OUTFILE_var_mnist.replace('mnist', '{}mnist'.format(data))
+	# else:
+	outfile = OUTFILE_var_mnist.replace('mnist', data_type)
 
 	with open(outfile, 'w') as f:
-		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity\n')
+		f.write('dataset, FL categorical size, categorical dimension, MSE, model space complexity, info\n')
 		for exp in expResultsSorted:
-			line = '{},\t{},\t{},\t{:.3},\t2^{{{}}}'.format(data_type, exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin)
+			line = '{},\t{},\t{},\t{:.3},\t2^{{{}}}, \t{}'.format(data_type, exp.flx_size, exp.flx_cat_dim, exp.loss, exp.complexity_bin, exp.original_name)
 			f.write(line + '\n')
 
 def gather_only_var_results(data):
@@ -286,15 +341,13 @@ def gather_only_var_results(data):
 				experiment_dirs.append(os.path.join(root, i))
 	
 	expResults = []
-	for exp in experiment_dirs:
-		if int(data.split('_')[1]) < 6:
-			flx_size = int(str(exp).split('/')[-1].split('_')[2].replace('fl',''))
-			flx_cat_dim = int(str(exp).split('/')[-1].split('_')[3].replace('c',''))
-		else:
-			flx_size = int(str(exp).split('_')[-2])
-			flx_cat_dim = int(str(exp).split('_')[-1])
-		expResult = ExpResult(flx_size, flx_cat_dim)
-		expResult.add_losses_from_dir(exp)
+	for exp_dir in experiment_dirs:
+		expResult = ExpResultFullFile(exp_dir)
+		expResult.add_dataset(exp_dir)
+		try:
+			expResult.add_losses_from_dir(exp_dir)
+		except Exception as e:
+			continue
 		expResults.append(expResult)
 	return expResults
 
@@ -385,10 +438,10 @@ def read_mnist_result_file(file):
 
 
 if __name__ == '__main__':
-	# make_var_resutls_file()
-	make_mnist_resutls_file_full('classification', data = 'ex_7_mnist')
-	make_mnist_resutls_file_full('classification', data = 'ex_6_emnist')
-	make_mnist_resutls_file_full('classification', data = 'ex_9_fashion')
-	make_mnist_resutls_file_full('noisy',          data = 'ex_7_mnist')
-	make_mnist_resutls_file_full('compositional',  data = 'ex_7_mnist')
-	make_mnist_resutls_file_full('compositional',  data = 'ex_9_fashion')
+	make_var_resutls_file(data = 'exp_sln')
+	# make_mnist_resutls_file_full('classification', data = 'ex_7_mnist')
+	# make_mnist_resutls_file_full('classification', data = 'ex_6_emnist')
+	# make_mnist_resutls_file_full('classification', data = 'ex_9_fashion')
+	# make_mnist_resutls_file_full('noisy',          data = 'ex_7_mnist')
+	# make_mnist_resutls_file_full('compositional',  data = 'ex_7_mnist')
+	# make_mnist_resutls_file_full('compositional',  data = 'ex_9_fashion')

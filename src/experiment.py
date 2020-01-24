@@ -519,6 +519,7 @@ def infer_offest(panel_image_size, image_size, current_offset):
 def do_make_class_samples_smaller(exp, image_size = 28, new_nb_rows = 3):
 	print('searching ', exp.evaluation_dir_path)
 	rowtotake = 5
+	nb_columns = 5
 	for root, folders, files in os.walk(exp.evaluation_dir_path):
 		for file in files:
 			if file.endswith('.png') and not 'small' in file:
@@ -527,7 +528,10 @@ def do_make_class_samples_smaller(exp, image_size = 28, new_nb_rows = 3):
 				padding = int(infer_offest(image.size[1], image_size, 1) / 2)
 				rows = (image.size[1] - (padding * 2) ) / (image_size + (padding * 2))
 
-				box = (0, rowtotake * (image_size + (padding * 2)), image.size[0], (new_nb_rows + rowtotake) * (image_size + (padding * 2)) + padding * 2)    
+				# new_width = image.size[0]
+				new_width = (nb_columns * 2) * (image_size + (padding)) + padding * 2
+
+				box = (0, rowtotake * (image_size + (padding * 2)), new_width, (new_nb_rows + rowtotake) * (image_size + (padding * 2)) + padding * 2)    
 				small_image = image.crop(box)
 				small_image.save(os.path.join(root, file.replace('.png','_small.png')))
 
@@ -878,9 +882,12 @@ if __name__ == '__main__':
 	# decode_all_possible(display_exp = True)
 	# evaluate_all_missing(display_exp = True)
 	# sample_all_missing(display_exp = False, only_first = False, types_of_query = ['dis'])
-	exps = [('ex_7_mnist_32_2', 'student_compute', 'classification', False),\
-			('ex_9_fashion_32_2', 'james03', 'classification', False)]
-	# exps = [('ex_7_mnist_32_2', 'james01', 'bland', True),\
+	# exps = [('ex_7_mnist_32_2', 'student_compute', 'classification', False),\
+	# 		('ex_9_fashion_32_2', 'james03', 'classification', False)]
+	exps = [('ex_7_mnist_32_2', 'staff_compute', 'blxor', True),\
+			('ex_7_mnist_16_4', 'student_compute', 'succ', True),\
+			# ('ex_7_mnist_16_4', 'staff_compute', 'blxor', True)
+			('ex_9_fashion_32_2', 'james08', 'blxor', False)]
 	# (experiment_parent_name,cluster_id,task_type,compress_fly) = ('ex_9_fashion_32_2', 'james03', 'classification', False)
 	# experiment_parent_name = 'ex_7_mnist_32_2'
 	# cluster_id = 'james06'
@@ -889,7 +896,10 @@ if __name__ == '__main__':
 	# compress_fly = True
 	for (experiment_parent_name,cluster_id,task_type,compress_fly) in exps:
 		exp = Experiment(experiment_parent_name, cluster_id, task_type, compress_fly = compress_fly, data_per = data_per)
-		combine_fl_variables_images(exp)
+		# combine_fl_variables_images(exp)
+
+
+		do_make_class_samples_smaller(exp)
 	# do_analyse_feature_layer(exp, 1000, testing = False)
 	# do_everything(exp, do_encode_data = True)
 	# # do_generative_query_on_test(exp, type_of_query = 'bin', testing = False, fl_to_query = ['fla'], y_condition = [1], impossible_examples = True)

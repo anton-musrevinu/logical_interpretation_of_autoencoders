@@ -98,9 +98,9 @@ def _to_img(x):
 
 def save_example_image(images_to_save, save_path_out, nrow = None):
         if type(images_to_save) == list and len(images_to_save) > 1:
-            print(images_to_save[0].shape)
+            # print(images_to_save[0].shape)
             images = torch.from_numpy(np.concatenate(images_to_save, axis = -1))
-            print(images.shape)
+            # print(images.shape)
         elif type(images_to_save) == list and len(images_to_save) == 1:
             images = images_to_save[0]
         else:

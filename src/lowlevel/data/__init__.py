@@ -36,7 +36,7 @@ def find_dataset_using_name(dataset_name):
 	if dataset is None:
 		raise NotImplementedError("In %s.py, there should be a subclass of BaseDataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
 
-	print(dataset)
+	# print(dataset)
 	return dataset
 
 
@@ -137,6 +137,7 @@ class CustomDatasetDataLoader():
 		"""
 		self.opt = opt
 		dataset_class = find_dataset_using_name(domain)
+
 		if args_for_dataset != None:
 			dataset = dataset_class(opt, type_of_data, mydir, **args_for_dataset)
 		else:
@@ -151,15 +152,17 @@ class CustomDatasetDataLoader():
 		self.dataset = dataset
 		self.str = 'dataset-{}-{}'.format(asStr, dataset)
 
-
-		print("[{} - {}] Id: {} , batch_size: {}, num_batches: {}".format(\
+		print("INIT: [{} - {}] Id: {} , batch_size: {}, len: {}".format(\
 			type(dataset).__name__,type_of_data,self.str,opt.batch_size,len(self)))
+
+		# for i, data in enumerate(self.dataloader):
+		# 	print(i,data)
 
 	# def get_num_batches(self):
 	# 	return len(self.dataloader)
 
-	def __getitem__(self,index):
-		return self.dataset[index]
+	# def __getitem__(self,index):
+	# 	return self.dataset[index]
 
 	def load_data(self):
 		return self
@@ -175,7 +178,8 @@ class CustomDatasetDataLoader():
 		"""Return a batch of data"""
 		for i, data in enumerate(self.dataloader):
 				# print(i, data['inputs'].shape,data['targets'].shape, type(data))
-				yield data
+			# print('===== retrieving item: {}'.format(i))
+			yield data
 
 		# for i in range(self.num_batches):
 		# 	yield self.dataset[i]

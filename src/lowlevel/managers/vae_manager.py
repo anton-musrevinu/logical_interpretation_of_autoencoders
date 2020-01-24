@@ -255,7 +255,7 @@ class VAEManager(MSCManager):
 
 				data_a = data['domain_a']
 				data_b = data['domain_b']
-				fly = data['y_label']
+				fly    = data['y_label']
 
 				self.model.set_input(data_a)
 				self.model.run_encoder()

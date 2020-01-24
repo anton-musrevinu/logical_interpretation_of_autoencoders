@@ -319,8 +319,13 @@ class VarAutoencoder(nn.Module):
         self.feature_layer_size = opt.feature_layer_size
         self.opt = opt
         self.norm_layer = norm_layer
-        self.use_dropout_encoder = opt.use_dropout_encoder
-        self.use_dropout_decoder = opt.use_dropout_decoder
+        if opt.phase == 'train':
+            self.use_dropout_encoder = opt.use_dropout_encoder
+            self.use_dropout_decoder = opt.use_dropout_decoder
+        else:
+            self.use_dropout_encoder = False
+            self.use_dropout_decoder = False
+
 
         if type(self.norm_layer) == functools.partial:  # no need to use bias as BatchNorm2d has affine parameters
             self.use_bias = norm_layer.func != nn.BatchNorm2d

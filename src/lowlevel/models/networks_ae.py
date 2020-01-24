@@ -1,5 +1,5 @@
 from .networks import *
-from .autoencoders.var_autoencoders import VarLinAutoEncoder,VarConvAutoEncoder,VarResNetAutoEncoder
+from .autoencoders.var_autoencoders import VarLinAutoEncoder,VarConvAutoEncoder,VarResNetAutoEncoder,VarConvAutoEncoder_Deep
 import torch
 
 def define_AE(opt):
@@ -8,7 +8,10 @@ def define_AE(opt):
 
 	norm_layer = get_norm_layer(norm_type=opt.norm)
 	
-	net = VarConvAutoEncoder(opt, norm_layer = norm_layer)
+	if opt.ae_model_type == 'deep':
+		net = VarConvAutoEncoder_Deep(opt, norm_layer = norm_layer)
+	elif opt.ae_model_type == 'vanilla':
+		net = VarConvAutoEncoder(opt, norm_layer = norm_layer)
 
 
 	if len(opt.gpu_ids) > 0:

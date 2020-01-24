@@ -40,6 +40,7 @@ class BaseManager():
 		self.opt.checkpoint_dir = self.manager_dir
 		print('self.opt.checkpoint_dir ',self.opt.checkpoint_dir )
 
+		# if self.opt.phase != 'graph':
 		self.create_model()
 
 		self.best_val_model_idx = {}
@@ -265,8 +266,7 @@ class BaseManager():
 
 		# self.total_losses = {}
 		total_iters = 0
-		start_time = time.time()
-		
+		start_time = time.time()		
 				# initialize a dict to keep the per-epoch metrics
 
 		print(self.total_losses)
@@ -383,11 +383,11 @@ class BaseManager():
 				f.write('\tall corresponding errors: \n{}'.format(out_string))
 
 		plot_stats_in_graph(self.total_losses, self.manager_dir)
-		make_time_image(self.experiment_logs)
+		make_time_image(self.experiment_logs, self.opt.image_width)
 
 
 
 	def make_graphs(self):
 		plot_stats_in_graph(self.total_losses, self.manager_dir)
-		make_time_image(self.experiment_logs)
+		make_time_image(self.experiment_logs, self.opt.image_width)
 		

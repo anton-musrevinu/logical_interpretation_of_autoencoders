@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import scipy.misc
 
-class MNISTEXAMPLEDataset(BaseDataset):
+class SLNDataset(ImageFolder):
 	"""Data provider for MNIST handwritten digit images."""
 
 
@@ -22,11 +22,8 @@ class MNISTEXAMPLEDataset(BaseDataset):
 		By default, the number of channels for input image  is 1 (L) and
 		the nubmer of channels for output image is 2 (ab). The direction is from A to B
 		"""
-		# old_value = parser.get_default(input_nc)
 		parser.add_argument('--num_classes', type=int, default=10)
-		parser.set_defaults(input_nc=1, batch_size=10, image_width = 28, image_height = 28)
-		# parser.input_nc = 1
-		# print('setting parser.input_nc from {} to {}'.format(old_value, parser.get_default(input_nc)))
+		parser.set_defaults(input_nc=3, batch_size=50, image_width = 96, image_height = 96)
 		return parser
 
 	def __init__(self, opt, type_of_data, mydir = None):
@@ -36,10 +33,14 @@ class MNISTEXAMPLEDataset(BaseDataset):
 			opt (Option class) -- stores all the experiment flags; needs to be a subclass of BaseOptions
 		"""
 		BaseDataset.__init__(self, opt)
-		if mydir == None:
-			self.dir = os.path.join(opt.dataroot, 'mnist-example-{}.npz'.format(type_of_data))
+		if opt.phase == 'train':
+			dataset_name = 'sln-unsupervised'
 		else:
-			self.dir = os.path.join(mydir, 'mnist-example-{}.npz'.format(type_of_data))
+			dataset_name = 'sln-supervised'
+		if mydir == None:
+			self.dir = os.path.join(opt.dataroot, '{}-{}.npz'.format(dataset_name, type_of_data))
+		else:
+			self.dir = os.path.join(mydir, '{}-{}.npz'.format(dataset_name,type_of_data))
 		self.type_of_data = type_of_data
 		self.num_classes = 10
 
@@ -47,17 +48,21 @@ class MNISTEXAMPLEDataset(BaseDataset):
 		self.inputs = loaded['inputs'].astype(np.float32)
 		if np.max(self.inputs) > 1:
 			self.inputs = self.inputs / 255.0
-		self.targets = loaded['targets'].astype(np.float32)
+		if opt.phase == 'train':
+			self.targets = loaded['targets'].astype(np.float32)
 
 		# print(np.min(self.inputs), np.max(self.inputs))
+		if self.opt.phase == 'train' and self.opt.testing:
+			limit_dataset_to = 100
+			self.num_data_points = int(min(self.inputs.shape[0],limit_dataset_to) / self.batch_size) * self.batch_size
+		else:
+			self.num_data_points = int(self.inputs.shape[0] / self.batch_size) * self.batch_size
 
-		self.num_data_points = int(self.inputs.shape[0] / self.batch_size) * self.batch_size
 		if opt.num_batches != -1:# and trim_data:
 			self.num_data_points = min(opt.num_batches * self.batch_size,self.num_data_points)
 
-		# if trim_data:
-		# 	self.inputs = np.delete(self.inputs, np.s_[self.num_data_points:], axis = 0)
-		# 	self.targets = np.delete(self.targets, np.s_[self.num_data_points:], axis = 0)
+		if self.opt.phase == 'train' and self.opt.testing:
+			self.inputs = np.delete(self.inputs, np.s_[self.num_data_points:], axis = 0)
 
 	def get_input_shape(self):
 		return self.opt.input_nc,self.opt.image_height,self.opt.image_width
@@ -75,13 +80,17 @@ class MNISTEXAMPLEDataset(BaseDataset):
 			B_paths (str) - - image paths (same as A_paths)
 		"""
 		inputs_batch = self.inputs[index].reshape(*self.get_input_shape())
-		# print(index, self.targets[index], type(index), type(self.targets[index]))
-		targets_batch = self.to_one_of_k(int(self.targets[index]))
-
 		inputs_batch = torch.Tensor(inputs_batch).float()
-		targets_batch = torch.Tensor(targets_batch).float()
+		# print(index, self.targets[index], type(index), type(self.targets[index]))
 
-		return {'inputs': inputs_batch, 'targets': targets_batch, 'indexs': index}
+
+		if self.opt.phase == 'train':
+			return {'inputs': inputs_batch, 'indexs': index}
+		else:
+			targets_batch = self.to_one_of_k(int(self.targets[index]))
+			targets_batch = torch.Tensor(targets_batch).float()
+
+			return {'inputs': inputs_batch, 'targets': targets_batch, 'indexs': index}
 
 
 

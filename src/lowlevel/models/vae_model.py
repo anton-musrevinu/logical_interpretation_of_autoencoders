@@ -81,14 +81,18 @@ class VAEModel(BaseModel):
         # Code (vs. paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
         if self.opt.ae_model_type == 'vanilla':
             self.netAE = networks.define_AE(opt)
-        else:
+        elif self.opt.ae_model_type == 'resnet':
             self.netAE = networks.define_resNetAE(opt)
+        elif self.opt.ae_model_type == 'deep':
+            self.netAE = networks.define_AE(opt)
 
         if self.isTrain:
             # define loss functions
 
             # self.criterionBCE = torch.nn.BCELoss().to(self.device)
             self.criterionBCE = lambda x, y: F.binary_cross_entropy(x, y, size_average=False) / x.shape[0]
+            # self.criterionBCE = torch.nn.L1Loss().to(self.device)
+            # self.criterionBCE = torch.nn.BCEWithLogitsLoss().to(self.device)
             self.criterionMSE = torch.nn.MSELoss().to(self.device)
             self.criterionGumbell = networks.Gumbell_kld(opt.beta_kld,opt.categorical_dim, self.netAE.fl_flat_shape).to(self.device)
             self.optimizer = torch.optim.Adam(self.netAE.parameters(), lr=opt.lr, amsgrad=False, weight_decay=opt.weight_decay_coefficient)#, lr=opt.lr)
