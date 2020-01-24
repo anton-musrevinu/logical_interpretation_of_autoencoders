@@ -20,8 +20,8 @@ def phase_train_options(parser):
     parser.add_argument('--norm', type=str, default='batch', help='instance normalization or batch normalization [instance | batch | none]')
     parser.add_argument('--init_type', type=str, default='xavier', help='network initialization [normal | xavier | kaiming | orthogonal]')
     parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
-    parser.add_argument('--use_dropout_encoder', type=str2bool, default=True, help='no dropout for the generator')
-    parser.add_argument('--use_dropout_decoder', type=str2bool, default=True, help='no dropout for the generator')
+    parser.add_argument('--use_dropout_encoder', type=str2bool, default=False, help='no dropout for the generator')
+    parser.add_argument('--use_dropout_decoder', type=str2bool, default=False, help='no dropout for the generator')
 
     parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
 
@@ -32,8 +32,8 @@ def phase_train_options(parser):
 
 def phase_graph_options(parser):
     parser.add_argument('--norm', type=str, default='batch', help='instance normalization or batch normalization [instance | batch | none]')
-    parser.add_argument('--use_dropout_encoder', type=str2bool, default=True, help='no dropout for the generator')
-    parser.add_argument('--use_dropout_decoder', type=str2bool, default=True, help='no dropout for the generator')
+    parser.add_argument('--use_dropout_encoder', type=str2bool, default=False, help='no dropout for the generator')
+    parser.add_argument('--use_dropout_decoder', type=str2bool, default=False, help='no dropout for the generator')
 
 
     return parser
@@ -48,8 +48,6 @@ def phase_encode_options(parser):
     parser.add_argument('--data_per', type=float,default=1, help='percentage of whole dataset to be converted')
     parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
     parser.add_argument('--norm', type=str, default='batch', help='instance normalization or batch normalization [instance | batch | none]')
-    parser.add_argument('--use_dropout_encoder', type=str2bool, default=True, help='no dropout for the generator')
-    parser.add_argument('--use_dropout_decoder', type=str2bool, default=True, help='no dropout for the generator')
     # parser.add_argument('--no_dropout', type=str2bool, default=True, help='no dropout for the generator')
     parser.add_argument('--dataset_to_encode', type = str, default=None)
     return parser
